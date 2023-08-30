@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: De Pietri
+    given-names: Marco
+    orcid: https://orcid.org/0000-0002-2815-6889
+title: "FLUNED"
+version: 0.1
+doi: 10.5281/zenodo.8301177
+date-released: 2023-03-28
+url: "https://github.com/marco-de-pietri/FLUNED-repository

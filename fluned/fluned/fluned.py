@@ -64,7 +64,7 @@ def sampleCoordinatesVTK(vtkFile, datasetName, coordinates):
         print ("ERROR activation file not found")
         sys.exit()
 
-    print ("Sampling Reaction Rate file ... ")
+
 
     #read the vtk file with an unstructured grid
     reader = vtk.vtkStructuredGridReader()
@@ -109,6 +109,7 @@ def sampleCoordinatesVTK(vtkFile, datasetName, coordinates):
 
 
     return  reacRates
+
 
 def sampleCoordinatesVTK1(vtkFile, datasetName, coordinates):
     """this function reads the vtk and sample the reaction rates"""
@@ -248,7 +249,7 @@ def readInputFile(path):
                            re.MULTILINE | re.DOTALL | re.IGNORECASE)
     casesVec = []
     parameters = [ 'case','time_treatment',  'activation_const',
-                   'activation_dataset',
+                   'activation_dataset','activation_dataset_error',
                     'activation_file', 'activation_normalization',
                    'inlet_conc','decay_constant', 'cfd_path',
                    'molecular_diffusion','schmidt_number','div_scheme',
@@ -308,6 +309,12 @@ class flunedCase:
             self.activation_dataset = argDic['activation_dataset']
         else:
             self.activation_dataset = ''
+
+        if 'activation_dataset_error' in argDic:
+            self.activation_dataset_error = argDic['activation_dataset_error']
+        else:
+            self.activation_dataset_error = ''
+
         if 'activation_file' in argDic:
             self.activation_file = os.path.normcase(
                     argDic['activation_file'])
@@ -1985,9 +1992,18 @@ boundaryField
             self.readCentroids()
 
             # 1.sample the activation file
+            print ("Sampling Reaction Rate file ... ")
             sampledRates = sampleCoordinatesVTK(self.activation_file,
                                                 self.activation_dataset,
                                                 self.Centroids)
+
+            # 1.1 if present sample the vtk file to get the error array
+            if self.activation_dataset_error != '':
+                print ("Sampling Reaction Rate MCNP errors  ... ")
+                sampledStatErr = sampleCoordinatesVTK(self.activation_file,
+                                            self.activation_dataset_error,
+                                            self.Centroids)
+
             # 2.use the activation const as a factor
             if self.activation_const == 0:
                 factor = 1
@@ -2075,6 +2091,50 @@ boundaryField
             fw.write(closerText)
 
 
+        if self.activation_dataset_error != '':
+            zeroSourceErrorPath = os.path.join(zeroFolder,'SourceError')
+
+
+            eHeaderText="""
+/*------------------------------*- C++ -*----------------------------------*\
+| =========               |                                                 |
+| \\      /  F ield       | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration   | Version:  2.3.1                                 |
+|   \\  /    A nd         | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulatio |                                                 |
+\*-------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      SourceError;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 -1 0 0 0 0];
+
+internalField   nonuniform List<scalar> 
+"""
+            with open(zeroSourceErrorPath,'w') as fw:
+                fw.write(eHeaderText)
+                fw.write("{:d}\n".format(self.numInternalCells))
+                fw.write("(\n")
+                for val in sampledStatErr:
+                    fw.write("{:e}\n".format(val))
+                fw.write(")\n;\n\n")
+                    
+                fw.write(boundaryText)
+
+                for face in self.faces:
+                    fw.write("    " + face['faceID'] + '\n    {\n')
+                    fw.write("        type            fixedValue;\n")
+                    valString="        value          uniform 0;\n"
+                    fw.write(valString)
+                    fw.write("    }\n" )
+                    
+                fw.write(closerText)
 
         return
 

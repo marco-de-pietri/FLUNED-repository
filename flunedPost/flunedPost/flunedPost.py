@@ -4,6 +4,7 @@ import sys
 import os
 import pathlib
 import shutil
+import copy
 #import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -16,6 +17,70 @@ import vtk
 import pyvista as pv
 from vtk.util import numpy_support as VN
 
+def mergeContinueRuns(time_lists,data_lists):
+    """
+    this function takes time series segments and join them in a single one -
+    the overlapping sections are removed
+    """
+
+    if len(time_lists) == 0 or len(data_lists) == 0 :
+        print ("ERROR could not read post processing data")
+        sys.exit()
+
+    if len(time_lists) != len(data_lists) :
+        print ("ERROR mismatch in length of data series")
+        print ("number of time lists: ", len(time_lists))
+        print ("number of data lists: ", len(data_lists))
+        sys.exit()
+
+    tot_len_time_lists = sum([len(x) for x in time_lists])
+    tot_len_data_lists = sum([len(x) for x in data_lists])
+
+    if tot_len_time_lists != tot_len_data_lists:
+        print ("ERROR mismatch in length of data series")
+        print ("number of time points: ", tot_len_time_lists)
+        print ("number of data points: ", tot_len_data_lists)
+
+    temp_list = list(zip(time_lists,data_lists))
+
+    #time_lists_sorted = sorted(time_lists,
+    #                           key=lambda x:x[0])
+
+    sorted_temp_list = sorted(temp_list, key= lambda x:x[0][0])
+
+    time_lists_sorted,data_lists_sorted = zip(*sorted_temp_list)
+    #data_lists_sorted = sorted(data_lists,
+    #                           key=lambda x:x[0])
+
+    time_series = time_lists_sorted[0]
+    data_series = data_lists_sorted[0]
+
+
+    if len(time_lists) > 1:
+        for i,l in enumerate(time_lists_sorted):
+            time_series_temp = copy.deepcopy(time_series)
+            if i == 0:
+                continue
+            appended = False
+            for j, val in enumerate(time_series_temp):
+                if val >= time_lists_sorted[i][0]:
+                    time_series = time_series[0:j]
+                    time_series.extend(l)
+                    data_series = data_series[0:j]
+                    data_series.extend(data_lists_sorted[i])
+                    appended = True
+                    break
+
+            if not appended:
+                time_series.extend(l)
+                data_series.extend(data_lists_sorted[i])
+
+    #for time,data in zip(time_series,data_series):
+    #    print (f"{time:.0f}")
+    #    print (f"{data:.0e}")
+
+    return time_series, data_series
+
 def getPostFiles(fPath):
     """
     this function crawl the folder to reach the data in the post process file
@@ -24,7 +89,7 @@ def getPostFiles(fPath):
     filePaths = []
     folderItms = os.listdir(fPath)
     folderItms = sorted(folderItms, reverse=False,key=lambda x:float(x))
-    
+
     for fld in folderItms:
 
         fPath1 = os.path.join(fPath,fld)
@@ -37,7 +102,7 @@ def getPostFiles(fPath):
 
 def postFileArea(fPath):
     """
-    this function extracts the face area (in m2) contained in the post 
+    this function extracts the face area (in m2) contained in the post
     processing file
     """
 
@@ -60,14 +125,13 @@ def postFileArea(fPath):
 
 def postFileArray(fPathList,name):
     """
-    this function extracts a generic array contained in the post 
+    this function extracts a generic array contained in the post
     processing file
     """
 
 
 
     arrayList = []
-    arrayTot = []
 
     for fPath in fPathList:
 
@@ -82,7 +146,7 @@ def postFileArray(fPathList,name):
         with postFile:
             lines = postFile.readlines()
             for line in lines:
-                
+
                 line = line.replace('#','')
 
                 wrds = line.split()
@@ -99,17 +163,8 @@ def postFileArray(fPathList,name):
 
             arrayList.append(array)
 
-    if len(arrayList) == 1:
-        arrayTot = arrayList[0]
-    else:
-        for i, l in enumerate(arrayList):
-            if i == 0:
-                arrayTot.extend(l)
-            else:
-                arrayTot.extend(l[1:])
 
-
-    return arrayTot
+    return arrayList
 
 def getVTKsize(vtkFile):
     """this function reads the unstructured mesh and get the cartesian
@@ -203,7 +258,7 @@ def sampleCoordinatesVTK(vtkFile, datasetName, coordinates):
     probeFilter.SetSourceData(data)
     probeFilter.SetInputData(polydata)
     probeFilter.Update()
-    
+
     vtkArray = probeFilter.GetOutput().GetPointData().GetArray(datasetName)
 
     concentrations = VN.vtk_to_numpy(vtkArray)
@@ -232,7 +287,7 @@ def formatValues(vector):
             returnString +=newLine + '\n'
             newLine = newNumber
 
-        else: 
+        else:
             newLine = newLine + ' ' + newNumber
 
     returnString += newLine + '\n'
@@ -294,13 +349,13 @@ def calculateEdgeCentroid(vector):
     return centroid
 
 def pointDistance(point1,point2):
-    
+
     dist = pow((sum([pow((point1[i] - point2[i]),2) for i in [0,1,2]])),0.5)
 
     return dist
 
 def mod(vec1):
-    
+
     sum = 0
     for el in vec1:
         sum += el**2
@@ -345,6 +400,16 @@ def checkInt(str):
     except ValueError:
         return False
 
+def check_float(str):
+    """
+    this function checks if a string is a float
+    """
+    try:
+        float(str)
+        return True
+    except ValueError:
+        return False
+
 class flunedCase:
     def __init__(self, simPath):
         """initialize case and create FLUNED case folder"""
@@ -368,7 +433,7 @@ class flunedCase:
         print ("reconstructing interface properties...")
 
         postFolder = os.path.join(self.fluned_path,'postProcessing')
-        
+
         # read the files in the postprocess folder
         postFlowVec = []
 
@@ -381,10 +446,19 @@ class flunedCase:
             postDic['folder'] = itm
             postDic['flowFiles'] = getPostFiles(os.path.join(postFolder,itm))
             postDic['areaFile'] = postFileArea(postDic['flowFiles'][0])
-            postDic['timeFile'] = postFileArray(postDic['flowFiles'],
-                                                    'Time')
-            postDic['phiFlowFile'] = postFileArray(postDic['flowFiles'],
-                                                    'sum(phi)')
+
+            timeLists = postFileArray(postDic['flowFiles'],
+                                         'Time')
+
+            flowLists =  postFileArray(postDic['flowFiles'],
+                                       'sum(phi)')
+
+            timeListSorted,flowListSorted = mergeContinueRuns (
+                                            timeLists,
+                                            flowLists,
+                                            )
+            postDic['timeFile']    = timeListSorted
+            postDic['phiFlowFile'] = flowListSorted
             postDic['phiFlowFileLast'] = postDic['phiFlowFile'][-1]
 
             if postDic['phiFlowFileLast'] > 0:
@@ -399,7 +473,7 @@ class flunedCase:
 
         self.facesPost = postFlowVec
 
-        
+
 
         return
 
@@ -412,41 +486,65 @@ class flunedCase:
 
 
         postFolder = os.path.join(self.fluned_path,'postProcessing')
-        
+
         # read the files in the postprocess folder
         postTrFlowVec = []
 
         folderItms = os.listdir(postFolder)
         flowFolders = [itm for itm in folderItms if itm[0:10]=='volTrFlow-']
 
+        if len(flowFolders) == 0:
+            # if the output relative to time is are not present
+            # initialize to zero the following variables
+            for face in self.facesPost:
+                face['avTrFile']   =  [0]
+                face['avTrGrad']   =  [0]
+                face['avTrFrac']   =  0
+                face['rtdResTime'] =  0
+                face['rtdDecRate'] =  0
+            return
+
         for itm in flowFolders:
             postDic = {}
             postDic['faceID'] = itm[10:]
             postDic['folder'] = itm
             postDic['flowFiles'] = getPostFiles(os.path.join(postFolder,itm))
-            postDic['TrFlowFile']=postFileArray(
-                    postDic['flowFiles'],'sum(Tr)')
+
+            timeLists = postFileArray(postDic['flowFiles'],
+                                         'Time')
+
+            flowLists =  postFileArray(postDic['flowFiles'],
+                                       'sum(Tr)')
+
+            timeListSorted,flowListSorted = mergeContinueRuns (
+                                            timeLists,
+                                            flowLists,
+                                            )
+
+            postDic['TrFlowFile'] = flowListSorted
+            #postDic['TrFlowFile']=postFileArray(
+            #        postDic['flowFiles'],'sum(Tr)')
             postDic['TrFlowFileLast'] = postDic['TrFlowFile'][-1]
             #print (postDic)
             postTrFlowVec.append(postDic)
 
 
         for face in self.facesPost:
-            face['TrFlowFileLast'] = ([v['TrFlowFileLast'] for 
-                                       v in postTrFlowVec 
+            face['TrFlowFileLast'] = ([v['TrFlowFileLast'] for
+                                       v in postTrFlowVec
                                        if v['faceID']==face['faceID']][0])
-            face['TrFlowFile'] = ([v['TrFlowFile'] for 
-                                       v in postTrFlowVec 
+            face['TrFlowFile'] = ([v['TrFlowFile'] for
+                                       v in postTrFlowVec
                                        if v['faceID']==face['faceID']][0])
             face['avTrFileLast'] = (face['TrFlowFileLast']
-                                   /face['phiFlowFileLast'])
-            face['avTrFile'] = ([t/f for t,f in 
+                                   / face['phiFlowFileLast'])
+            face['avTrFile'] = ([t/f for t,f in
                                 zip(face['TrFlowFile'],face['phiFlowFile'])])
             face['avTrGrad'] = (list((np.gradient(face['avTrFile'],
                                      face['timeFile'],
                                      edge_order=1))))
 
-          
+
             dt = face['timeFile'][1] - face['timeFile'][0]
 
             face['avTrFrac'] = [dt*g for g in face['avTrGrad']]
@@ -454,13 +552,13 @@ class flunedCase:
             face['rtdResTime'] = sum([t*g for t,g in zip(face['timeFile'],
                                     face['avTrFrac'])])
 
-            face['rtdDecRate'] = sum([g*math.exp(-self.decay_constant*t) 
+            face['rtdDecRate'] = sum([g*math.exp(-self.decay_constant*t)
                                      for t,g in zip(face['timeFile'],
                                      face['avTrFrac'])])
 
-            
 
-        
+
+
 
         return
 
@@ -473,7 +571,7 @@ class flunedCase:
 
 
         postFolder = os.path.join(self.fluned_path,'postProcessing')
-        
+
         # read the files in the postprocess folder
         postTFlowVec = []
 
@@ -485,28 +583,40 @@ class flunedCase:
             postDic['faceID'] = itm[9:]
             postDic['folder'] = itm
             postDic['flowFiles'] = getPostFiles(os.path.join(postFolder,itm))
-            postDic['TFlowFile']=postFileArray(postDic['flowFiles'],'sum(T)')
+            timeLists = postFileArray(postDic['flowFiles'],
+                                         'Time')
+
+            flowLists =  postFileArray(postDic['flowFiles'],
+                                       'sum(T)')
+
+            timeListSorted,flowListSorted = mergeContinueRuns (
+                                            timeLists,
+                                            flowLists,
+                                            )
+            postDic['timeFile']    = timeListSorted
+            postDic['TFlowFile'] = flowListSorted
+            #postDic['TFlowFile']=postFileArray(postDic['flowFiles'],'sum(T)')
             postDic['TFlowFileLast'] = postDic['TFlowFile'][-1]
             #print (postDic)
             postTFlowVec.append(postDic)
 
 
         for face in self.facesPost:
-            face['TFlowFileLast'] = ([v['TFlowFileLast'] for 
-                                      v in postTFlowVec if 
+            face['TFlowFileLast'] = ([v['TFlowFileLast'] for
+                                      v in postTFlowVec if
                                       v['faceID']==face['faceID']][0])
-            face['TFlowFile'] = ([v['TFlowFile'] for v in postTFlowVec if 
+            face['TFlowFile'] = ([v['TFlowFile'] for v in postTFlowVec if
                                       v['faceID']==face['faceID']][0])
             face['avTFileLast']=face['TFlowFileLast']/face['phiFlowFileLast']
-            face['avTFile'] = ([t/f for t,f in 
+            face['avTFile'] = ([t/f for t,f in
                                 zip(face['TFlowFile'],face['phiFlowFile'])])
-            
+
         return
 
 
 
     def readDefVector(self,elID):
-        """ this function looks for the studied element - and output the 
+        """ this function looks for the studied element - and output the
         definition - no storing"""
 
 
@@ -524,7 +634,7 @@ class flunedCase:
 
             start = False
             startLine = 0
-            
+
             targetLine = elID
 
             for i,line in enumerate(inpFile):
@@ -540,12 +650,12 @@ class flunedCase:
                         break
 
             definition = defPat.findall(defLine)
-            defVector = [int(num) for num in definition[0].split()] 
+            defVector = [int(num) for num in definition[0].split()]
 
         return defVector
 
     def readPointDefinitions(self,pointIDVector):
-        """ this function looks for the studied points - and output the 
+        """ this function looks for the studied points - and output the
         definition - no storing"""
 
         #add test for empty lines - later
@@ -567,14 +677,14 @@ class flunedCase:
 
             start = False
             startLine = 0
-            
-            targetLines = sorted(pointIDVector) 
+
+            targetLines = sorted(pointIDVector)
 
             for i,line in enumerate(inpFile):
                 if start == False:
                     if len(lineStartPat.findall(line)) != 0:
                         startLine = i
-                        targetLines=([(val+startLine+1) for 
+                        targetLines=([(val+startLine+1) for
                             val in targetLines])
                         start = True
 
@@ -582,7 +692,7 @@ class flunedCase:
                     if i in targetLines:
                         defLine = line
                         definition = defPat.findall(defLine)
-                        defVector=([float(num) for num in 
+                        defVector=([float(num) for num in
                             definition[0].split()])
                         returnDic[i-startLine-1] = defVector
 
@@ -590,7 +700,7 @@ class flunedCase:
         return returnDic
 
     def readElDefinitions(self,elIDVector):
-        """ this function looks for the studied element - and output the 
+        """ this function looks for the studied element - and output the
         definition - no storing"""
 
         #add test for empty lines - later
@@ -612,14 +722,14 @@ class flunedCase:
 
             start = False
             startLine = 0
-            
-            targetLines = sorted(elIDVector) 
+
+            targetLines = sorted(elIDVector)
 
             for i,line in enumerate(inpFile):
                 if start == False:
                     if len(lineStartPat.findall(line)) != 0:
                         startLine = i
-                        targetLines=([(val+startLine+1) for 
+                        targetLines=([(val+startLine+1) for
                             val in targetLines])
                         start = True
 
@@ -634,7 +744,7 @@ class flunedCase:
         return returnDic
 
     def readPointCoordinate(self,pointID):
-        """ this function looks for the studied point - and output the 
+        """ this function looks for the studied point - and output the
         coordinates - no storing"""
 
 
@@ -653,7 +763,7 @@ class flunedCase:
 
             start = False
             startLine = 0
-            
+
             targetLine = pointID
 
             for i,line in enumerate(inpFile):
@@ -669,27 +779,27 @@ class flunedCase:
                         break
 
             definition = defPat.findall(defLine)
-            defVector = [float(num) for num in definition[0].split()] 
+            defVector = [float(num) for num in definition[0].split()]
 
         return defVector
 
 
 
-        
+
 
 
     def readVolumes(self):
-        """ this function reads the volumes from the V file located in the 
+        """ this function reads the volumes from the V file located in the
         zero folder """
-       
+
 
         print ("reading volume values...")
 
         # common patterns
-        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\)", 
+        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\)",
                                           re.MULTILINE | re.DOTALL )
 
-        nElPat = re.compile("internalField.*?(\d+).*?\(", 
+        nElPat = re.compile("internalField.*?(\d+).*?\(",
                                           re.MULTILINE | re.DOTALL )
         vFile = os.path.join(self.fluned_path,'0','V')
         try:
@@ -711,13 +821,13 @@ class flunedCase:
 
 
     def readVelocities(self):
-        """ this function reads the velocity from the U file located in the 
+        """ this function reads the velocity from the U file located in the
         zero folder """
-       
+
         print ("reading velocity values...")
 
         # common patterns
-        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\n\\s*\)", 
+        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\n\\s*\)",
                                           re.MULTILINE | re.DOTALL )
 
         uFile = os.path.join(self.fluned_path,'0','U')
@@ -731,7 +841,7 @@ class flunedCase:
             numInternalBlocks = internalBlockPat.findall(text)
             internalVels = numInternalBlocks[0].split('\n')[1:]
             internalVels=[val.strip('()') for val in internalVels]
-            
+
             self.Velocities = np.array(
                               [np.array(
                               [float(val) for val in v.split()])
@@ -742,19 +852,19 @@ class flunedCase:
 
     def readGradT(self):
         """ this function reads the T gradient"""
-       
+
         print ("reading gradient values...")
 
         # find the last folder
-        folderItms = os.listdir(self.fluned_path)
-        folderTimes=[int(itm) for itm in folderItms if checkInt(itm) == True]
-        lastTime = max(folderTimes)
+        #folderItms = os.listdir(self.fluned_path)
+        #folderTimes=[int(itm) for itm in folderItms if checkInt(itm) == True]
+        #lastTime = max(folderTimes)
 
         # common patterns
-        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\n\\s*\)", 
+        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\n\\s*\)",
                                           re.MULTILINE | re.DOTALL )
 
-        gradFile = os.path.join(self.fluned_path,str(lastTime),'grad(T)')
+        gradFile = os.path.join(self.last_time_step,'grad(T)')
         try:
             inpFile = open(gradFile,'r',encoding="utf8", errors='ignore')
         except IOError:
@@ -772,22 +882,25 @@ class flunedCase:
 
         return
     def readT(self):
+        """
+        this function reads the T scalar
+        """
 
 
         print ("reading scalar values...")
 
-        """ this function reads the T scalar  """
-       
+
         # find the last folder
-        folderItms = os.listdir(self.fluned_path)
-        folderTimes=[int(itm) for itm in folderItms if checkInt(itm) == True]
-        lastTime = max(folderTimes)
+        #folderItms = os.listdir(self.fluned_path)
+        #folderTimes=[int(itm) for itm in folderItms if checkInt(itm) == True]
+        #lastTime = max(folderTimes)
 
         # common patterns
-        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\)", 
+        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\)",
                                           re.MULTILINE | re.DOTALL )
 
-        tFile = os.path.join(self.fluned_path,str(lastTime),'T')
+        tFile = os.path.join(self.last_time_step,'T')
+
         try:
             inpFile = open(tFile,'r',encoding="utf8", errors='ignore')
         except IOError:
@@ -810,7 +923,7 @@ class flunedCase:
         """
 
         # common patterns
-        ddtPat = re.compile("ddtSchemes.*?\{.{1,}?\}", 
+        ddtPat = re.compile("ddtSchemes.*?\{.{1,}?\}",
                                           re.MULTILINE | re.DOTALL )
 
         cFile = os.path.join(
@@ -835,7 +948,7 @@ class flunedCase:
         return
 
     def parseConstants(self):
-        """ this function parses the constant properties to get the decay 
+        """ this function parses the constant properties to get the decay
         variable and the others"""
 
         # common patterns
@@ -861,7 +974,7 @@ class flunedCase:
                 self.molecular_dif = float(val)
             else:
                 self.molecular_dif = 0
-            
+
             if len(lambdaLines) != 0:
                 vals = lambdaLines[0].strip(' ;').split()
                 val = vals[-1]
@@ -970,7 +1083,7 @@ class flunedCase:
                     self.originalEmissionRate))
                 sampString = "SAMPLED EMISSION RATE (UNSCALED) [#/s],{:e},\n"
                 fw.write(sampString.format(self.unscaledEmissionRate))
-                
+
             fw.write("\n")
             fw.write("\n")
             fw.write("ACTIVATION\n")
@@ -993,7 +1106,7 @@ class flunedCase:
 
 
 
-                
+
             if inletAtoms != 0:
                 reductionRate = outletAtoms/inletAtoms
                 fw.write("OUT/IN RATIO FINAL,{:.5e},\n".
@@ -1003,7 +1116,7 @@ class flunedCase:
             fw.write("\n")
             fw.write("\n")
             fw.write("FACES\n")
-                
+
             for face in self.facesPost:
                 if face['typeFile'] != 'wall':
                     fw.write(face['faceID'])
@@ -1032,7 +1145,7 @@ class flunedCase:
                 continue
 
             # write the flowing atoms at inlet-outlet
-            faceSummary=('face-atom-flow-' + face['faceID'] + 
+            faceSummary=('face-atom-flow-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
             sumFile1 = os.path.join(resFolder,faceSummary)
             with open(sumFile1,'w') as fw:
@@ -1040,7 +1153,7 @@ class flunedCase:
                     fw.write('{:.3f},{:.5e},\n'.format(t,c))
 
             # write the concentration at inlet-outlet
-            faceSummary=('face-conc-' + face['faceID'] + 
+            faceSummary=('face-conc-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
             sumFile1 = os.path.join(resFolder,faceSummary)
             with open(sumFile1,'w') as fw:
@@ -1048,7 +1161,7 @@ class flunedCase:
                     fw.write('{:.3f},{:.5e},\n'.format(t,c))
 
             # write the specific activity at inlet-outlet
-            faceSummary=('face-specific-activity-' + face['faceID'] + 
+            faceSummary=('face-specific-activity-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
             sumFile1 = os.path.join(resFolder,faceSummary)
             with open(sumFile1,'w') as fw:
@@ -1057,7 +1170,7 @@ class flunedCase:
                              t,c*self.decay_constant))
 
             # write the specific time-conc at inlet-outlet
-            faceSummary=('face-fictitious-time-' + face['faceID'] + 
+            faceSummary=('face-fictitious-time-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
             sumFile1 = os.path.join(resFolder,faceSummary)
             with open(sumFile1,'w') as fw:
@@ -1066,7 +1179,7 @@ class flunedCase:
 
 
             # write the RTD at inlet-outlet
-            faceSummary=('face-RTD-raw-' + face['faceID'] + 
+            faceSummary=('face-RTD-raw-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
             sumFile1 = os.path.join(resFolder,faceSummary)
             with open(sumFile1,'w') as fw:
@@ -1128,7 +1241,7 @@ class flunedCase:
         #parameter 1 based on residence times
         #averageCellReTime = sum(self.resTimes)/len(self.resTimes)
 
-        #qualityPar = [t*c*lbda/(ln2*totS) for t,c 
+        #qualityPar = [t*c*lbda/(ln2*totS) for t,c
         #              in zip(self.resTimes,self.TScalar)]
 
         #avgMeshQualParameter = sum(qualityPar)/len(qualityPar)
@@ -1144,24 +1257,24 @@ class flunedCase:
             totS = sum(self.TScalar)
 
             #parameter 2 based on transit times
-    
-            transitTimes = [(vol**(1/3))/mod(v) for vol,v in 
+
+            transitTimes = [(vol**(1/3))/mod(v) for vol,v in
                             zip(self.Volumes,self.Velocities)]
-    
+
             averageTransitTime = sum(transitTimes)/len(transitTimes)
-    
-            qualityPar2 = [t*c*lbda/(ln2*totS) for t,c 
+
+            qualityPar2 = [t*c*lbda/(ln2*totS) for t,c
                           in zip(transitTimes,self.TScalar)]
-    
+
             avgMeshQualParameter2 = sum(qualityPar2)/len(qualityPar2)
-    
+
             #parameter 3 based on scalar gradient
-    
+
             gradients = [mod(g) for g in self.Gradients]
 
             avgGrad = sum(gradients)/len(gradients)
 
-            gradientDist = [g*(vol**(1/3)) for vol,g in 
+            gradientDist = [g*(vol**(1/3)) for vol,g in
                             zip(self.Volumes,gradients)]
 
             avgGradDist = sum(gradientDist)/len(gradientDist)
@@ -1228,7 +1341,7 @@ class flunedCase:
 
 
 
-                
+
             if inletAtoms != 0:
                 reductionRate = outletAtoms/inletAtoms
                 fw.write("OUT/IN RATIO,{:.5e},\n".format(reductionRate))
@@ -1237,7 +1350,7 @@ class flunedCase:
             fw.write("\n")
             fw.write("\n")
             fw.write("FACES\n")
-                
+
             for face in self.facesPost:
                 if face['typeFile'] != 'wall':
                     fw.write(face['faceID'])
@@ -1258,10 +1371,10 @@ class flunedCase:
 
 
         return
-            
+
     def launchFuncObjects(self):
         """launches the utility to calculate T gradient """
-    
+
         print ("launching gradient function object")
         origFolder = os.getcwd()
         os.chdir(self.fluned_path)
@@ -1274,7 +1387,7 @@ class flunedCase:
 
     def convertToVTK(self):
         """launches the utility to create a vtk file """
-    
+
         print ("launching FoamToVTK utility")
         origFolder = os.getcwd()
         os.chdir(self.fluned_path)
@@ -1292,7 +1405,7 @@ class flunedCase:
 
     def getVTKPath(self):
         """
-        this function looks for the vtk file in the VTK folder and 
+        this function looks for the vtk file in the VTK folder and
         store the complete path
         """
 
@@ -1321,9 +1434,9 @@ class flunedCase:
 
     def getIsotope(self):
         """
-        using the decay constant this function understand if we are 
-        considering N-16, N-17 or O-19 and assign the spectrum 
-        accordingly. If it is not possible a dummy spectrum is 
+        using the decay constant this function understand if we are
+        considering N-16, N-17 or O-19 and assign the spectrum
+        accordingly. If it is not possible a dummy spectrum is
         assigned
         """
 
@@ -1333,7 +1446,7 @@ class flunedCase:
 
         N16_branching_ratio = 0.749577982
         N17_branching_ratio = 0.951951
-        O19_branching_ratio = 1.5299368 
+        O19_branching_ratio = 1.5299368
 
         n16Spectrum = [
         [0.0000000e+00,0          ],
@@ -1356,9 +1469,9 @@ class flunedCase:
         [7.1150788e+00,0.05000],
         [7.1152212e+00,0          ],
         [8.8691113e+00,0.00080000],
-        [8.8692887e+00,0] 
+        [8.8692887e+00,0]
         ]
-        
+
         # JEFF 3.3
         n17Spectrum = [
         [0.0000000    ,0.0],
@@ -1369,13 +1482,13 @@ class flunedCase:
         [1.1629999    ,0.498],
         [1.1630001    ,0.0],
         [1.6889999    ,0.069],
-        [1.6890001    ,0.0], 
-        [3.6139999    ,0.00024], 
-        [3.6140001    ,0.0], 
-        [3.8199999    ,0.00012], 
-        [3.8200001    ,0.0], 
+        [1.6890001    ,0.0],
+        [3.6139999    ,0.00024],
+        [3.6140001    ,0.0],
+        [3.8199999    ,0.00012],
+        [3.8200001    ,0.0],
         ]
-        
+
         o19Spectrum = [
         [0.0000000e+00,0],
         [1.0989890e-01,0],
@@ -1393,7 +1506,7 @@ class flunedCase:
         [2.5819742e+00,0],
         [2.5820258e+00,0],
         [4.1789582e+00,0],
-        [4.1790418e+00,0], 
+        [4.1790418e+00,0],
         ]
         dummySpectrum = [
         [ 0 ,0 ],
@@ -1421,12 +1534,12 @@ class flunedCase:
             print ("a dummy spectrum is assigned")
 
         # normalize spectrum
-        
-        
+
+
         sumOriginal = sum([val[1] for val in spectrum])
-        
+
         normalizingFactor = 1/sumOriginal
-        
+
         for val in spectrum:
             val.append(val[1]*normalizingFactor)
 
@@ -1438,7 +1551,7 @@ class flunedCase:
 
     def getOriginalEmission(self):
         """
-        this function reads the initial vtk and calculates the total 
+        this function reads the initial vtk and calculates the total
         emission
         """
 
@@ -1468,7 +1581,7 @@ class flunedCase:
                     math.ceil(vtkBoundaries[5]*100)])
 
         samplingResolution = self.precision
-        
+
         xInts = math.ceil((xBounds[1] - xBounds[0])/(samplingResolution*100))
         yInts = math.ceil((yBounds[1] - yBounds[0])/(samplingResolution*100))
         zInts = math.ceil((zBounds[1] - zBounds[0])/(samplingResolution*100))
@@ -1476,12 +1589,12 @@ class flunedCase:
         self.xInts = xInts
         self.yInts = yInts
         self.zInts = zInts
-        
-        xNodes = ([(xBounds[0] + samplingResolution*100*i ) 
+
+        xNodes = ([(xBounds[0] + samplingResolution*100*i )
             for i in range(xInts+1)])
-        yNodes = ([(yBounds[0] + samplingResolution*100*i ) 
+        yNodes = ([(yBounds[0] + samplingResolution*100*i )
             for i in range(yInts+1)])
-        zNodes = ([(zBounds[0] + samplingResolution*100*i ) 
+        zNodes = ([(zBounds[0] + samplingResolution*100*i )
             for i in range(zInts+1)])
 
         self.xNodes = xNodes
@@ -1491,7 +1604,7 @@ class flunedCase:
         voxelVector = []
         sampleCoordinates = []
         id = 1
-        
+
         for i in range(xInts) :
             xVoxelNodes = [xNodes[i], xNodes[i+1]]
             xVoxelCenter = (xNodes[i+1] + xNodes[i])/2
@@ -1506,7 +1619,7 @@ class flunedCase:
                     newDic['centCoords'] = ([xVoxelCenter,
                                              yVoxelCenter,
                                              zVoxelCenter])
-                    sampleCoordinates.append([cord/100 for cord 
+                    sampleCoordinates.append([cord/100 for cord
                         in newDic['centCoords']])
                     voxelVector.append(newDic)
                     id += 1
@@ -1521,20 +1634,20 @@ class flunedCase:
         """
         add the sampled value to the sample coordinates vector
         """
-    
+
         vtkFile = self.vtk_path
         vtkDataSet = self.dataset
         spectrumVector = self.spectrum
-    
-    
-    
+
+
+
         sampledRates = sampleCoordinatesVTK(vtkFile, vtkDataSet,
                                             self.sampleCoordinates)
-        
+
         totalEmission = 0
-    
+
         voxelVolume = self.voxelVolume
-        
+
         for voxel,concentration in zip(self.voxelVector,sampledRates):
             #voxel['emittingDensity'] = concentration*1e-06 #from m3 to cm3
             voxel['emission'] = (concentration*
@@ -1543,27 +1656,27 @@ class flunedCase:
                                  self.branching_ratio*
                                  self.scaling*
                                  1e-06)  #atoms per m3 to cm3
-            #voxel['emittingSpectrum'] = [val[2]*voxel['emission'] 
+            #voxel['emittingSpectrum'] = [val[2]*voxel['emission']
             #                            for val in spectrumVector]
-        
+
             totalEmission += voxel['emission']
-    
+
         self.unscaledEmissionRate = totalEmission
-    
+
         ratioVtkSampling = self.originalEmissionRate/totalEmission
-    
+
         totalEmissionScaled = 0
-    
+
         for voxel,concentration in zip(self.voxelVector,sampledRates):
             #voxel['emittingDensity'] = concentration*1e-06 #from m3 to cm3
             voxel['emission'] = voxel['emission']*ratioVtkSampling
-            #voxel['emittingSpectrum'] = [val[2]*voxel['emission'] 
+            #voxel['emittingSpectrum'] = [val[2]*voxel['emission']
             #                            for val in spectrumVector]
-        
+
             totalEmissionScaled += voxel['emission']
 
         self.scaledEmissionRate = totalEmissionScaled
-    
+
         return
 
     def writeCDGS(self):
@@ -1588,7 +1701,7 @@ class flunedCase:
             specValues = [val[0] for val in spectrumVector]
             specString = formatValues(specValues)
             fw.write(specString)
-        
+
             fw.write("mesh_type rec\n")
             fw.write("mesh_boundaries {:d} {:d} {:d}\n".format(self.xInts+1,
                                                                self.yInts+1,
@@ -1614,7 +1727,7 @@ class flunedCase:
                                                  vox['emission'],
                                                  self.voxelVolume))
                     fw.write(voxelString2.format(vox['emission']))
-                    emittingSpectrum =  ([val[2]*vox['emission'] 
+                    emittingSpectrum =  ([val[2]*vox['emission']
                                          for val in self.spectrum])
                     spectrumString=formatValues(emittingSpectrum[:-1])
                     fw.write(spectrumString)
@@ -1626,11 +1739,26 @@ class flunedCase:
 
         return
 
+    def get_last_time_step(self):
+        """
+        this function save as a class attribute the path of the last time step
+        """
+
+        folder_itms = os.listdir(self.fluned_path)
+        folder_times= ([[float(itm),itm] for itm in folder_itms
+                     if check_float(itm) == True])
+
+        folder_times.sort(key=lambda x: x[0])
+
+        self.last_time_step = os.path.join(self.fluned_path,folder_times[-1][1])
+
+        return
+
 
 
 def main():
 
-    
+
     parser = argparse.ArgumentParser(description="flunedPost v0.0.1")
     parser.add_argument('-d',"--debug", action ='store_true' ,
             help="debug mode", default = False)
@@ -1656,19 +1784,21 @@ def main():
     simCase.parseConstants()
     simCase.getIsotope()
     simCase.getTimeTreatment()
+    simCase.get_last_time_step()
 
     if  args.check:
         simCase.launchFuncObjects()
         simCase.readVelocities()
         simCase.readGradT()
 
-    
+
 
     simCase.readVolumes()
     simCase.readT()
     simCase.readPostProcess_flows()
     simCase.readPostProcess_Tflows()
     simCase.readPostProcess_Trflows()
+
 
 
 
