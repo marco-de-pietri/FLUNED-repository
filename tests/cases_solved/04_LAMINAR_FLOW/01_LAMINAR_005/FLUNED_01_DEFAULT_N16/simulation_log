@@ -1,0 +1,525 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-0347120b3b9d
+Exec   : FLUNED-solver
+Date   : Jan 31 2023
+Time   : 12:25:54
+Host   : "LAPTOP-9VOHN090"
+PID    : 3257
+I/O    : uncollated
+Case   : /mnt/d/01_OPENFOAM/10_TEST_DEV/01_TEST_SUITE/00_EMPTY/04_LAMINAR_FLOW/01_LAMINAR_005/FLUNED_01_DEFAULT_N16
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+SIMPLE: Convergence criteria found
+        T: tolerance 1e-06
+        Tr: tolerance 1e-06
+
+Reading field T
+
+Reading field Source
+
+Reading field Tr
+
+Reading field nut
+
+Reading face flux field phi
+
+Reading field U
+
+Reading transportProperties
+
+Reading diffusivity DT
+
+Reading lambda value
+
+Reading turbulent Schmidt number
+
+No fvModels present
+No fvConstraints present
+
+Calculating scalar transport
+
+surfaceFieldValue volFlow-face1:
+    total faces  = 72
+    total area   = 7.57334e-05
+
+
+surfaceFieldValue volTFlow-face1:
+    total faces  = 72
+    total area   = 7.57334e-05
+volTFlow-face1 sum weight field phi
+
+surfaceFieldValue volTrFlow-face1:
+    total faces  = 72
+    total area   = 7.57334e-05
+volTrFlow-face1 sum weight field phi
+
+surfaceFieldValue volFlow-face2:
+    total faces  = 68
+    total area   = 7.55303e-05
+
+
+surfaceFieldValue volTFlow-face2:
+    total faces  = 68
+    total area   = 7.55303e-05
+volTFlow-face2 sum weight field phi
+
+surfaceFieldValue volTrFlow-face2:
+    total faces  = 68
+    total area   = 7.55303e-05
+volTrFlow-face2 sum weight field phi
+
+Time = 1
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1, Final residual = 0.00891722, No Iterations 149
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1, Final residual = 0.00608988, No Iterations 163
+Time = 2
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.586375, Final residual = 0.00471941, No Iterations 55
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.586711, Final residual = 0.00505489, No Iterations 5
+Time = 3
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.320198, Final residual = 0.00305842, No Iterations 54
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.341383, Final residual = 0.00305842, No Iterations 122
+Time = 4
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.183692, Final residual = 0.00165756, No Iterations 50
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.21219, Final residual = 0.00177862, No Iterations 15
+Time = 5
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.115724, Final residual = 0.000989909, No Iterations 46
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.14447, Final residual = 0.00140536, No Iterations 7
+Time = 6
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0771607, Final residual = 0.000703033, No Iterations 39
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.104102, Final residual = 0.00104037, No Iterations 107
+Time = 7
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0530361, Final residual = 0.000482698, No Iterations 38
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0771578, Final residual = 0.000689313, No Iterations 42
+Time = 8
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0367582, Final residual = 0.000364363, No Iterations 45
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0585635, Final residual = 0.000578713, No Iterations 32
+Time = 9
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0258387, Final residual = 0.00024402, No Iterations 39
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0451571, Final residual = 0.000380801, No Iterations 55
+Time = 10
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0183854, Final residual = 0.000182462, No Iterations 39
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0353065, Final residual = 0.000347002, No Iterations 6
+Time = 11
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0130748, Final residual = 0.000124646, No Iterations 11
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0276753, Final residual = 0.000274006, No Iterations 6
+Time = 12
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00915409, Final residual = 8.3777e-05, No Iterations 30
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0216144, Final residual = 0.000174778, No Iterations 62
+Time = 13
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00649884, Final residual = 6.30503e-05, No Iterations 13
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0170128, Final residual = 0.000112088, No Iterations 54
+Time = 14
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00464194, Final residual = 4.43255e-05, No Iterations 33
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0133011, Final residual = 0.000130559, No Iterations 7
+Time = 15
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00333138, Final residual = 3.16786e-05, No Iterations 12
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0102617, Final residual = 8.83277e-05, No Iterations 40
+Time = 16
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00236865, Final residual = 2.25182e-05, No Iterations 44
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.007988, Final residual = 6.51126e-05, No Iterations 7
+Time = 17
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00166497, Final residual = 1.46969e-05, No Iterations 30
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00609881, Final residual = 4.34343e-05, No Iterations 55
+Time = 18
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00116692, Final residual = 1.13859e-05, No Iterations 32
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00468223, Final residual = 4.0535e-05, No Iterations 24
+Time = 19
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000820897, Final residual = 5.44733e-06, No Iterations 13
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00355846, Final residual = 3.40621e-05, No Iterations 22
+Time = 20
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00057819, Final residual = 5.59591e-06, No Iterations 22
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00267708, Final residual = 2.54502e-05, No Iterations 24
+Time = 21
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000405758, Final residual = 3.67557e-06, No Iterations 14
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00198433, Final residual = 1.63794e-05, No Iterations 14
+Time = 22
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000284542, Final residual = 2.49617e-06, No Iterations 22
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00143518, Final residual = 1.39407e-05, No Iterations 21
+Time = 23
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000199281, Final residual = 1.91261e-06, No Iterations 11
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00103425, Final residual = 9.55653e-06, No Iterations 23
+Time = 24
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000139616, Final residual = 1.39431e-06, No Iterations 7
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00073973, Final residual = 7.28067e-06, No Iterations 10
+Time = 25
+
+DILUPBiCGStab:  Solving for T, Initial residual = 9.77612e-05, Final residual = 7.56104e-07, No Iterations 15
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000518014, Final residual = 2.72384e-06, No Iterations 25
+Time = 26
+
+DILUPBiCGStab:  Solving for T, Initial residual = 6.85658e-05, Final residual = 5.25697e-07, No Iterations 14
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00036229, Final residual = 3.40582e-06, No Iterations 21
+Time = 27
+
+DILUPBiCGStab:  Solving for T, Initial residual = 4.78879e-05, Final residual = 4.07099e-07, No Iterations 18
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000254288, Final residual = 7.17176e-07, No Iterations 28
+Time = 28
+
+DILUPBiCGStab:  Solving for T, Initial residual = 3.33493e-05, Final residual = 2.8125e-07, No Iterations 15
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000178992, Final residual = 1.73373e-06, No Iterations 14
+Time = 29
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.32424e-05, Final residual = 2.29927e-07, No Iterations 17
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000127089, Final residual = 1.04601e-06, No Iterations 14
+Time = 30
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1.61852e-05, Final residual = 5.01914e-08, No Iterations 21
+DILUPBiCGStab:  Solving for Tr, Initial residual = 9.1015e-05, Final residual = 8.74674e-07, No Iterations 7
+Time = 31
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1.13328e-05, Final residual = 1.08882e-07, No Iterations 11
+DILUPBiCGStab:  Solving for Tr, Initial residual = 6.53649e-05, Final residual = 4.56762e-07, No Iterations 9
+Time = 32
+
+DILUPBiCGStab:  Solving for T, Initial residual = 7.95458e-06, Final residual = 9.9385e-08, No Iterations 7
+DILUPBiCGStab:  Solving for Tr, Initial residual = 4.68149e-05, Final residual = 3.70556e-07, No Iterations 8
+Time = 33
+
+DILUPBiCGStab:  Solving for T, Initial residual = 5.57995e-06, Final residual = 9.15982e-08, No Iterations 8
+DILUPBiCGStab:  Solving for Tr, Initial residual = 3.32541e-05, Final residual = 1.81413e-07, No Iterations 15
+Time = 34
+
+DILUPBiCGStab:  Solving for T, Initial residual = 3.95533e-06, Final residual = 9.7406e-08, No Iterations 4
+DILUPBiCGStab:  Solving for Tr, Initial residual = 2.35578e-05, Final residual = 2.21041e-07, No Iterations 11
+Time = 35
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.7904e-06, Final residual = 9.11365e-08, No Iterations 4
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.66406e-05, Final residual = 1.32091e-07, No Iterations 8
+Time = 36
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.00253e-06, Final residual = 4.38309e-08, No Iterations 7
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.15806e-05, Final residual = 9.37421e-08, No Iterations 9
+Time = 37
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1.42982e-06, Final residual = 7.91976e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Tr, Initial residual = 8.06256e-06, Final residual = 7.13587e-08, No Iterations 9
+Time = 38
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1.02016e-06, Final residual = 9.05101e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Tr, Initial residual = 5.60789e-06, Final residual = 8.26416e-08, No Iterations 7
+Time = 39
+
+DILUPBiCGStab:  Solving for T, Initial residual = 7.31672e-07, Final residual = 9.28688e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Tr, Initial residual = 3.88631e-06, Final residual = 8.83033e-08, No Iterations 4
+Time = 40
+
+DILUPBiCGStab:  Solving for T, Initial residual = 4.90004e-07, Final residual = 8.64272e-08, No Iterations 1
+DILUPBiCGStab:  Solving for Tr, Initial residual = 2.70479e-06, Final residual = 9.92465e-08, No Iterations 4
+Time = 41
+
+DILUPBiCGStab:  Solving for T, Initial residual = 3.4438e-07, Final residual = 7.27952e-08, No Iterations 1
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.90935e-06, Final residual = 8.55139e-08, No Iterations 3
+Time = 42
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.60861e-07, Final residual = 6.20851e-08, No Iterations 1
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.3122e-06, Final residual = 9.0921e-08, No Iterations 3
+Time = 43
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.04033e-07, Final residual = 5.22793e-08, No Iterations 1
+DILUPBiCGStab:  Solving for Tr, Initial residual = 9.72017e-07, Final residual = 6.8904e-08, No Iterations 2
+
+SIMPLE solution converged in 43 iterations
+
+End
+
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-0347120b3b9d
+Exec   : FLUNED-solver
+Date   : Jan 31 2023
+Time   : 15:15:38
+Host   : "LAPTOP-9VOHN090"
+PID    : 6268
+I/O    : uncollated
+Case   : /mnt/d/01_OPENFOAM/10_TEST_DEV/01_TEST_SUITE/00_EMPTY/04_LAMINAR_FLOW/01_LAMINAR_005/FLUNED_01_DEFAULT_N16
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+SIMPLE: Convergence criteria found
+        T: tolerance 1e-06
+        Tr: tolerance 1e-06
+
+Reading field T
+
+Reading field Source
+
+Reading field Tr
+
+Reading field nut
+
+Reading face flux field phi
+
+Reading field U
+
+Reading transportProperties
+
+Reading diffusivity DT
+
+Reading lambda value
+
+Reading turbulent Schmidt number
+
+No fvModels present
+No fvConstraints present
+
+Calculating scalar transport
+
+Courant Number mean: 88.33 max: 434.781
+surfaceFieldValue volFlow-face1:
+    total faces  = 72
+    total area   = 7.57334e-05
+
+
+surfaceFieldValue volTFlow-face1:
+    total faces  = 72
+    total area   = 7.57334e-05
+volTFlow-face1 sum weight field phi
+
+surfaceFieldValue volTrFlow-face1:
+    total faces  = 72
+    total area   = 7.57334e-05
+volTrFlow-face1 sum weight field phi
+
+surfaceFieldValue volFlow-face2:
+    total faces  = 68
+    total area   = 7.55303e-05
+
+
+surfaceFieldValue volTFlow-face2:
+    total faces  = 68
+    total area   = 7.55303e-05
+volTFlow-face2 sum weight field phi
+
+surfaceFieldValue volTrFlow-face2:
+    total faces  = 68
+    total area   = 7.55303e-05
+volTrFlow-face2 sum weight field phi
+
+Time = 1
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1, Final residual = 0.0078349, No Iterations 148
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1, Final residual = 0.00608988, No Iterations 163
+Time = 2
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.586946, Final residual = 0.00449496, No Iterations 56
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.586711, Final residual = 0.00505489, No Iterations 5
+Time = 3
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.320505, Final residual = 0.00297774, No Iterations 51
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.341383, Final residual = 0.00305842, No Iterations 122
+Time = 4
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.184612, Final residual = 0.00132096, No Iterations 50
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.21219, Final residual = 0.00177862, No Iterations 15
+Time = 5
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.116676, Final residual = 0.00114081, No Iterations 43
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.14447, Final residual = 0.00140536, No Iterations 7
+Time = 6
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0782399, Final residual = 0.00067772, No Iterations 48
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.104102, Final residual = 0.00104037, No Iterations 107
+Time = 7
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0540879, Final residual = 0.000380028, No Iterations 47
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0771578, Final residual = 0.000689313, No Iterations 42
+Time = 8
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0375628, Final residual = 0.000371188, No Iterations 25
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0585635, Final residual = 0.000578713, No Iterations 32
+Time = 9
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0262333, Final residual = 0.000259654, No Iterations 38
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0451571, Final residual = 0.000380801, No Iterations 55
+Time = 10
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0186759, Final residual = 0.000183021, No Iterations 42
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0353065, Final residual = 0.000347002, No Iterations 6
+Time = 11
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0133226, Final residual = 0.000124615, No Iterations 23
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0276753, Final residual = 0.000274006, No Iterations 6
+Time = 12
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00944204, Final residual = 7.62414e-05, No Iterations 43
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0216144, Final residual = 0.000174778, No Iterations 62
+Time = 13
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.0067125, Final residual = 5.8287e-05, No Iterations 27
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0170128, Final residual = 0.000112088, No Iterations 54
+Time = 14
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00477361, Final residual = 2.77349e-05, No Iterations 33
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0133011, Final residual = 0.000130559, No Iterations 7
+Time = 15
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00339765, Final residual = 3.34095e-05, No Iterations 6
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0102617, Final residual = 8.83277e-05, No Iterations 40
+Time = 16
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00239288, Final residual = 1.61772e-05, No Iterations 39
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.007988, Final residual = 6.51126e-05, No Iterations 7
+Time = 17
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00168968, Final residual = 1.29068e-05, No Iterations 20
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00609881, Final residual = 4.34343e-05, No Iterations 55
+Time = 18
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.00119176, Final residual = 1.15649e-05, No Iterations 22
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00468223, Final residual = 4.0535e-05, No Iterations 24
+Time = 19
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000839902, Final residual = 8.3211e-06, No Iterations 8
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00355846, Final residual = 3.40621e-05, No Iterations 22
+Time = 20
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000590443, Final residual = 5.81245e-06, No Iterations 28
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00267708, Final residual = 2.54502e-05, No Iterations 24
+Time = 21
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000414163, Final residual = 3.98991e-06, No Iterations 13
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00198433, Final residual = 1.63794e-05, No Iterations 14
+Time = 22
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000290984, Final residual = 2.351e-06, No Iterations 14
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00143518, Final residual = 1.39407e-05, No Iterations 21
+Time = 23
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000204079, Final residual = 1.29542e-06, No Iterations 21
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00103425, Final residual = 9.55653e-06, No Iterations 23
+Time = 24
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000143126, Final residual = 1.42474e-06, No Iterations 13
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00073973, Final residual = 7.28067e-06, No Iterations 10
+Time = 25
+
+DILUPBiCGStab:  Solving for T, Initial residual = 0.000100575, Final residual = 8.44323e-07, No Iterations 12
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000518014, Final residual = 2.72384e-06, No Iterations 25
+Time = 26
+
+DILUPBiCGStab:  Solving for T, Initial residual = 7.05062e-05, Final residual = 6.75634e-07, No Iterations 11
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00036229, Final residual = 3.40582e-06, No Iterations 21
+Time = 27
+
+DILUPBiCGStab:  Solving for T, Initial residual = 4.93462e-05, Final residual = 4.4025e-07, No Iterations 12
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000254288, Final residual = 7.17176e-07, No Iterations 28
+Time = 28
+
+DILUPBiCGStab:  Solving for T, Initial residual = 3.44225e-05, Final residual = 3.16445e-07, No Iterations 17
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000178992, Final residual = 1.73373e-06, No Iterations 14
+Time = 29
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.403e-05, Final residual = 2.388e-07, No Iterations 10
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000127089, Final residual = 1.04601e-06, No Iterations 14
+Time = 30
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1.67952e-05, Final residual = 1.62462e-07, No Iterations 12
+DILUPBiCGStab:  Solving for Tr, Initial residual = 9.1015e-05, Final residual = 8.74674e-07, No Iterations 7
+Time = 31
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1.17594e-05, Final residual = 1.02626e-07, No Iterations 14
+DILUPBiCGStab:  Solving for Tr, Initial residual = 6.53649e-05, Final residual = 4.56762e-07, No Iterations 9
+Time = 32
+
+DILUPBiCGStab:  Solving for T, Initial residual = 8.21616e-06, Final residual = 9.36697e-08, No Iterations 11
+DILUPBiCGStab:  Solving for Tr, Initial residual = 4.68149e-05, Final residual = 3.70556e-07, No Iterations 8
+Time = 33
+
+DILUPBiCGStab:  Solving for T, Initial residual = 5.76221e-06, Final residual = 4.0134e-08, No Iterations 12
+DILUPBiCGStab:  Solving for Tr, Initial residual = 3.32541e-05, Final residual = 1.81413e-07, No Iterations 15
+Time = 34
+
+DILUPBiCGStab:  Solving for T, Initial residual = 4.05265e-06, Final residual = 9.0088e-08, No Iterations 9
+DILUPBiCGStab:  Solving for Tr, Initial residual = 2.35578e-05, Final residual = 2.21041e-07, No Iterations 11
+Time = 35
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.87857e-06, Final residual = 8.14207e-08, No Iterations 4
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.66406e-05, Final residual = 1.32091e-07, No Iterations 8
+Time = 36
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.02985e-06, Final residual = 7.44541e-08, No Iterations 4
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.15806e-05, Final residual = 9.37421e-08, No Iterations 9
+Time = 37
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1.45018e-06, Final residual = 4.75244e-08, No Iterations 5
+DILUPBiCGStab:  Solving for Tr, Initial residual = 8.06256e-06, Final residual = 7.13587e-08, No Iterations 9
+Time = 38
+
+DILUPBiCGStab:  Solving for T, Initial residual = 1.04189e-06, Final residual = 8.37325e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Tr, Initial residual = 5.60789e-06, Final residual = 8.26416e-08, No Iterations 7
+Time = 39
+
+DILUPBiCGStab:  Solving for T, Initial residual = 7.47724e-07, Final residual = 9.17715e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Tr, Initial residual = 3.88631e-06, Final residual = 8.83033e-08, No Iterations 4
+Time = 40
+
+DILUPBiCGStab:  Solving for T, Initial residual = 4.96338e-07, Final residual = 8.40445e-08, No Iterations 1
+DILUPBiCGStab:  Solving for Tr, Initial residual = 2.70479e-06, Final residual = 9.92465e-08, No Iterations 4
+Time = 41
+
+DILUPBiCGStab:  Solving for T, Initial residual = 3.4843e-07, Final residual = 7.04779e-08, No Iterations 1
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.90935e-06, Final residual = 8.55139e-08, No Iterations 3
+Time = 42
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.62979e-07, Final residual = 5.88878e-08, No Iterations 1
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.3122e-06, Final residual = 9.0921e-08, No Iterations 3
+Time = 43
+
+DILUPBiCGStab:  Solving for T, Initial residual = 2.03426e-07, Final residual = 4.85666e-08, No Iterations 1
+DILUPBiCGStab:  Solving for Tr, Initial residual = 9.72017e-07, Final residual = 6.8904e-08, No Iterations 2
+
+SIMPLE solution converged in 43 iterations
+
+End
+

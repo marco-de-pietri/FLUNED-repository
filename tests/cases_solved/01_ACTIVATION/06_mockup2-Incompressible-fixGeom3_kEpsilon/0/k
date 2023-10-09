@@ -1,0 +1,199 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.3.1                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      k;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 2 -2 0 0 0 0];
+
+internalField   uniform 0.00375;
+
+boundaryField
+{
+    face1
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face2
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face3
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face4
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face5
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face6
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face7
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face8
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face9
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face10
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face11
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face12
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face13
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face14
+    {
+        type            freestream;
+        freestreamValue uniform 0.00375;
+        value           uniform 0.00375;
+    }
+    face15
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face16
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face17
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face18
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face19
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face20
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face21
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face22
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face23
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face24
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face25
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face26
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face27
+    {
+        type            inletOutlet;
+        inletValue      uniform 0.00375;
+        value           uniform 0.00375;
+    }
+    face28
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face29
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face30
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face31
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face32
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face33
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+    face34
+    {
+        type            kqRWallFunction;
+        value           uniform 0.00375;
+    }
+}
+
+
+// ************************************************************************* //

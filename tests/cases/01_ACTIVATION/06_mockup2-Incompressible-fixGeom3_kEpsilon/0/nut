@@ -1,0 +1,197 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.3.1                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      nut;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 2 -1 0 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    face1
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face2
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face3
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face4
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face5
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face6
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face7
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face8
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face9
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face10
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face11
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face12
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face13
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face14
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    face15
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face16
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face17
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face18
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face19
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face20
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face21
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face22
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face23
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face24
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face25
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face26
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face27
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    face28
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face29
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face30
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face31
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face32
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face33
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    face34
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+}
+
+
+// ************************************************************************* //

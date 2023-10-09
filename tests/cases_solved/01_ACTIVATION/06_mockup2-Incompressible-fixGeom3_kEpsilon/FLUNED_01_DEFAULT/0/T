@@ -1,0 +1,167 @@
+
+/*------------------------------*- C++ -*----------------------------------*| =========                 |                                               |
+| \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
+|  \    /   O peration     | Version:  2.3.1                               |
+|   \  /    A nd           | Web:      www.OpenFOAM.org                    |
+|    \/     M anipulation  |                                               |
+\*-------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+
+    face1
+    {
+        type            zeroGradient;
+    }
+    face2
+    {
+        type            zeroGradient;
+    }
+    face3
+    {
+        type            zeroGradient;
+    }
+    face4
+    {
+        type            zeroGradient;
+    }
+    face5
+    {
+        type            zeroGradient;
+    }
+    face6
+    {
+        type            zeroGradient;
+    }
+    face7
+    {
+        type            zeroGradient;
+    }
+    face8
+    {
+        type            zeroGradient;
+    }
+    face9
+    {
+        type            zeroGradient;
+    }
+    face10
+    {
+        type            zeroGradient;
+    }
+    face11
+    {
+        type            zeroGradient;
+    }
+    face12
+    {
+        type            zeroGradient;
+    }
+    face13
+    {
+        type            zeroGradient;
+    }
+    face14
+    {
+        type            fixedValue;
+        value         uniform 0.0;
+    }
+    face15
+    {
+        type            zeroGradient;
+    }
+    face16
+    {
+        type            zeroGradient;
+    }
+    face17
+    {
+        type            zeroGradient;
+    }
+    face18
+    {
+        type            zeroGradient;
+    }
+    face19
+    {
+        type            zeroGradient;
+    }
+    face20
+    {
+        type            zeroGradient;
+    }
+    face21
+    {
+        type            zeroGradient;
+    }
+    face22
+    {
+        type            zeroGradient;
+    }
+    face23
+    {
+        type            zeroGradient;
+    }
+    face24
+    {
+        type            zeroGradient;
+    }
+    face25
+    {
+        type            zeroGradient;
+    }
+    face26
+    {
+        type            zeroGradient;
+    }
+    face27
+    {
+        type            zeroGradient;
+    }
+    face28
+    {
+        type            zeroGradient;
+    }
+    face29
+    {
+        type            zeroGradient;
+    }
+    face30
+    {
+        type            zeroGradient;
+    }
+    face31
+    {
+        type            zeroGradient;
+    }
+    face32
+    {
+        type            zeroGradient;
+    }
+    face33
+    {
+        type            zeroGradient;
+    }
+    face34
+    {
+        type            zeroGradient;
+    }
+
+
+}
+
+
+// ********************************************************************** //

@@ -1,0 +1,199 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.3.1                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      epsilon;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 2 -3 0 0 0 0];
+
+internalField   uniform 0.0125;
+
+boundaryField
+{
+    face1
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face2
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face3
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face4
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face5
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face6
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face7
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face8
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face9
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face10
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face11
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face12
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face13
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face14
+    {
+        type            freestream;
+        freestreamValue uniform 0.0125;
+        value           uniform 0.0125;
+    }
+    face15
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face16
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face17
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face18
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face19
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face20
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face21
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face22
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face23
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face24
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face25
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face26
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face27
+    {
+        type            inletOutlet;
+        inletValue      uniform 0.0125;
+        value           uniform 0.0125;
+    }
+    face28
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face29
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face30
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face31
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face32
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face33
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+    face34
+    {
+        type            epsilonWallFunction;
+        value           uniform 0.0125;
+    }
+}
+
+
+// ************************************************************************* //

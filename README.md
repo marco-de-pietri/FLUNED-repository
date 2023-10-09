@@ -65,5 +65,32 @@ FLUNED-solver
 flunedPost
 ```
 
+## Tests
+
+A set of tests are present in the tests folder. These cases are very simple and have no physical accuracy, are just meant to test the integrated working of the scripts functionalities.  
+To run these execute the following commands from a bash shell inside the tests folder:
+
+1. Run the test suite.
+
+```
+./run_tests.sh
+```
+
+2. Run the post processing script for the tests simulations:
+
+```
+./run_post.sh
+```
+
+3. Run a script that executes the comparison between the test results and the expected results. This comparison will be written in the test_results file
+```
+./eval_results.sh
+```
+
+4. Clean the created files
+```
+./clean_tests.sh
+```
+
 ## LICENSE
 FLUNED is an open-source software licensed under the [GNU GPLv3](./LICENSE) license.

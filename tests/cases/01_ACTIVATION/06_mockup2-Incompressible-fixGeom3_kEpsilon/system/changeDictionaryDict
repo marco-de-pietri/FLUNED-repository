@@ -1,0 +1,106 @@
+FoamFile {
+    version 2.0;
+    format ascii;
+    class dictionary;
+    object changeDictionaryDict;
+}
+dictionaryReplacement {
+    boundary {
+        face4 {
+            type wall;
+        }
+        face1 {
+            type wall;
+        }
+        face3 {
+            type wall;
+        }
+        face2 {
+            type wall;
+        }
+        face29 {
+            type wall;
+        }
+        face28 {
+            type wall;
+        }
+        face8 {
+            type wall;
+        }
+        face13 {
+            type wall;
+        }
+        face7 {
+            type wall;
+        }
+        face16 {
+            type wall;
+        }
+        face10 {
+            type wall;
+        }
+        face12 {
+            type wall;
+        }
+        face15 {
+            type wall;
+        }
+        face11 {
+            type wall;
+        }
+        face9 {
+            type wall;
+        }
+        face32 {
+            type wall;
+        }
+        face30 {
+            type wall;
+        }
+        face17 {
+            type wall;
+        }
+        face18 {
+            type wall;
+        }
+        face34 {
+            type wall;
+        }
+        face33 {
+            type wall;
+        }
+        face31 {
+            type wall;
+        }
+        face6 {
+            type wall;
+        }
+        face5 {
+            type wall;
+        }
+        face19 {
+            type wall;
+        }
+        face20 {
+            type wall;
+        }
+        face21 {
+            type wall;
+        }
+        face22 {
+            type wall;
+        }
+        face23 {
+            type wall;
+        }
+        face24 {
+            type wall;
+        }
+        face25 {
+            type wall;
+        }
+        face26 {
+            type wall;
+        }
+    }
+}
