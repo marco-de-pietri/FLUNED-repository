@@ -6,7 +6,7 @@ resfolder=/RESULTS/SUMMARY.csv
 diff_file=./test_results
 
 folder1=/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT 
-echo 4folder1 >> $diff_file
+echo $folder1 >> $diff_file
 (diff $casesfolder$folder1$resfolder $cmpfolder$folder1$resfolder >> $diff_file)
 
 folder2=/02_DECAY/01_tewn_2022-Incompressible-tewn_2022_ref33/FLUNED_01_DEFAULT_N16
