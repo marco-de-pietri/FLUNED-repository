@@ -107,65 +107,66 @@ def sample_coordinates_VTK(vtk_file, dataset_name, coordinates):
     return  reacRates
 
 
-def sampleCoordinatesVTK1(vtkFile, datasetName, coordinates):
-    """this function reads the vtk and sample the reaction rates"""
+#def sampleCoordinatesVTK1(vtkFile, datasetName, coordinates):
+#    """this function reads the vtk and sample the reaction rates"""
+#
+#    checkFile = os.path.isfile(vtkFile)
+#    if not checkFile:
+#        print ("ERROR activation file not found")
+#        sys.exit()
+#    print ("Sampling Reaction Rate file... points ")
+#
+#    #read the vtk file with an unstructured grid
+#    reader = vtk.vtkStructuredGridReader()
+#    reader.SetFileName(vtkFile)
+#    reader.ReadAllVectorsOn()
+#    reader.ReadAllScalarsOn()
+#    reader.Update()
+#    data = reader.GetOutput()
+#
+#
+#    bounds =list(data.GetBounds())
+#    dims =list(data.GetDimensions())
+#    print (data)
+#    print (bounds)
+#    print (bounds)
+#
+#
+#
+#    #define probe
+#
+#    points = vtk.vtkPoints()
+#    points.SetNumberOfPoints(len(coordinates))
+#
+#    for i,val in enumerate(coordinates):
+#        points.SetPoint(i,val[0],val[1],val[2])
+#
+#
+#
+#    polydata = vtk.vtkPolyData()
+#    polydata.SetPoints(points)
+#
+#
+#    #Perform the interpolation
+#    interpolator = vtk.vtkPointInterpolator()
+#    #interpolator.SetInputData(polydata)
+#    interpolator.SetInputConnection(polydata.GetPointData().GetOutputPort())
+#    #probeFilter.SetSourceData(data)
+#    #probeFilter.SetInputData(polydata)
+#    #probeFilter.Update()
+#    #vtkArray = probeFilter.GetOutput().GetPointData().GetArray(datasetName)
+#
+#    #reacRates = VN.vtk_to_numpy(vtkArray)
+#
+#    interpolator.Update()
+#    sys.exit()
+#
+#
+#    sys.exit()
+#
+#
+#    return  reacRates
 
-    checkFile = os.path.isfile(vtkFile)
-    if not checkFile:
-        print ("ERROR activation file not found")
-        sys.exit()
-    print ("Sampling Reaction Rate file... points ")
-
-    #read the vtk file with an unstructured grid
-    reader = vtk.vtkStructuredGridReader()
-    reader.SetFileName(vtkFile)
-    reader.ReadAllVectorsOn()
-    reader.ReadAllScalarsOn()
-    reader.Update()
-    data = reader.GetOutput()
-
-
-    bounds =list(data.GetBounds())
-    dims =list(data.GetDimensions())
-    print (data)
-    print (bounds)
-    print (bounds)
-
-
-
-    #define probe
-
-    points = vtk.vtkPoints()
-    points.SetNumberOfPoints(len(coordinates))
-
-    for i,val in enumerate(coordinates):
-        points.SetPoint(i,val[0],val[1],val[2])
-
-
-
-    polydata = vtk.vtkPolyData()
-    polydata.SetPoints(points)
-
-
-    #Perform the interpolation
-    interpolator = vtk.vtkPointInterpolator()
-    #interpolator.SetInputData(polydata)
-    interpolator.SetInputConnection(polydata.GetPointData().GetOutputPort())
-    #probeFilter.SetSourceData(data)
-    #probeFilter.SetInputData(polydata)
-    #probeFilter.Update()
-    #vtkArray = probeFilter.GetOutput().GetPointData().GetArray(datasetName)
-
-    #reacRates = VN.vtk_to_numpy(vtkArray)
-
-    interpolator.Update()
-    sys.exit()
-
-
-    sys.exit()
-
-
-    return  reacRates
 def heronFormula(points):
 
     dist1 = point_distance(points[0],points[1])
@@ -376,22 +377,75 @@ class FlunedCase:
 
         return
 
-    def generateZeroTr(self):
-        """ this function generate the Tr file at t=0"""
+    def generate_zero_ta(self):
+        """
+        this function generate the Ta file at t=0
+        """
 
 
-        zeroFolder = os.path.join(self.fluned_path,'0')
-        zeroTPath = os.path.join(zeroFolder,'Tr')
+        zero_folder = os.path.join(self.fluned_path,'0')
+        zero_ta_path = os.path.join(zero_folder,'Ta')
 
 
-        tHeaderText="""
-/*------------------------------*- C++ -*----------------------------------*\
-| =======                 |                                                 |
-| \\      /  F ield       | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration   | Version:  2.3.1                                 |
-|   \\  /    A nd         | Web:      www.OpenFOAM.org                      |
-|    \\/     M anipulation|                                                 |
-\*-------------------------------------------------------------------------*/
+        ta_header_text="""
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      Ta;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+
+"""
+        end_text = """
+
+}
+"""
+
+        with open(zero_ta_path,'w',encoding='utf-8') as fw:
+            fw.write(ta_header_text)
+
+            for face in self.faces:
+                fw.write("    " + face['faceID'] + '\n    {\n')
+                if face['type'] == 'wall':
+                    fw.write("        type            zeroGradient;\n")
+                elif face['type'] == 'outlet':
+                    fw.write("        type            zeroGradient;\n")
+                elif face['type'] == 'inlet':
+                    fw.write("        type            fixedValue;\n")
+                    vals_string="        value          uniform 0;\n"
+                    fw.write(vals_string)
+                else:
+                    print ("ERROR face type not recognized")
+                    print (face['type'])
+                    sys.exit()
+
+                fw.write("    }\n" )
+
+            fw.write(end_text)
+
+        return
+
+    def generate_zero_tr(self):
+        """
+        this function generate the Tr file at t=0
+        """
+
+
+        zero_folder = os.path.join(self.fluned_path,'0')
+        zero_tr_path = os.path.join(zero_folder,'Tr')
+
+
+        tr_header_text="""
 FoamFile
 {
     version     2.0;
@@ -410,16 +464,13 @@ boundaryField
 {
 
 """
-        closerText = """
+        end_text = """
 
 }
-
-
-// *********************************************************************** //
 """
 
-        with open(zeroTPath,'w') as fw:
-            fw.write(tHeaderText)
+        with open(zero_tr_path,'w',encoding='utf-8') as fw:
+            fw.write(tr_header_text)
 
             for face in self.faces:
                 fw.write("    " + face['faceID'] + '\n    {\n')
@@ -430,10 +481,10 @@ boundaryField
                 elif face['type'] == 'inlet':
                     fw.write("        type            fixedValue;\n")
                     if self.time_treatment == 'steadystate':
-                        valString="        value          uniform 0;\n"
+                        vals_string="        value          uniform 0;\n"
                     elif self.time_treatment == 'transient':
-                        valString="        value          uniform 1;\n"
-                    fw.write(valString)
+                        vals_string="        value          uniform 1;\n"
+                    fw.write(vals_string)
                 else:
                     print ("ERROR face type not recognized")
                     print (face['type'])
@@ -441,35 +492,29 @@ boundaryField
 
                 fw.write("    }\n" )
 
-            fw.write(closerText)
+            fw.write(end_text)
 
         return
 
-    def generateZeroT(self):
-        """ this function generate the T file at t=0"""
+    def generate_zero_td(self):
+        """
+        this function generate the Td file at t=0
+        """
 
 
-        zeroFolder = os.path.join(self.fluned_path,'0')
-        zeroTPath = os.path.join(zeroFolder,'T')
+        zero_folder = os.path.join(self.fluned_path,'0')
+        zero_td_path = os.path.join(zero_folder,'Td')
 
 
-        tHeaderText="""
-/*------------------------------*- C++ -*----------------------------------*\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2.3.1                               |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
+        td_header_text="""
 FoamFile
 {
     version     2.0;
     format      ascii;
     class       volScalarField;
     location    "0";
-    object      T;
+    object      Td;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 dimensions      [0 0 0 0 0 0 0];
 
@@ -479,16 +524,14 @@ boundaryField
 {
 
 """
-        closerText = """
+        end_text = """
 
 }
 
-
-// ********************************************************************** //
 """
 
-        with open(zeroTPath,'w') as fw:
-            fw.write(tHeaderText)
+        with open(zero_td_path,'w',encoding='utf-8') as fw:
+            fw.write(td_header_text)
 
             for face in self.faces:
                 fw.write("    " + face['faceID'] + '\n    {\n')
@@ -498,8 +541,8 @@ boundaryField
                     fw.write("        type            zeroGradient;\n")
                 elif face['type'] == 'inlet':
                     fw.write("        type            fixedValue;\n")
-                    valString="        value         uniform {};\n"
-                    fw.write(valString.format(self.inlet_conc))
+                    vals_string="        value         uniform {};\n"
+                    fw.write(vals_string.format(self.inlet_conc))
                 else:
                     print ("ERROR face type not recognized")
                     print (face['type'])
@@ -507,7 +550,65 @@ boundaryField
 
                 fw.write("    }\n" )
 
-            fw.write(closerText)
+            fw.write(end_text)
+
+        return
+
+    def generate_zero_t(self):
+        """
+        this function generate the T file at t=0
+        """
+
+
+        zero_folder = os.path.join(self.fluned_path,'0')
+        zero_t_path = os.path.join(zero_folder,'T')
+
+
+        t_header_text="""
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      T;
+}
+
+dimensions      [0 0 0 0 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+
+"""
+        end_text = """
+
+}
+
+"""
+
+        with open(zero_t_path,'w',encoding='utf-8') as fw:
+            fw.write(t_header_text)
+
+            for face in self.faces:
+                fw.write("    " + face['faceID'] + '\n    {\n')
+                if face['type'] == 'wall':
+                    fw.write("        type            zeroGradient;\n")
+                elif face['type'] == 'outlet':
+                    fw.write("        type            zeroGradient;\n")
+                elif face['type'] == 'inlet':
+                    fw.write("        type            fixedValue;\n")
+                    vals_string="        value         uniform {};\n"
+                    fw.write(vals_string.format(self.inlet_conc))
+                else:
+                    print ("ERROR face type not recognized")
+                    print (face['type'])
+                    sys.exit()
+
+                fw.write("    }\n" )
+
+            fw.write(end_text)
 
         return
 
@@ -800,21 +901,14 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
         return
 
 
-    def generateSystemFiles(self):
+    def generate_system_file(self):
         """
         this function creates the files needed in the system folder for an
         openFOAM simulation - in later development it will apply the case
         parameters
         """
 
-        controlDictTextTransient = """
-/*------------------------------*- C++ -*----------------------------------\\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  8
-     \\/     M anipulation  |
-\*-------------------------------------------------------------------------*/
+        control_dict_text_transient = """
 FoamFile
 {
     version     2.0;
@@ -823,7 +917,6 @@ FoamFile
     location    "system";
     object      controlDict;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 application    FLUNED-solver;
 
@@ -860,7 +953,6 @@ adjustTimeStep  yes;
 maxCo           0.5;
 
 
-// *********************************************************************** //
 
 
 functions
@@ -868,14 +960,7 @@ functions
 
 """
 
-        controlDictText = """
-/*------------------------------*- C++ -*----------------------------------\\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  8
-     \\/     M anipulation  |
-\*-------------------------------------------------------------------------*/
+        control_dict_text = """
 FoamFile
 {
     version     2.0;
@@ -884,7 +969,6 @@ FoamFile
     location    "system";
     object      controlDict;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 application    FLUNED-solver;
 
@@ -925,7 +1009,7 @@ functions
 
 """
 
-        volFlowText = """
+        vol_flow_text = """
     {}
     {{
 
@@ -944,7 +1028,7 @@ functions
     }}
 
  """
-        volTFlowText = """
+        vol_t_flow_text = """
     {}
     {{
 
@@ -964,8 +1048,48 @@ functions
     }}
 
  """
+        vol_td_flow_text = """
+    {}
+    {{
 
-        volTrFlowText = """
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   {};
+        fields  (Td);
+        weightField phi;
+
+        operation sum;
+        regionType  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl {};
+
+    }}
+ """
+
+        vol_ta_flow_text = """
+    {}
+    {{
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   {};
+        fields  (Ta);
+        weightField phi;
+
+        operation sum;
+        regionType  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl {};
+
+    }}
+
+ """
+
+        vol_tr_flow_text = """
     {}
     {{
 
@@ -985,42 +1109,58 @@ functions
     }}
 
  """
-        systemFolder = os.path.join(self.fluned_path,'system')
-        controlDictPath = os.path.join(systemFolder,'controlDict')
+        system_folder = os.path.join(self.fluned_path,'system')
+        control_dict_path = os.path.join(system_folder,'controlDict')
 
 
 
-        with open(controlDictPath,'w') as fw:
+        with open(control_dict_path,'w',encoding='utf-8') as fw:
             if self.time_treatment =='steadystate':
-                fw.write(controlDictText)
+                fw.write(control_dict_text)
                 for face in self.faces:
                     if face['type'] in ['inlet','outlet']:
-                        fw.write(volFlowText.format(
+                        fw.write(vol_flow_text.format(
                                      "volFlow-"+face['faceID'],
                                      face['faceID'],
                                      'outputTime'))
-                        fw.write(volTFlowText.format(
+                        fw.write(vol_t_flow_text.format(
                                      "volTFlow-"+face['faceID'],
                                      face['faceID'],
                                      'outputTime'))
-                        fw.write(volTrFlowText.format(
+                        fw.write(vol_tr_flow_text.format(
                                      "volTrFlow-"+face['faceID'],
+                                     face['faceID'],
+                                     'outputTime'))
+                        fw.write(vol_td_flow_text.format(
+                                     "volTdFlow-"+face['faceID'],
+                                     face['faceID'],
+                                     'outputTime'))
+                        fw.write(vol_ta_flow_text.format(
+                                     "volTaFlow-"+face['faceID'],
                                      face['faceID'],
                                      'outputTime'))
             elif self.time_treatment =='transient':
-                fw.write(controlDictTextTransient)
+                fw.write(control_dict_text_transient)
                 for face in self.faces:
                     if face['type'] in ['inlet','outlet']:
-                        fw.write(volFlowText.format(
+                        fw.write(vol_flow_text.format(
                                      "volFlow-"+face['faceID'],
                                      face['faceID'],
                                      'timeStep'))
-                        fw.write(volTFlowText.format(
+                        fw.write(vol_t_flow_text.format(
                                      "volTFlow-"+face['faceID'],
                                      face['faceID'],
                                      'timeStep'))
-                        fw.write(volTrFlowText.format(
+                        fw.write(vol_tr_flow_text.format(
                                      "volTrFlow-"+face['faceID'],
+                                     face['faceID'],
+                                     'timeStep'))
+                        fw.write(vol_td_flow_text.format(
+                                     "volTdFlow-"+face['faceID'],
+                                     face['faceID'],
+                                     'timeStep'))
+                        fw.write(vol_ta_flow_text.format(
+                                     "volTaFlow-"+face['faceID'],
                                      face['faceID'],
                                      'timeStep'))
 
@@ -1028,14 +1168,7 @@ functions
             fw.write("}")
 
 
-        fvSchemeText = """
-/*------------------------------*- C++ -*----------------------------------\\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  8
-     \\/     M anipulation  |
-\*-------------------------------------------------------------------------*/
+        fv_scheme_text = """
 FoamFile
 {{
     version     2.0;
@@ -1044,7 +1177,6 @@ FoamFile
     location    "system";
     object      fvSchemes;
 }}
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 ddtSchemes
 {{
@@ -1060,6 +1192,8 @@ divSchemes
 {{
     default         none;
     div(phi,T)      Gauss linearUpwind default;
+    div(phi,Ta)      Gauss linearUpwind default;
+    div(phi,Td)      Gauss linearUpwind default;
     div(phi,Tr)      Gauss linearUpwind default;
 }}
 
@@ -1070,6 +1204,10 @@ laplacianSchemes
     laplacian(Dturbulent,T) Gauss linear corrected;
     laplacian(DT,Tr) Gauss linear corrected;
     laplacian(Dturbulent,Tr) Gauss linear corrected;
+    laplacian(DT,Ta) Gauss linear corrected;
+    laplacian(Dturbulent,Ta) Gauss linear corrected;
+    laplacian(DT,Td) Gauss linear corrected;
+    laplacian(Dturbulent,Td) Gauss linear corrected;
 }}
 
 interpolationSchemes
@@ -1082,19 +1220,18 @@ snGradSchemes
     default         limited 1;
 }}
 
-// *********************************************************************** //
 """
 
-        schemesPath = os.path.join(systemFolder,'fvSchemes')
+        schemes_path = os.path.join(system_folder,'fvSchemes')
 
 
-        with open(schemesPath,'w') as fw:
+        with open(schemes_path,'w',encoding='utf-8') as fw:
             if self.time_treatment == 'steadystate':
-                fw.write(fvSchemeText.format('steadyState'))
+                fw.write(fv_scheme_text.format('steadyState'))
             if self.time_treatment == 'transient':
-                fw.write(fvSchemeText.format('Euler'))
+                fw.write(fv_scheme_text.format('Euler'))
 
-        fvSolutionText = """
+        fv_solution_text = """
 FoamFile
 {{
     version     2.0;
@@ -1122,6 +1259,20 @@ solvers
         tolerance       1e-07;
         relTol          {};
     }}
+    Ta
+    {{
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-07;
+        relTol          {};
+    }}
+    Td
+    {{
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-07;
+        relTol          {};
+    }}
 }}
 
 SIMPLE
@@ -1134,24 +1285,25 @@ SIMPLE
 
         T               1e-6;
         Tr              1e-6;
+        Ta              1e-6;
+        Td              1e-6;
 
     }}
 
 
 }}
 
-// *********************************************************************** //
 """
-        solutionPath = os.path.join(systemFolder,'fvSolution')
+        solution_path = os.path.join(system_folder,'fvSolution')
 
 
-        with open(solutionPath,'w') as fw:
+        with open(solution_path,'w',encoding='utf-8') as fw:
             if self.time_treatment == 'steadystate':
-                fw.write(fvSolutionText.format(0.01,0.01))
+                fw.write(fv_solution_text.format(0.01,0.01,0.01,0.01))
             elif self.time_treatment == 'transient':
-                fw.write(fvSolutionText.format(0,0))
+                fw.write(fv_solution_text.format(0,0,0,0))
 
-        parallelDictText = """
+        parallel_dict_text = """
 FoamFile
 {
     format      ascii;
@@ -1167,9 +1319,9 @@ method          scotch;
 
 // *********************************************************************** //
 """
-        parallelDictPath = os.path.join(systemFolder,'decomposeParDict')
-        with open(parallelDictPath,'w') as fw:
-                fw.write(parallelDictText)
+        parallel_dict_path = os.path.join(system_folder,'decomposeParDict')
+        with open(parallel_dict_path,'w',encoding='utf-8') as fw:
+                fw.write(parallel_dict_text)
 
         return
 
@@ -1267,18 +1419,14 @@ method          scotch;
         return
 
 
-    def writeCellZones(self):
-        cellZonesFilePath = os.path.join(self.cfd_path,'constant',
+    def write_cell_zones(self):
+        """
+        function to write the cell zones file in the polyMesh folder
+        """
+        cell_zones_file_path = os.path.join(self.cfd_path,'constant',
                                            'polyMesh', 'cellZones')
 
-        cellZones = """
-/*------------------------------*- C++ -*---------------------------------*\\
-| =========                |                                                |
-| \\      /  F ield        | OpenFOAM: The Open Source CFD Toolbox          |
-|  \\    /   O peration    | Version:  2112                                 |
-|   \\  /    A nd          | Website:  www.openfoam.com                     |
-|    \\/     M anipulation |                                                |
-\*-------------------------------------------------------------------------*/
+        cell_zones_string = """
 FoamFile
 {
     version     2.0;
@@ -1289,14 +1437,12 @@ FoamFile
     object      cellZones;
 
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  * * //
 
 0()
 
-// *********************************************************************** //
 """
-        with open(cellZonesFilePath,'w') as fo2:
-            fo2.write(cellZones)
+        with open(cell_zones_file_path,'w',encoding='utf-8') as fo2:
+            fo2.write(cell_zones_string)
 
         return
 
@@ -3065,7 +3211,7 @@ def main():
             fCase.defineWalls_multi_h5()
             fCase.writeOwner_multi_h5()
             fCase.writeNeighbour_multi_h5()
-            fCase.writeCellZones()
+            fCase.write_cell_zones()
             fCase.writeBoundary_multi_h5()
             fCase.writeFaces_multi_h5()
             fCase.writeNodes_multi_h5()
@@ -3092,11 +3238,13 @@ def main():
         fCase.copyLastNut()
         fCase.copyPolyMesh()
         fCase.reconstructFaces()
-        fCase.generateSystemFiles()
+        fCase.generate_system_file()
         fCase.launchVolFuncObjects()
         fCase.generateConstantFiles()
-        fCase.generateZeroT()
-        fCase.generateZeroTr()
+        fCase.generate_zero_t()
+        fCase.generate_zero_ta()
+        fCase.generate_zero_td()
+        fCase.generate_zero_tr()
         fCase.generateSourceFile()
         fCase.generateTrSourceFile()
 

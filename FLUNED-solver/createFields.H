@@ -13,7 +13,31 @@ volScalarField T
     mesh
 );
 
+volScalarField Ta
+(
+    IOobject
+    (
+        "Ta",
+        runTime.timeName(),
+        mesh,
+        IOobject::MUST_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh
+);
 
+volScalarField Td
+(
+    IOobject
+    (
+        "Td",
+        runTime.timeName(),
+        mesh,
+        IOobject::MUST_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh
+);
 
 Info<< "Reading field Source\n" << endl;
 
@@ -162,20 +186,6 @@ volScalarField Dturbulent
     nut/Sct,
     nut.boundaryField().types()
 );
-
-// volScalarField Dturbulent
-// (
-//     IOobject
-//     (
-//         "Dturbulent",
-//         runTime.timeName(),
-//         mesh,
-//         IOobject::MUST_READ,//NO_READ,
-//         IOobject::AUTO_WRITE//NO_WRITE
-//     ),
-//     nut/Sct,
-//     nut.boundaryField().types()
-// );
 
 
 

@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nCalculating scalar transport\n" << endl;
-	
+
 	#include "CourantNo.H"
 
 
@@ -39,22 +39,38 @@ int main(int argc, char *argv[])
 
         while (simple.correctNonOrthogonal())
         {
-	
-            // radio-isotope equation
-            fvScalarMatrix TEqn
+
+            // radio-isotope equation for activation
+            fvScalarMatrix TaEqn
             (
 
-               fvm::ddt(T)
-             + fvm::div(phi, T)
-	     + fvm::Sp(lambda,T)
-             - fvm::laplacian(DT, T)
-	     - fvm::laplacian(Dturbulent, T)
+               fvm::ddt(Ta)
+             + fvm::div(phi, Ta)
+	     + fvm::Sp(lambda,Ta)
+             - fvm::laplacian(DT, Ta)
+	     - fvm::laplacian(Dturbulent, Ta)
              ==
 	       Source
 
             );
-            TEqn.relax();
-            TEqn.solve();
+            TaEqn.relax();
+            TaEqn.solve();
+
+            // radio-isotope equation for inlet flow decay
+            fvScalarMatrix TdEqn
+            (
+
+               fvm::ddt(Td)
+             + fvm::div(phi, Td)
+	     + fvm::Sp(lambda,Td)
+             - fvm::laplacian(DT, Td)
+	     - fvm::laplacian(Dturbulent, Td)
+
+            );
+            TdEqn.relax();
+            TdEqn.solve();
+
+            T = Ta + Td;
 
             // residence time equation
             fvScalarMatrix TrEqn
@@ -74,7 +90,7 @@ int main(int argc, char *argv[])
 
         runTime.write();
     }
-    
+
 
 
     Info<< "End\n" << endl;
