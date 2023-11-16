@@ -1,3 +1,0 @@
-SOURCE += scalarTransportFoam.C
-
-EXE = $(FOAM_USER_APPBIN)/FLUNED-solver

@@ -1385,21 +1385,22 @@ class flunedCase:
 
         return
 
-    def convertToVTK(self):
-        """launches the utility to create a vtk file """
+    def generate_vtk(self):
+        """
+        launches the utility to create a vtk file
+        """
 
         print ("launching FoamToVTK utility")
-        origFolder = os.getcwd()
+        orig_folder = os.getcwd()
         os.chdir(self.fluned_path)
-        cmdStr1="foamToVTK -latestTime -noFaceZones -noFunctionObjects "
-        cmdStr2=" -fields (T) "
-        cmdStr3=" -excludePatches (\".*\")"
-        cmdStr = cmdStr1 + cmdStr2 + cmdStr3
-        launchF2VTK = cmdStr.split()
-        #launchF2VTK.append("-fields '(T)'")
-        with open('log', "a") as outfile:
-            proc = subprocess.Popen(launchF2VTK, stdout=outfile).wait()
-        os.chdir(origFolder)
+        cmd_str_1="foamToVTK -latestTime -noFaceZones -noFunctionObjects "
+        cmd_str_2=" -fields (T Ta Td) "
+        cmd_str_3=" -excludePatches (\".*\")"
+        cmd_str = cmd_str_1 + cmd_str_2 + cmd_str_3
+        launch_f2vtk = cmd_str.split()
+        with open('log', "a",encoding='utf-8') as outfile:
+            subprocess.Popen(launch_f2vtk, stdout=outfile).wait()
+        os.chdir(orig_folder)
 
         return
 
@@ -1798,6 +1799,8 @@ def main():
     simCase.readPostProcess_flows()
     simCase.readPostProcess_Tflows()
     simCase.readPostProcess_Trflows()
+    simCase.generate_vtk()
+
 
 
 
@@ -1806,7 +1809,7 @@ def main():
         simCase.precision = args.precision
         simCase.dataset = args.dataset
         simCase.scaling = args.scaling
-        simCase.convertToVTK()
+        simCase.generate_vtk()
         simCase.getVTKPath()
         simCase.getOriginalEmission()
         simCase.calculateSamplingCoordinates()

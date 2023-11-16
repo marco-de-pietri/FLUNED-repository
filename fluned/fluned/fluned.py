@@ -242,21 +242,27 @@ def calculateArea(points):
 
 
 
-def checkInt(str):
+def check_int(check_str):
+    """
+    Check if a string can be converted to an integer
+    """
     try:
-        int(str)
+        int(check_str)
         return True
     except ValueError:
         return False
 
 def read_input_file(path):
-    """this function reads the user input file"""
+    """
+    this function reads the user input file
+    """
 
-    casePath = re.compile ("^\s*case .{1,}?(?=^\s*case|\Z)",
+    case_path = re.compile ("^\s*case .{1,}?(?=^\s*case|\Z)",
                            re.MULTILINE | re.DOTALL | re.IGNORECASE)
-    casesVec = []
+    cases_vec = []
     parameters = [ 'case','time_treatment',  'activation_const',
                    'activation_dataset','activation_dataset_error',
+                   'fv_scheme',
                     'activation_file', 'activation_normalization',
                    'inlet_conc','decay_constant', 'cfd_path',
                    'molecular_diffusion','schmidt_number','div_scheme',
@@ -265,100 +271,110 @@ def read_input_file(path):
         fin = open(path,'r',encoding="utf8", errors='ignore')
     except IOError:
         print("couldn't open file")
-        sys.exit()
     with fin:
-        textBlock = fin.read()
+        text_block = fin.read()
 
-    casesBlocks = casePath.findall(textBlock)
+    cases_blocks = case_path.findall(text_block)
 
-    for case in casesBlocks:
-        parametersDic = {}
-        caseLines = case.splitlines()
-        for line in caseLines:
+    for case in cases_blocks:
+        parameters_dict = {}
+        case_lines = case.splitlines()
+        for line in case_lines:
             if len(line.strip()) == 0:
                 continue
             if '"' in line:
                 args = line.strip().split('"')
                 key = args[0].strip().lower()
                 if key in parameters:
-                    parametersDic[key] = args[1]
+                    parameters_dict[key] = args[1]
             else:
                 args = line.strip().split()
                 if args[0].lower() in parameters:
-                    parametersDic[args[0].lower()] = args[1]
+                    parameters_dict[args[0].lower()] = args[1]
 
-        casesVec.append(parametersDic)
+        cases_vec.append(parameters_dict)
 
-    #print (casesVec)
 
-    return casesVec
+    return cases_vec
 
 class FlunedCase:
     """
     FLUNED simulation class
     """
-    def __init__(self, argDic):
-        """initialize case and create FLUNED case folder"""
+    def __init__(self, arg_dict):
+        """
+        initialize case and create FLUNED case folder
+        """
 
-        self.case = argDic['case']
-        if 'decay_constant' in argDic:
-            self.decay_constant = float(argDic['decay_constant'])
+        self.case = arg_dict['case']
+
+        # set decay constant
+        if 'decay_constant' in arg_dict:
+            self.decay_constant = float(arg_dict['decay_constant'])
         else:
             self.decay_constant = 0
-        if 'activation_const' in argDic:
-            self.activation_const = float(argDic['activation_const'])
+        if 'activation_const' in arg_dict:
+            self.activation_const = float(arg_dict['activation_const'])
         else:
             self.activation_const = 0
-        if 'activation_normalization' in argDic:
+        if 'activation_normalization' in arg_dict:
             self.activation_normalization = float(
-                argDic['activation_normalization'])
+                arg_dict['activation_normalization'])
         else:
             self.activation_normalization = 0
-        if 'activation_dataset' in argDic:
-            self.activation_dataset = argDic['activation_dataset']
+        if 'activation_dataset' in arg_dict:
+            self.activation_dataset = arg_dict['activation_dataset']
         else:
             self.activation_dataset = ''
 
-        if 'activation_dataset_error' in argDic:
-            self.activation_dataset_error = argDic['activation_dataset_error']
+        if 'activation_dataset_error' in arg_dict:
+            self.activation_dataset_error = arg_dict['activation_dataset_error']
         else:
             self.activation_dataset_error = ''
 
-        if 'activation_file' in argDic:
+        if 'activation_file' in arg_dict:
             self.activation_file = os.path.normcase(
-                    argDic['activation_file'])
+                    arg_dict['activation_file'])
         else:
             self.activation_file = ''
 
-        if 'cfd_type' not in argDic:
+        if 'fv_scheme' in arg_dict:
+            if arg_dict['fv_scheme'].lower() in ['stable','accurate']:
+                self.fv_scheme = arg_dict['fv_scheme']
+            else:
+                raise ValueError("fv_scheme must be 'stable' or 'accurate'")
+        else:
+            self.fv_scheme = 'stable'
+
+        if 'cfd_type' not in arg_dict:
             print ("ERROR: cfd type not specified")
             sys.exit()
         else:
-            self.cfd_type = argDic['cfd_type'].lower()
+            self.cfd_type = arg_dict['cfd_type'].lower()
 
-        if 'time_treatment' not in argDic:
-            print ("ERROR: type of time treatment not specified")
-            sys.exit()
-        elif (argDic['time_treatment'].lower() not in
+        if 'time_treatment' not in arg_dict:
+            raise ValueError("ERROR: type of time treatment not specified")
+        elif (arg_dict['time_treatment'].lower() not in
                 ['steadystate','transient']):
-            print ("ERROR: type of time treatment not recognized")
-            sys.exit()
+            err_string = ("ERROR: time treatment must be 'steadyState' or "
+                            "'transient'")
+            raise ValueError(err_string)
         else:
-            self.time_treatment = argDic['time_treatment'].lower()
+            self.time_treatment = arg_dict['time_treatment'].lower()
 
         if self.cfd_type in ['fluent-h5-multi','fluent-multi']:
-            if 'fluent_fluid_region_name' not in argDic:
+            if 'fluent_fluid_region_name' not in arg_dict:
                 print ("ERROR: name of the fluid region to extract not")
                 print ("specified! use parameter FLUENT_FLUID_REGION_NAME")
                 sys.exit()
             else:
                 self.fluent_fluid_region_name = (
-                    argDic['fluent_fluid_region_name'])
+                    arg_dict['fluent_fluid_region_name'])
 
-        self.molecular_diffusion = float(argDic['molecular_diffusion'])
-        self.schmidt_number = float(argDic['schmidt_number'])
-        self.inlet_conc = float(argDic['inlet_conc'])
-        self.cfd_path = os.path.normcase(argDic['cfd_path'])
+        self.molecular_diffusion = float(arg_dict['molecular_diffusion'])
+        self.schmidt_number = float(arg_dict['schmidt_number'])
+        self.inlet_conc = float(arg_dict['inlet_conc'])
+        self.cfd_path = os.path.normcase(arg_dict['cfd_path'])
         self.cfd_simulation = SimulationOF(self.cfd_path)
 
 
@@ -366,8 +382,6 @@ class FlunedCase:
             raise OSError(f"Folder not found: {self.cfd_path}")
 
         self.fluned_path = os.path.join(self.cfd_path,self.case)
-
-        #self.fluned_simulation = SimulationOF(self.fluned_path)
 
         if not os.path.exists(self.fluned_path):
             os.mkdir(self.fluned_path)
@@ -761,7 +775,7 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
 
         folderItems = os.listdir(self.cfd_path)
 
-        folderTimes=[int(itm) for itm in folderItems if checkInt(itm) == True]
+        folderTimes=[int(itm) for itm in folderItems if check_int(itm) == True]
 
         lastTime = max(folderTimes)
 
@@ -778,7 +792,7 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
 
         folderItems = os.listdir(self.cfd_path)
 
-        folderTimes=[int(itm) for itm in folderItems if checkInt(itm) == True]
+        folderTimes=[int(itm) for itm in folderItems if check_int(itm) == True]
 
         lastTime = max(folderTimes)
 
@@ -1167,8 +1181,61 @@ functions
 
             fw.write("}")
 
+        fv_scheme_stable = """
+FoamFile
+{{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}}
 
-        fv_scheme_text = """
+ddtSchemes
+{{
+    default         {};
+}}
+
+gradSchemes
+{{
+    default         cellLimited Gauss linear 1;
+}}
+
+divSchemes
+{{
+    default         none;
+    div(phi,T)      Gauss  upwind;
+    div(phi,Ta)      Gauss upwind;
+    div(phi,Td)      Gauss upwind;
+    div(phi,Tr)      Gauss upwind;
+}}
+
+laplacianSchemes
+{{
+    default         none;
+    laplacian(DT,T) Gauss linear corrected;
+    laplacian(Dturbulent,T) Gauss linear corrected;
+    laplacian(DT,Tr) Gauss linear corrected;
+    laplacian(Dturbulent,Tr) Gauss linear corrected;
+    laplacian(DT,Ta) Gauss linear corrected;
+    laplacian(Dturbulent,Ta) Gauss linear corrected;
+    laplacian(DT,Td) Gauss linear corrected;
+    laplacian(Dturbulent,Td) Gauss linear corrected;
+}}
+
+interpolationSchemes
+{{
+    default         linear;
+}}
+
+snGradSchemes
+{{
+    default         limited 0.5;
+}}
+
+"""
+
+        fv_scheme_accurate = """
 FoamFile
 {{
     version     2.0;
@@ -1226,9 +1293,19 @@ snGradSchemes
 
 
         with open(schemes_path,'w',encoding='utf-8') as fw:
+
+            # select the fv scheme
+            if self.fv_scheme == 'accurate':
+                fv_scheme_text = fv_scheme_accurate
+            elif self.fv_scheme == 'stable':
+                fv_scheme_text = fv_scheme_stable
+
+            #select the time treatment
+            elif self.time_treatment == 'transient':
+                fw.write(fv_scheme_text.format('Euler'))
             if self.time_treatment == 'steadystate':
                 fw.write(fv_scheme_text.format('steadyState'))
-            if self.time_treatment == 'transient':
+            elif self.time_treatment == 'transient':
                 fw.write(fv_scheme_text.format('Euler'))
 
         fv_solution_text = """
@@ -3107,7 +3184,7 @@ dimensions      [0 2 -1 0 0 0 0];
 
         folderItems = os.listdir(self.cfd_path)
 
-        folderTimes=[int(itm) for itm in folderItems if checkInt(itm) == True]
+        folderTimes=[int(itm) for itm in folderItems if check_int(itm) == True]
 
         lastTime = max(folderTimes)
 
@@ -3191,11 +3268,11 @@ def main():
         create_input_template()
         sys.exit()
 
-    inputCases = read_input_file(args.input)
+    input_cases = read_input_file(args.input)
 
     # define a vector of FLUNED cases
 
-    for case in inputCases:
+    for case in input_cases:
 
         print ("creating FLUNED case...")
 
