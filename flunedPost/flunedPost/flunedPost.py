@@ -1394,9 +1394,11 @@ class flunedCase:
         orig_folder = os.getcwd()
         os.chdir(self.fluned_path)
         cmd_str_1="foamToVTK -latestTime -noFaceZones -noFunctionObjects "
-        cmd_str_2=" -fields (T Ta Td) "
+        cmd_str_2a=" -fields (T"
+        cmd_str_2b="Ta"
+        cmd_str_2c="Td)"
         cmd_str_3=" -excludePatches (\".*\")"
-        cmd_str = cmd_str_1 + cmd_str_2 + cmd_str_3
+        cmd_str = cmd_str_1 + cmd_str_2a + cmd_str_2b +cmd_str_2c + cmd_str_3
         launch_f2vtk = cmd_str.split()
         with open('log', "a",encoding='utf-8') as outfile:
             subprocess.Popen(launch_f2vtk, stdout=outfile).wait()
