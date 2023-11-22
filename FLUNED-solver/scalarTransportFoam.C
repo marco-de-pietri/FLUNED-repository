@@ -73,12 +73,12 @@ int main(int argc, char *argv[])
             );
             TdEqn.relax();
             TdEqn.solve();
-            
-			
+
+
 			if (includeDecayScalar ){
 				T = Ta + Td;}
 			else {
-				T = Ta
+				T = Ta;
 			}
 
             // residence time equation
