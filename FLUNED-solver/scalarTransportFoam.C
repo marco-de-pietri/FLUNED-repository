@@ -31,6 +31,10 @@ int main(int argc, char *argv[])
 
 	#include "CourantNo.H"
 
+  bool includeDecayScalar ( runTime.controlDict().lookupOrDefault<bool>("includeDecayScalar", true) );
+
+  // Info << "includeDecayScalar = " << includeDecayScalar << endl;
+
 
 
     while (simple.loop(runTime))
@@ -69,8 +73,13 @@ int main(int argc, char *argv[])
             );
             TdEqn.relax();
             TdEqn.solve();
-
-            T = Ta + Td;
+            
+			
+			if (includeDecayScalar ){
+				T = Ta + Td;}
+			else {
+				T = Ta
+			}
 
             // residence time equation
             fvScalarMatrix TrEqn

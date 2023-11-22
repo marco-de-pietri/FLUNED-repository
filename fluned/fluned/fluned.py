@@ -966,6 +966,8 @@ adjustTimeStep  yes;
 
 maxCo           0.5;
 
+includeDecayScalar true;
+
 
 
 
