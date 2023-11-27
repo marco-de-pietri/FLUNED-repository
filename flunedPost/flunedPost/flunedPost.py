@@ -1372,16 +1372,17 @@ class flunedCase:
 
         return
 
-    def launchFuncObjects(self):
-        """launches the utility to calculate T gradient """
-
+    def launch_func_object(self):
+        """
+        launches the utility to calculate T gradient
+        """
         print ("launching gradient function object")
-        origFolder = os.getcwd()
+        orig_folder = os.getcwd()
         os.chdir(self.fluned_path)
-        launchGrad = "postProcess -func 'grad(T)'".split()
-        with open('log', "a") as outfile:
-            proc = subprocess.Popen(launchGrad, stdout=outfile).wait()
-        os.chdir(origFolder)
+        launch_grad = "postProcess -func 'grad(T)'".split()
+        with open('log', "a",encoding='utf-8') as out_file:
+            subprocess.Popen(launch_grad, stdout=out_file).wait()
+        os.chdir(orig_folder)
 
         return
 
@@ -1394,12 +1395,12 @@ class flunedCase:
         orig_folder = os.getcwd()
         os.chdir(self.fluned_path)
         cmd_str_1="foamToVTK -latestTime -noFaceZones -noFunctionObjects "
-        cmd_str_2a=" -fields (T"
-        cmd_str_2b="Ta"
-        cmd_str_2c="Td)"
         cmd_str_3=" -excludePatches (\".*\")"
-        cmd_str = cmd_str_1 + cmd_str_2a + cmd_str_2b +cmd_str_2c + cmd_str_3
-        launch_f2vtk = cmd_str.split()
+        launch_f2vtk = cmd_str_1.split()
+        launch_f2vtk.append("-fields")
+        launch_f2vtk.append("(T Ta Td)")
+        launch_f2vtk.extend(cmd_str_3.split())
+        #print (launch_f2vtk)
         with open('log', "a",encoding='utf-8') as outfile:
             subprocess.Popen(launch_f2vtk, stdout=outfile).wait()
         os.chdir(orig_folder)
@@ -1790,7 +1791,7 @@ def main():
     simCase.get_last_time_step()
 
     if  args.check:
-        simCase.launchFuncObjects()
+        simCase.launch_func_object()
         simCase.readVelocities()
         simCase.readGradT()
 
