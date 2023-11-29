@@ -411,17 +411,18 @@ def check_float(str):
         return False
 
 class flunedCase:
-    def __init__(self, simPath):
-        """initialize case and create FLUNED case folder"""
+    """
+    fluned case class
+    """
+    def __init__(self, path):
+        """
+        initialize case and create FLUNED case folder
+        """
 
+        self.fluned_path = os.path.join(path)
+        self.case = os.path.split(path)[1]
+        self.n_elements = 0
 
-        self.fluned_path = os.path.join(simPath)
-        self.case = os.path.split(simPath)[1]
-        self.nElements = 0
-
-
-
-        return
 
     def readPostProcess_flows(self):
         """
@@ -810,11 +811,11 @@ class flunedCase:
         with inpFile:
             text = inpFile.read()
             cellNumberText = nElPat.findall(text)
-            self.nElements = (int(cellNumberText[0]))
+            self.n_elements = (int(cellNumberText[0]))
             numInternalBlocks = internalBlockPat.findall(text)
             internalVolumes = numInternalBlocks[0].split('\n')[1:-1]
-            self.Volumes = np.zeros(self.nElements)
-            for i in range(self.nElements):
+            self.Volumes = np.zeros(self.n_elements)
+            for i in range(self.n_elements):
                 self.Volumes[i] = float(internalVolumes[i])
 
         return
@@ -910,8 +911,8 @@ class flunedCase:
             text = inpFile.read()
             numInternalBlocks = internalBlockPat.findall(text)
             internalScalar = numInternalBlocks[0].split('\n')[1:-1]
-            self.TScalar = np.zeros(self.nElements)
-            for i in range(self.nElements):
+            self.TScalar = np.zeros(self.n_elements)
+            for i in range(self.n_elements):
                 self.TScalar[i] = float(internalScalar[i])
 
         return
@@ -991,21 +992,23 @@ class flunedCase:
 
         return
 
-    def writeSummary(self,arguments):
-        """ write a bunch of results of the simulation """
+    def write_summary(self,arguments):
+        """
+        write a bunch of results of the simulation
+        """
 
 
         print ("printing final Summary ... ")
 
 
         if self.time_treatment == 'steadystate':
-            self.writeSummary_steady(arguments)
+            self.write_summary_steady(arguments)
         elif self.time_treatment == 'transient':
-            self.writeSummary_transient(arguments)
+            self.write_summary_transient(arguments)
 
         return
 
-    def writeSummary_transient(self,arguments):
+    def write_summary_transient(self,arguments):
 
         resFolder = os.path.join(self.fluned_path,'RESULTS')
 
@@ -1190,15 +1193,18 @@ class flunedCase:
         return
 
 
-    def writeSummary_steady(self,arguments):
+    def write_summary_steady(self,arguments):
+        """
+        This function writes the summary file in the RESULTS/ folder
+        """
 
-        resFolder = os.path.join(self.fluned_path,'RESULTS')
+        result_dir = os.path.join(self.fluned_path,'RESULTS')
 
-        dirCheck = os.path.isdir(resFolder)
-        if not dirCheck:
-            os.mkdir(resFolder)
+        dir_check = os.path.isdir(result_dir)
+        if not dir_check:
+            os.mkdir(result_dir)
 
-        sumFile = os.path.join(resFolder,'SUMMARY.csv')
+        summary_file = os.path.join(result_dir,'SUMMARY.csv')
 
         inletAtoms = 0
         inletFlow = 0
@@ -1223,7 +1229,7 @@ class flunedCase:
 
         cellActivity = np.zeros(len(self.TScalar))
 
-        for i in range(len(self.TScalar)):
+        for i,_ in enumerate(self.TScalar):
             if self.TScalar[i] > 0:
                 cellActivity[i] = (self.TScalar[i]*
                                    self.Volumes[i]*
@@ -1286,7 +1292,7 @@ class flunedCase:
 
         negCheck = any(n < 0 for n in self.TScalar)
 
-        with open(sumFile,'w') as fw:
+        with open(summary_file,'w') as fw:
             fw.write("FLUNED SIMULATION SUMMARY\n")
             fw.write("CASE,{},\n".format(self.case))
             fw.write("STEADY STATE SIMULATION\n")
@@ -1812,14 +1818,13 @@ def main():
         simCase.precision = args.precision
         simCase.dataset = args.dataset
         simCase.scaling = args.scaling
-        simCase.generate_vtk()
         simCase.getVTKPath()
         simCase.getOriginalEmission()
         simCase.calculateSamplingCoordinates()
         simCase.sampleCoordinatesValues()
         simCase.writeCDGS()
 
-    simCase.writeSummary(args)
+    simCase.write_summary(args)
 
     print ("Finished!")
 

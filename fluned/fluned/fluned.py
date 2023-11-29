@@ -54,13 +54,13 @@ CFD_TYPE    OpenFoam       # OpenFoam, fluent-h5-multi types supported
     return 0
 
 
-def sample_coordinates_VTK(vtk_file, dataset_name, coordinates):
+def sample_coordinates_vtk(vtk_file, dataset_name, coordinates):
     """
     this function reads the vtk and sample the reaction rates
     """
 
-    checkFile = os.path.isfile(vtk_file)
-    if not checkFile:
+    check_file = os.path.isfile(vtk_file)
+    if not check_file:
         print ("ERROR activation file not found")
         sys.exit()
 
@@ -95,16 +95,16 @@ def sample_coordinates_VTK(vtk_file, dataset_name, coordinates):
 
 
     #Perform the interpolation
-    probeFilter =vtk.vtkProbeFilter()
-    probeFilter.SetSourceData(data)
-    probeFilter.SetInputData(polydata)
-    probeFilter.Update()
+    probe_filter =vtk.vtkProbeFilter()
+    probe_filter.SetSourceData(data)
+    probe_filter.SetInputData(polydata)
+    probe_filter.Update()
 
-    vtkArray = probeFilter.GetOutput().GetPointData().GetArray(dataset_name)
+    vtk_array = probe_filter.GetOutput().GetPointData().GetArray(dataset_name)
 
-    reacRates = VN.vtk_to_numpy(vtkArray)
+    reac_rates = VN.vtk_to_numpy(vtk_array)
 
-    return  reacRates
+    return  reac_rates
 
 
 #def sampleCoordinatesVTK1(vtkFile, datasetName, coordinates):
@@ -167,7 +167,10 @@ def sample_coordinates_VTK(vtk_file, dataset_name, coordinates):
 #
 #    return  reacRates
 
-def heronFormula(points):
+def heron_formula(points):
+    """
+    calculate the area of a triangle using the heron formula
+    """
 
     dist1 = point_distance(points[0],points[1])
     dist2 = point_distance(points[1],points[2])
@@ -216,27 +219,27 @@ def calculateArea(points):
     """
 
     if len(points) == 3:
-        area = heronFormula(points)
+        area = heron_formula(points)
     elif len(points) == 4:
         centroid =  calculateEdgeCentroid(points)
         #print (points)
         area = 0
-        area1 = heronFormula([points[0],points[1],centroid])
+        area1 = heron_formula([points[0],points[1],centroid])
         #print("area1", area1)
-        area2 = heronFormula([points[1],points[2],centroid])
+        area2 = heron_formula([points[1],points[2],centroid])
         #print("area2", area2)
-        area3 = heronFormula([points[2],points[3],centroid])
+        area3 = heron_formula([points[2],points[3],centroid])
         #print("area3", area3)
-        area4 = heronFormula([points[3],points[0],centroid])
+        area4 = heron_formula([points[3],points[0],centroid])
         #print("area4", area4)
         area = area1 + area2 + area3 + area4
     else:
         centroid =  calculateEdgeCentroid(points)
         area = 0
         for i in range(len(points)-1):
-            area += heronFormula([points[i],points[i+1], centroid])
+            area += heron_formula([points[i],points[i+1], centroid])
 
-        area += heronFormula([points[-1],points[0], centroid])
+        area += heron_formula([points[-1],points[0], centroid])
 
     return area
 
@@ -375,7 +378,6 @@ class FlunedCase:
         self.schmidt_number = float(arg_dict['schmidt_number'])
         self.inlet_conc = float(arg_dict['inlet_conc'])
         self.cfd_path = os.path.normcase(arg_dict['cfd_path'])
-        self.cfd_simulation = SimulationOF(self.cfd_path)
 
 
         if not os.path.isdir(self.cfd_path):
@@ -388,6 +390,16 @@ class FlunedCase:
 
         self.num_internal_cells = 0
 
+
+        return
+
+    def initialize_cfd_class(self):
+        """
+        this function initialize the cfd class, after the initial openfoam or
+        fluent simulation has been processed
+        """
+
+        self.cfd_simulation = SimulationOF(self.cfd_path)
 
         return
 
@@ -468,7 +480,6 @@ FoamFile
     location    "0";
     object      Tr;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 dimensions      [0 0 0 0 0 0 0];
 
@@ -626,16 +637,12 @@ boundaryField
 
         return
 
-    def generateConstantFiles(self):
-        """This function creates the files in the constant folder"""
-        transportPropertiesText = """
-/*-------------------------------*- C++ -*----------------------------------\\
-| =========                |                                                 |
-| \\      /  F ield        | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration    | Version:  v2012                                 |
-|   \\  /    A nd          | Website:  www.openfoam.com                      |
-|    \\/     M anipulation |                                                 |
-\*--------------------------------------------------------------------------*/
+    def generate_constant_file(self):
+        """
+        This function creates the files in the constant folder
+        """
+
+        transport_prop_text = """
 FoamFile
 {{
     version     2.0;
@@ -659,12 +666,12 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
 // ************************************************************************ //
 """
 
-        constantFolder = os.path.join(self.fluned_path,'constant')
-        transpPropPath = os.path.join(constantFolder,'transportProperties')
+        constant_folder = os.path.join(self.fluned_path,'constant')
+        transport_prop_path = os.path.join(constant_folder,'transportProperties')
 
 
-        with open(transpPropPath,'w') as fw:
-            fw.write(transportPropertiesText.format(
+        with open(transport_prop_path,'w',encoding='utf-8') as fw:
+            fw.write(transport_prop_text.format(
                 self.molecular_diffusion,
                 self.decay_constant,
                 self.schmidt_number))
@@ -770,21 +777,18 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
 
         return
 
-    def copyLastU(self):
-        """ this function look for the last U file in the cfd folder"""
-
-        folderItems = os.listdir(self.cfd_path)
-
-        folderTimes=[int(itm) for itm in folderItems if check_int(itm) == True]
-
-        lastTime = max(folderTimes)
-
-        targetFile = os.path.join(self.fluned_path,'0','U')
-        originFile = os.path.join(self.cfd_path,str(lastTime),'U')
-        shutil.copyfile( originFile,targetFile)
+    def copy_last_u(self):
+        """
+        this function look for the last U file in the cfd folder
+        """
 
 
-        return
+        last_time = self.cfd_simulation.last_time
+        target_file = os.path.join(self.fluned_path,'0','U')
+        origin_file = os.path.join(self.cfd_path,str(last_time),'U')
+        shutil.copyfile( origin_file,target_file)
+
+        return None
 
     def copyLastNut(self):
         """ this function look for the last nut file in the cfd folder,
@@ -1016,6 +1020,7 @@ timePrecision   6;
 
 runTimeModifiable true;
 
+includeDecayScalar true;
 
 
 
@@ -1024,6 +1029,19 @@ functions
 {
 
 """
+        vol_calc_text = """
+    volumeCalc
+    {{
+        type            writeCellVolumes;
+        libs            ("libfieldFunctionObjects.so");
+	    regionType      all;
+
+        writeFields     false;
+        writeControl {};
+
+    }}
+
+ """
 
         vol_flow_text = """
     {}
@@ -1044,54 +1062,14 @@ functions
     }}
 
  """
-        vol_t_flow_text = """
+        vol_tx_flow_text = """
     {}
     {{
 
         type            surfaceFieldValue;
         libs            ("libfieldFunctionObjects.so");
         patch   {};
-        fields  (T);
-        weightField phi;
-
-        operation sum;
-        regionType  patch;
-        name        $patch;
-
-        writeFields     false;
-        writeControl {};
-
-    }}
-
- """
-        vol_td_flow_text = """
-    {}
-    {{
-
-        type            surfaceFieldValue;
-        libs            ("libfieldFunctionObjects.so");
-        patch   {};
-        fields  (Td);
-        weightField phi;
-
-        operation sum;
-        regionType  patch;
-        name        $patch;
-
-        writeFields     false;
-        writeControl {};
-
-    }}
- """
-
-        vol_ta_flow_text = """
-    {}
-    {{
-
-        type            surfaceFieldValue;
-        libs            ("libfieldFunctionObjects.so");
-        patch   {};
-        fields  (Ta);
+        fields  ({});
         weightField phi;
 
         operation sum;
@@ -1105,22 +1083,20 @@ functions
 
  """
 
-        vol_tr_flow_text = """
+        vol_tx_sum_text = """
     {}
     {{
 
-        type            surfaceFieldValue;
+        type            volFieldValue;
         libs            ("libfieldFunctionObjects.so");
-        patch   {};
-        fields  (Tr);
-        weightField phi;
+        fields  ({});
 
-        operation sum;
-        regionType  patch;
-        name        $patch;
+        operation       volAverage;
+	    regionType      all;
 
         writeFields     false;
         writeControl {};
+
 
     }}
 
@@ -1133,52 +1109,53 @@ functions
         with open(control_dict_path,'w',encoding='utf-8') as fw:
             if self.time_treatment =='steadystate':
                 fw.write(control_dict_text)
-                for face in self.faces:
-                    if face['type'] in ['inlet','outlet']:
-                        fw.write(vol_flow_text.format(
-                                     "volFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'outputTime'))
-                        fw.write(vol_t_flow_text.format(
-                                     "volTFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'outputTime'))
-                        fw.write(vol_tr_flow_text.format(
-                                     "volTrFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'outputTime'))
-                        fw.write(vol_td_flow_text.format(
-                                     "volTdFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'outputTime'))
-                        fw.write(vol_ta_flow_text.format(
-                                     "volTaFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'outputTime'))
+                write_control = 'outputTime'
             elif self.time_treatment =='transient':
                 fw.write(control_dict_text_transient)
-                for face in self.faces:
-                    if face['type'] in ['inlet','outlet']:
-                        fw.write(vol_flow_text.format(
-                                     "volFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'timeStep'))
-                        fw.write(vol_t_flow_text.format(
-                                     "volTFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'timeStep'))
-                        fw.write(vol_tr_flow_text.format(
-                                     "volTrFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'timeStep'))
-                        fw.write(vol_td_flow_text.format(
-                                     "volTdFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'timeStep'))
-                        fw.write(vol_ta_flow_text.format(
-                                     "volTaFlow-"+face['faceID'],
-                                     face['faceID'],
-                                     'timeStep'))
+                write_control = 'timeStep'
+
+            fw.write(vol_calc_text.format(write_control))
+
+            fw.write(vol_tx_sum_text.format(
+                                    'volTSum',
+                                    'T',
+                                    write_control))
+            fw.write(vol_tx_sum_text.format(
+                                    'volTaSum',
+                                    'Ta',
+                                    write_control))
+            fw.write(vol_tx_sum_text.format(
+                                    'volTdSum',
+                                    'Td',
+                                    write_control))
+
+            for face in self.faces:
+                if face['type'] in ['inlet','outlet']:
+                    fw.write(vol_flow_text.format(
+                                 "volFlow-"+face['faceID'],
+                                 face['faceID'],
+                                 write_control))
+
+                    fw.write(vol_tx_flow_text.format(
+                                 "volTFlow-"+face['faceID'],
+                                 face['faceID'],
+                                 'T',
+                                 write_control))
+                    fw.write(vol_tx_flow_text.format(
+                                 "volTrFlow-"+face['faceID'],
+                                 face['faceID'],
+                                 'Tr',
+                                 write_control))
+                    fw.write(vol_tx_flow_text.format(
+                                 "volTdFlow-"+face['faceID'],
+                                 face['faceID'],
+                                 'Td',
+                                 write_control))
+                    fw.write(vol_tx_flow_text.format(
+                                 "volTaFlow-"+face['faceID'],
+                                 face['faceID'],
+                                 'Ta',
+                                 write_control))
 
 
             fw.write("}")
@@ -1405,20 +1382,22 @@ method          scotch;
         return
 
 
-    def launchVolFuncObjects(self):
-        """this function launch the utilities that calculates the volumes
+    def launch_vol_func_object(self):
+        """
+        this function launch the utilities that calculates the volumes
         - this field is needed only for the activation rate
-        interpolation"""
+        interpolation
+        """
 
         print ("calculating volumes  ...")
-        origFolder = os.getcwd()
+        orig_folder = os.getcwd()
         os.chdir(self.fluned_path)
-        launchVolumes = "postProcess -func writeCellVolumes".split()
-        with open('log', "a") as outfile:
-            proc = subprocess.Popen(launchVolumes, stdout=outfile).wait()
-        os.chdir(origFolder)
+        launch_volumes = "postProcess -func writeCellVolumes".split()
+        with open('log', "a", encoding='utf-8') as outfile:
+            subprocess.Popen(launch_volumes, stdout=outfile).wait()
+        os.chdir(orig_folder)
 
-        return
+        return None
 
     def launchCentroidFuncObjects(self):
         """this function launch the utilities that calculates the volume and
@@ -1693,13 +1672,6 @@ FoamFile
                                            'polyMesh', 'faceZones')
 
         faceZones = """
-/*-------------------------------*- C++ -*--------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -1733,13 +1705,6 @@ FoamFile
         boundaryFilePath = os.path.join(self.cfd_path,'constant','polyMesh',
                                       'boundary')
         boundaryHeader = """
-/*--------------------------------*- C++ -*------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -1808,13 +1773,6 @@ FoamFile
 
 
         ownerHeader = """
-/*-------------------------------*- C++ -*--------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -2209,14 +2167,14 @@ boundaryField
 
             # 1.sample the activation file
             print ("Sampling Reaction Rate file ... ")
-            sampledRates = sample_coordinates_VTK(self.activation_file,
+            sampledRates = sample_coordinates_vtk(self.activation_file,
                                                 self.activation_dataset,
                                                 self.Centroids)
 
             # 1.1 if present sample the vtk file to get the error array
             if self.activation_dataset_error != '':
                 print ("Sampling Reaction Rate MCNP errors  ... ")
-                sampledStatErr = sample_coordinates_VTK(self.activation_file,
+                sampledStatErr = sample_coordinates_vtk(self.activation_file,
                                             self.activation_dataset_error,
                                             self.Centroids)
 
@@ -2598,7 +2556,7 @@ dimensions      [0 3 -1 0 0 0 0];
                     fo.write("(\n")
                     phiStr = "{:24.18e}\n"
                     for val in phiTemp:
-                        fo.write(phiStr.format(val/self.fluentDensity))
+                        fo.write(phiStr.format(val/self.fluent_density))
             fo.write(")\n")
             fo.write(";\n")
             fo.write("\n")
@@ -2625,7 +2583,7 @@ dimensions      [0 3 -1 0 0 0 0];
                         fo.write("{:d}\n".format(len(phiTemp)))
                         fo.write("(\n")
                         for val in phiTemp:
-                            fo.write(phiStr.format(val/self.fluentDensity))
+                            fo.write(phiStr.format(val/self.fluent_density))
                         fo.write(")\n")
                         fo.write(";\n")
                     fo.write("    }\n")
@@ -3137,7 +3095,7 @@ dimensions      [0 2 -1 0 0 0 0];
             fo.write("{:d}\n".format(self.fluid_cellN))
             fo.write("(\n")
             for val in mutValues:
-                fo.write(nutStr.format(val/self.fluentDensity))
+                fo.write(nutStr.format(val/self.fluent_density))
 
             fo.write(")\n")
             fo.write(";\n")
@@ -3170,7 +3128,7 @@ dimensions      [0 2 -1 0 0 0 0];
                         for ow in faceOwn:
                             fo.write(nutStr.format(
                                 mutValues[int(ow-self.fluid_cellID_min)]/
-                                            self.fluentDensity))
+                                            self.fluent_density))
                         fo.write(")\n")
                         fo.write(";\n")
                     fo.write("    }\n")
@@ -3209,14 +3167,14 @@ dimensions      [0 2 -1 0 0 0 0];
         return
 
 
-    def readDensity_h5(self):
+    def read_density_h5(self):
         """
-        this function reads the density
+        this function reads the density stored in the h5 fluent file
         """
 
         filename = os.path.join(self.cfd_path,self.datH5file)
 
-        denCellPat = re.compile(".*/cells/SV_DENSITY/.*",
+        cell_density_pat = re.compile(".*/cells/SV_DENSITY/.*",
                                      re.IGNORECASE)
 
 
@@ -3228,20 +3186,19 @@ dimensions      [0 2 -1 0 0 0 0];
             paths = get_dataset_keys(fi)
 
             for path in paths:
-                denMatches = denCellPat.findall(path)
+                denMatches = cell_density_pat.findall(path)
                 if len(denMatches) == 1:
                     cell_density_path.append(path)
 
             if len(cell_density_path) == 1:
-                self.denCellPath = cell_density_path[0]
+                self.cell_density_path = cell_density_path[0]
                 if hasattr(self,'minIDregion'):
-                    self.fluentDensity = (fi[self.denCellPath]
+                    self.fluent_density = (fi[self.cell_density_path]
                                             [self.minIDregion - 1])
                 else:
-                    self.fluentDensity = fi[self.denCellPath][0]
+                    self.fluent_density = fi[self.cell_density_path][0]
             else:
-                print ("ERROR zero or more than one density datasets found")
-                sys.exit()
+                raise ValueError("ERROR zero or more than one density datasets found")
 
         return
 
@@ -3286,7 +3243,7 @@ def main():
             fCase.create_case_folders_fluent()
             fCase.getFluidCells_h5()
             fCase.getFluidFaces_h5()
-            fCase.readDensity_h5()
+            fCase.read_density_h5()
             fCase.defineWalls_multi_h5()
             fCase.writeOwner_multi_h5()
             fCase.writeNeighbour_multi_h5()
@@ -3301,25 +3258,20 @@ def main():
         if fCase.cfd_type == 'fluent-multi':
             print ("parsing binary cas/dat files not implemented yet ... ")
             sys.exit()
-            #fCase.getCASDATfiles()
-            #fCase.createCaseFoldersFluent()
-            #fCase.createHeaderDictionary()
-            #fCase.getFluidCells()
-            #fCase.getFluidFaces()
-            #fCase.writeNodes_multi()
 
 
         print ("copying last CFD iteration files ... ")
         fCase.create_case_folder()
+        fCase.initialize_cfd_class()
         fCase.copy_last_phi()
-        fCase.copyLastU()
+        fCase.copy_last_u()
         fCase.getNumCells()
         fCase.copyLastNut()
         fCase.copyPolyMesh()
         fCase.reconstructFaces()
         fCase.generate_system_file()
-        fCase.launchVolFuncObjects()
-        fCase.generateConstantFiles()
+        fCase.launch_vol_func_object()
+        fCase.generate_constant_file()
         fCase.generate_zero_t()
         fCase.generate_zero_ta()
         fCase.generate_zero_td()

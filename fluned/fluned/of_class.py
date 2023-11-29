@@ -4,6 +4,8 @@ class for the OF simulations, this can be used to parse and generate files
 import os
 import re
 import sys
+import copy
+import numpy as np
 
 def is_float(s):
     """
@@ -14,6 +16,233 @@ def is_float(s):
         return True
     except ValueError:
         return False
+
+def merge_continue_runs(time_lists,data_lists):
+    """
+    this function takes time series segments and join them in a single one -
+    the overlapping sections are removed
+    """
+
+    if len(time_lists) == 0 or len(data_lists) == 0 :
+        raise ValueError('Error with the number of post process files')
+
+    if len(time_lists) != len(data_lists) :
+        print ("ERROR mismatch in length of data series")
+        print ("number of time lists: ", len(time_lists))
+        print ("number of data lists: ", len(data_lists))
+        raise ValueError('Error with the number of post process files')
+
+    tot_len_time_lists = sum([len(x) for x in time_lists])
+    tot_len_data_lists = sum([len(x) for x in data_lists])
+
+    if tot_len_time_lists != tot_len_data_lists:
+        print ("ERROR mismatch in length of data series")
+        print ("number of time points: ", tot_len_time_lists)
+        print ("number of data points: ", tot_len_data_lists)
+        raise ValueError('Error with the number of post process data points')
+
+
+    temp_list = list(zip(time_lists,data_lists))
+
+    #time_lists_sorted = sorted(time_lists,
+    #                           key=lambda x:x[0])
+
+    sorted_temp_list = sorted(temp_list, key= lambda x:x[0][0])
+
+    time_lists_sorted,data_lists_sorted = zip(*sorted_temp_list)
+    #data_lists_sorted = sorted(data_lists,
+    #                           key=lambda x:x[0])
+
+    time_series = time_lists_sorted[0]
+    data_series = data_lists_sorted[0]
+
+
+    if len(time_lists) > 1:
+        for i,l in enumerate(time_lists_sorted):
+            time_series_temp = copy.deepcopy(time_series)
+            if i == 0:
+                continue
+            appended = False
+            for j, val in enumerate(time_series_temp):
+                if val >= time_lists_sorted[i][0]:
+                    time_series = time_series[0:j]
+                    time_series.extend(l)
+                    data_series = data_series[0:j]
+                    data_series.extend(data_lists_sorted[i])
+                    appended = True
+                    break
+
+            if not appended:
+                time_series.extend(l)
+                data_series.extend(data_lists_sorted[i])
+
+
+    return time_series, data_series
+
+def post_file_array(path_list,name):
+    """
+    this function extracts a generic array contained in the post
+    processing file
+    """
+
+    array_list = []
+
+    for f_path in path_list:
+
+        array = []
+        index = -1
+
+        try:
+            post_file = open(f_path,'r',encoding="utf8", errors='ignore')
+        except IOError:
+            print("couldn't open postprocess file")
+        with post_file:
+            lines = post_file.readlines()
+            for line in lines:
+
+                line = line.replace('#','')
+
+                wrds = line.split()
+
+                if len(wrds) == 0:
+                    continue
+
+                if 'time' in wrds[0].lower():
+                    index = wrds.index(name)
+                    continue
+
+                if index != -1:
+                    array.append(float(wrds[index]))
+
+            array_list.append(array)
+
+
+    return array_list
+
+def get_post_files(path):
+    """
+    this function crawl the folder to reach the data in the post process file
+    """
+
+    file_paths = []
+    folder_itms = os.listdir(path)
+    folder_itms = sorted(folder_itms, reverse=False,key=lambda x:float(x))
+
+    for fld in folder_itms:
+
+        path_1 = os.path.join(path,fld)
+        if os.path.isdir(path_1):
+            file_itms = os.listdir(path_1)
+            complete_path = os.path.join(path_1,file_itms[0])
+            file_paths.append(complete_path)
+
+    return file_paths
+
+class PatchClass:
+    """
+    this class represents a patch of the mesh of an openfoam simulation
+    """
+
+    def __init__(self, patch_dict, path):
+        """
+        Constructs all the necessary attributes for the PatchClass object.
+
+        Parameters:
+        -----------
+        patch_dict : dict
+            A dictionary with the patch information.
+        path : str
+            The complete path to the simulation folder.
+        """
+
+        self.simulation_path = path
+        self.post_process_path = os.path.join(self.simulation_path,'postProcessing')
+        self.face_id = patch_dict['face_id']
+        self.face_elements_n = patch_dict['face_elements_n']
+        self.face_first_element = patch_dict['face_first_element']
+        self.face_type = patch_dict['type']
+        self.face_sum_phis = patch_dict['sum_phis']
+        self.post_process_flow = []
+        self.post_process_time = []
+        self.post_process_t_flow = []
+        self.post_process_ta_flow = []
+        self.post_process_td_flow = []
+        self.t_conc_atoms_m3 = []
+        self.ta_conc_atoms_m3 = []
+        self.td_conc_atoms_m3 = []
+
+    def post_process_face(self):
+        """
+        this function reads all the post process files and calculates the
+        different scalar flows across the face
+        """
+        self.post_process_flow, self.post_process_time = self.get_post_process_list('volFlow-','sum(phi)')
+        self.post_process_t_flow, _ = self.get_post_process_list('volTFlow-','sum(T)')
+        self.post_process_ta_flow, _ = self.get_post_process_list('volTaFlow-','sum(Ta)')
+        self.post_process_td_flow, _ = self.get_post_process_list('volTdFlow-','sum(Td)')
+        self.t_conc_atoms_m3 = [x/y if y!= 0 else 0 for x,y in zip(
+                                    self.post_process_t_flow,
+                                    self.post_process_flow)]
+        self.ta_conc_atoms_m3 = [x/y if y!= 0 else 0 for x,y in zip(
+                                    self.post_process_ta_flow,
+                                    self.post_process_flow)]
+        self.td_conc_atoms_m3 = [x/y if y!= 0 else 0 for x,y in zip(
+                                    self.post_process_td_flow,
+                                    self.post_process_flow)]
+
+
+        # check the sign of the flow
+        if self.post_process_flow[-1] > 0 and self.face_type != 'outlet':
+            raise ValueError('Error with the flow sign')
+        elif self.post_process_flow[-1] < 0 and self.face_type != 'inlet':
+            raise ValueError('Error with the flow sign')
+        elif self.post_process_flow[-1] == 0 and self.face_type != 'wall':
+            raise ValueError('Error with the flow sign')
+        if self.t_conc_atoms_m3[-1] < 0:
+            raise ValueError('Error with the concentration sign')
+
+        print (self.post_process_t_flow)
+        print (self.t_conc_atoms_m3)
+
+        return None
+
+
+    def get_post_process_list(self, dir_prefix, col_name ):
+        """
+        this function gets the post process flow from the simulation folder
+        """
+
+        if self.face_type == 'wall':
+            return [0],[0]
+
+        dir_name = dir_prefix + self.face_id
+        flow_folders = [itm for itm in os.listdir(self.post_process_path)
+                        if dir_name in itm]
+
+        if len(flow_folders) != 1:
+            raise ValueError('Error with the number of flow folders')
+
+        #print (flow_folders)
+
+        flow_files = get_post_files(os.path.join(self.post_process_path,
+                                                flow_folders[0]))
+
+        #print (flow_files)
+        #postDic['areaFile'] = postFileArea(postDic['flowFiles'][0])
+
+        time_lists = post_file_array(flow_files,'Time')
+        flow_lists = post_file_array(flow_files,col_name)
+
+
+        time_list_sorted,flow_list_sorted = merge_continue_runs (
+                                        time_lists,
+                                        flow_lists,
+                                        )
+
+
+
+        return flow_list_sorted, time_list_sorted
+
 
 class SimulationOF:
     """
@@ -45,6 +274,156 @@ class SimulationOF:
             self.density_kg_m3 = self.get_density()
         else:
             self.density_kg_m3 = 1000
+
+        self.patches = self.get_patches()
+        self.reduction_rate = 0
+
+
+    def post_process_simulation(self):
+        """
+        this function is called when we process a finished FLUNED simulation
+        """
+        for face in self.patches.values():
+            face.post_process_face()
+
+        self.reduction_rate = self.get_reduction_rate()
+        print ("self.reduction_rate")
+        print (self.reduction_rate)
+
+    def get_patches(self):
+        """
+        this function creates a dictionary with the patches objects
+        """
+
+        patches = {}
+
+        patches_list = self.parse_boundary_phi_files()
+
+        for patch in patches_list:
+            patches [patch['face_id']] = PatchClass(patch,self.path)
+
+
+        return patches
+
+    def get_reduction_rate(self):
+        """
+        this function calculates the reduction rate of the isotope in the cfd
+        it sums all the outlet Td sum values - therefore multiple inlets or
+        outlets are not supported yet
+        """
+        atom_in = 0
+        atom_out = 0
+        red_rate = 0
+
+        for patch in self.patches.values():
+            if patch.face_type == 'inlet':
+                atom_in += abs(patch.post_process_td_flow[-1])
+            elif patch.face_type == 'outlet':
+                atom_out += abs(patch.post_process_td_flow[-1])
+
+
+        if atom_in != 0:
+            red_rate = atom_out/atom_in
+
+        return red_rate
+
+
+
+
+    def parse_boundary_phi_files(self):
+        """
+        this function examines phi files and returns a list of dictionary with
+        the face_name and type
+        at the moment it is not optimized for speed
+        """
+
+        #print ("parsing faces...")
+
+        faces = []
+
+        poly_mesh_folder = os.path.join(self.path,'constant','polyMesh')
+        boundary_file = os.path.join(poly_mesh_folder,'boundary')
+
+        try:
+            inp_file = open(boundary_file,'r',encoding="utf8", errors='ignore')
+        except IOError:
+            print("couldn't open boundary file")
+        with inp_file:
+
+            text = inp_file.read()
+
+            face_def_pat = re.compile(r"\d+[\n\r\s]+?\(.*?[\n\r\s]+?\)",
+                                    re.MULTILINE | re.DOTALL )
+            face_number_pat = re.compile(r"(\d+)[\n\r\s]+?\(.*?\)",
+                                       re.MULTILINE | re.DOTALL )
+            boundary_pat = re.compile(r"[^\s]+[\n\r\s]+?\{.*?\}",
+                                     re.MULTILINE | re.DOTALL )
+            boundary_name_pat = re.compile(r"([^\s]+)[\n\r\s]+?\{.*?\}",
+                                         re.MULTILINE | re.DOTALL )
+            face_n_pat = re.compile(r"nFaces.*?(\d+)")
+            first_face_pat = re.compile(r"startFace.*?(\d+)")
+            def_block = face_def_pat.findall(text)[0]
+            face_number = int(face_number_pat.findall(text)[0])
+            boundary_blocks = boundary_pat.findall(def_block)
+
+            for block in boundary_blocks:
+                b_dict = {}
+                b_dict['face_id'] = boundary_name_pat.findall(block)[0]
+                b_dict['face_elements_n'] = int(face_n_pat.findall(block)[0])
+                b_dict['face_first_element'] = int(first_face_pat.findall(block)[0])
+                faces.append(b_dict)
+
+            if len(faces) != face_number:
+                raise ValueError('Error with the number of faces')
+
+
+
+        phi_file_path = os.path.join(self.path,str(self.last_time),'phi')
+        try:
+            inp_file = open(phi_file_path,'r',encoding="utf8", errors='ignore')
+        except IOError:
+            print("couldn't open phi file")
+        with inp_file:
+
+            face_phi_pat = re.compile(r"\((.{1,}?)\)",
+                    re.MULTILINE | re.DOTALL )
+            text = inp_file.read()
+            wall_face_pat = re.compile(r"value\s+uniform\s+0")
+
+            #print ("face phi")
+            for face in faces:
+                face_block_pat=re.compile(face['face_id'] + r"[\n\r\s]+?\{.*?\}",
+                                         re.MULTILINE | re.DOTALL )
+                face_block = face_block_pat.findall(text)[0]
+                #print (faceBloc)
+                face_phis = face_phi_pat.findall(face_block)
+                #print (facePhis)
+                wall_confirm = wall_face_pat.findall(face_block)
+                #print (wallConfirm)
+                if len(face_phis) == 0 and len(wall_confirm)!=0 :
+                    face['type'] = "wall"
+                    face['sum_phis'] = 0
+                else:
+                    phi_list=face_phi_pat.findall(face_block)[0].strip().split('\n')
+                    phi_list = np.array([float(val) for val in phi_list])
+
+
+                    if all(i >= 0 for i in phi_list):
+                        face['type'] = 'outlet'
+                        face['sum_phis'] = sum(phi_list)
+                    elif all(i <= 0 for i in phi_list):
+                        face['type'] = 'inlet'
+                        face['sum_phis'] = sum(phi_list)
+                    else:
+                        raise ValueError('Error, phis with mixed sign in boundary')
+
+
+        #for ls in faces:
+        #    print (ls)
+
+
+
+        return faces
 
 
     def get_last_time(self):
