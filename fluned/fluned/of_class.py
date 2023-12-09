@@ -3,9 +3,10 @@ class for the OF simulations, this can be used to parse and generate files
 """
 import os
 import re
-import sys
 import copy
+import math
 import numpy as np
+import pyvista as pv
 
 def is_float(s):
     """
@@ -16,6 +17,38 @@ def is_float(s):
         return True
     except ValueError:
         return False
+
+def get_post_process_list(path, dir_prefix,face_name, col_name ):
+    """
+    this function gets the post process flow from the simulation folder
+    """
+
+
+    dir_name = dir_prefix + face_name
+    flow_folders = [itm for itm in os.listdir(path)
+                    if dir_name in itm]
+
+    if len(flow_folders) != 1:
+        raise ValueError('Error with the number of flow folders')
+
+    #print (flow_folders)
+
+    flow_files = get_post_files(os.path.join(path,
+                                            flow_folders[0]))
+
+
+    time_lists = post_file_array(flow_files,'Time')
+    flow_lists = post_file_array(flow_files,col_name)
+
+
+    time_list_sorted,flow_list_sorted = merge_continue_runs (
+                                    time_lists,
+                                    flow_lists,
+                                    )
+
+
+
+    return flow_list_sorted, time_list_sorted
 
 def merge_continue_runs(time_lists,data_lists):
     """
@@ -176,10 +209,31 @@ class PatchClass:
         this function reads all the post process files and calculates the
         different scalar flows across the face
         """
-        self.post_process_flow, self.post_process_time = self.get_post_process_list('volFlow-','sum(phi)')
-        self.post_process_t_flow, _ = self.get_post_process_list('volTFlow-','sum(T)')
-        self.post_process_ta_flow, _ = self.get_post_process_list('volTaFlow-','sum(Ta)')
-        self.post_process_td_flow, _ = self.get_post_process_list('volTdFlow-','sum(Td)')
+
+        if self.face_type == 'wall':
+            return None
+
+        self.post_process_flow, self.post_process_time = get_post_process_list(
+                                       self.post_process_path,
+                                       'volFlow-',
+                                       self.face_id,
+                                       'sum(phi)')
+        self.post_process_t_flow, _ =  get_post_process_list(
+                                       self.post_process_path,
+                                       'volTFlow-',
+                                       self.face_id,
+                                       'sum(T)')
+        self.post_process_ta_flow, _ = get_post_process_list(
+                                       self.post_process_path,
+                                       'volTaFlow-',
+                                       self.face_id,
+                                       'sum(Ta)')
+        self.post_process_td_flow, _ = get_post_process_list(
+                                       self.post_process_path,
+                                       'volTdFlow-',
+                                       self.face_id,
+                                       'sum(Td)')
+
         self.t_conc_atoms_m3 = [x/y if y!= 0 else 0 for x,y in zip(
                                     self.post_process_t_flow,
                                     self.post_process_flow)]
@@ -201,47 +255,12 @@ class PatchClass:
         if self.t_conc_atoms_m3[-1] < 0:
             raise ValueError('Error with the concentration sign')
 
-        print (self.post_process_t_flow)
-        print (self.t_conc_atoms_m3)
+        #print (self.post_process_t_flow)
+        #print (self.t_conc_atoms_m3)
 
         return None
 
 
-    def get_post_process_list(self, dir_prefix, col_name ):
-        """
-        this function gets the post process flow from the simulation folder
-        """
-
-        if self.face_type == 'wall':
-            return [0],[0]
-
-        dir_name = dir_prefix + self.face_id
-        flow_folders = [itm for itm in os.listdir(self.post_process_path)
-                        if dir_name in itm]
-
-        if len(flow_folders) != 1:
-            raise ValueError('Error with the number of flow folders')
-
-        #print (flow_folders)
-
-        flow_files = get_post_files(os.path.join(self.post_process_path,
-                                                flow_folders[0]))
-
-        #print (flow_files)
-        #postDic['areaFile'] = postFileArea(postDic['flowFiles'][0])
-
-        time_lists = post_file_array(flow_files,'Time')
-        flow_lists = post_file_array(flow_files,col_name)
-
-
-        time_list_sorted,flow_list_sorted = merge_continue_runs (
-                                        time_lists,
-                                        flow_lists,
-                                        )
-
-
-
-        return flow_list_sorted, time_list_sorted
 
 
 class SimulationOF:
@@ -265,6 +284,10 @@ class SimulationOF:
             The complete path to the simulation folder.
         """
         self.path = path
+        self.post_process_path = os.path.join(self.path,'postProcessing')
+        self.vtk_file_path = ''
+        self.scaled_vtk_file_path = ''
+        self.vtk_dimensions = []
         self.last_time = self.get_last_time()
 
         self.volumetric_flag = self.get_volumetric_flag()
@@ -276,7 +299,13 @@ class SimulationOF:
             self.density_kg_m3 = 1000
 
         self.patches = self.get_patches()
-        self.reduction_rate = 0
+        self.reduction_rate = []
+        self.normalized_average_td = []
+        self.inlet_td_conc_atoms_m3 = []
+        self.outlet_rr_conc_atoms_m3 = []
+        self.average_rr_conc_atoms_m3 = []
+        self.post_process_td_average = []
+        self.average_ta = []
 
 
     def post_process_simulation(self):
@@ -286,9 +315,70 @@ class SimulationOF:
         for face in self.patches.values():
             face.post_process_face()
 
+        self.post_process_td_average, _ = get_post_process_list(
+                                          self.post_process_path,
+                                          'volTdSum',
+                                          '',
+                                          'volAverage(Td)')
+        self.average_ta, _ = get_post_process_list(self.post_process_path,
+                                                   'volTaSum',
+                                                   '',
+                                                   'volAverage(Ta)')
+
+        self.inlet_td_conc_atoms_m3 = self.get_inlet_td_conc_atoms_m3()
+        #print ("self.inlet_td_conc_atoms_m3")
+        #print (f"{self.inlet_td_conc_atoms_m3[-1]:.2e}")
+
         self.reduction_rate = self.get_reduction_rate()
-        print ("self.reduction_rate")
-        print (self.reduction_rate)
+        #print ("self.reduction_rate")
+        #print (self.reduction_rate)
+
+        self.normalized_average_td = self.get_normalized_average_td()
+        #print ("self.normalized_average_td")
+        #print (self.normalized_average_td)
+
+
+        self.outlet_rr_conc_atoms_m3 = self.get_outlet_rr_conc_atoms_m3()
+        #print ("self.outlet_rr_conc_atoms_m3")
+        #print (f"{self.outlet_rr_conc_atoms_m3[-1]:.2e}")
+
+        #print ("self.average_ta")
+        #print (f"{self.average_ta[-1]:.2e}")
+
+        self.vtk_file_path = self.get_vtk_file_path()
+        self.vtk_dimensions = self.get_vtk_dimensions()
+
+
+    def get_vtk_file_path(self):
+        """
+        this function returns the path of the vtk file
+        """
+
+        vtk_folder = os.path.join(self.path,'VTK')
+
+        files = os.listdir(vtk_folder)
+
+        if len(files) != 1:
+            raise ValueError('Error with the number of vtk files')
+
+        return os.path.join(vtk_folder,files[0])
+
+    def get_vtk_dimensions(self):
+        """
+        this function reads the unstructured mesh and get the cartesian
+        boundaries
+        """
+
+
+        mesh = pv.read(self.vtk_file_path)
+
+        bounds = mesh.bounds
+
+        print (bounds)
+
+        return bounds
+
+
 
     def get_patches(self):
         """
@@ -311,22 +401,65 @@ class SimulationOF:
         it sums all the outlet Td sum values - therefore multiple inlets or
         outlets are not supported yet
         """
-        atom_in = 0
-        atom_out = 0
-        red_rate = 0
 
         for patch in self.patches.values():
             if patch.face_type == 'inlet':
-                atom_in += abs(patch.post_process_td_flow[-1])
-            elif patch.face_type == 'outlet':
-                atom_out += abs(patch.post_process_td_flow[-1])
+                atom_in = patch.post_process_td_flow
+            if patch.face_type == 'outlet':
+                atom_out = patch.post_process_td_flow
 
 
-        if atom_in != 0:
-            red_rate = atom_out/atom_in
+        red_ratio = [abs(x/y) if y!= 0 else 0 for x,y in zip(atom_out,atom_in)]
 
-        return red_rate
 
+        return red_ratio
+
+    def get_outlet_rr_conc_atoms_m3(self):
+        """
+        this function returns the concentration of the outlet patch for the
+        Ta field, meaning for the part generated only by the irradiation and
+        not from the inlet flow
+        at the moment it supports only one outlet patch
+        """
+
+        for patch in self.patches.values():
+            if patch.face_type == 'outlet':
+                conc_out = patch.ta_conc_atoms_m3
+                break
+
+
+
+        return conc_out
+
+
+    def get_inlet_td_conc_atoms_m3(self):
+        """
+        this function returns the concentration of the inlet patch for the
+        Td field, meaning for the part due to the inlet flow
+
+        at the moment it supports only one outlet patch
+        """
+
+        for patch in self.patches.values():
+            if patch.face_type == 'inlet':
+                conc_out = patch.td_conc_atoms_m3
+                break
+
+
+
+        return conc_out
+
+    def get_normalized_average_td(self):
+        """
+        this function returns the average concentration of the Td field due
+        only to the decay of the inlet flow
+        """
+
+        norm_td = ([x/y if y!= 0 else 0 for x,y in
+                zip(self.post_process_td_average,self.inlet_td_conc_atoms_m3)])
+
+
+        return norm_td
 
 
 
@@ -816,3 +949,122 @@ class SimulationOF:
                 found_boundary = False
 
             yield t_dict
+
+    def write_vtk(self, out_path,inlet_activity, decay_const):
+        """
+        this function writes a vtk file with the concentration values
+        """
+
+        print ("writing vtk file for FLUNED simulation ... ")
+
+        mesh = pv.read(self.vtk_file_path)
+
+        decay_array = mesh.cell_data['Td']
+        rr_array = mesh.cell_data['Ta']
+
+        del mesh.cell_data['Td']
+        del mesh.cell_data['Ta']
+        del mesh.cell_data['T']
+        #del mesh.cell_data['CellID']
+        del mesh.point_data['T']
+        del mesh.point_data['Ta']
+        del mesh.point_data['Td']
+
+        decay_array = inlet_activity*decay_array/self.inlet_td_conc_atoms_m3[-1]
+        rr_array = decay_const*rr_array
+
+        mesh.cell_data['average_vol_activity_bq_m3_decay'] = decay_array
+        mesh.cell_data['average_vol_activity_bq_m3_rr']    = rr_array
+        mesh.cell_data['average_vol_activity_bq_m3']    = rr_array + decay_array
+
+
+
+        mesh.save(out_path)
+
+        self.scaled_vtk_file_path = out_path
+
+        return
+
+
+    def calculate_sampling_coordinates(self,sampling_res_cm):
+        """
+        this function returns a list of dictionaries with the info relative to
+        the sampling coordinates
+        """
+
+        vtk_boundaries = self.vtk_dimensions
+
+
+        # convert to cm
+        x_bounds = ([math.floor(vtk_boundaries[0]*100),
+                    math.ceil(vtk_boundaries[1]*100)])
+        y_bounds = ([math.floor(vtk_boundaries[2]*100),
+                    math.ceil(vtk_boundaries[3]*100)])
+        z_bounds = ([math.floor(vtk_boundaries[4]*100),
+                    math.ceil(vtk_boundaries[5]*100)])
+
+
+        x_ints = math.ceil((x_bounds[1] - x_bounds[0])/(sampling_res_cm))
+        y_ints = math.ceil((y_bounds[1] - y_bounds[0])/(sampling_res_cm))
+        z_ints = math.ceil((z_bounds[1] - z_bounds[0])/(sampling_res_cm))
+
+
+
+        x_nodes = ([(x_bounds[0] + sampling_res_cm*i )
+            for i in range(x_ints+1)])
+        y_nodes = ([(y_bounds[0] + sampling_res_cm*i )
+            for i in range(y_ints+1)])
+        z_nodes = ([(z_bounds[0] + sampling_res_cm*i )
+            for i in range(z_ints+1)])
+
+        xyz_nodes = [x_nodes, y_nodes, z_nodes]
+
+
+        voxel_list = []
+        voxel_id = 1
+
+        for i in range(x_ints) :
+            #xVoxelNodes = [x_nodes[i], x_nodes[i+1]]
+            x_voxel_center = (x_nodes[i+1] + x_nodes[i])/2
+            for j in range(y_ints) :
+                #yVoxelNodes = [y_nodes[j], y_nodes[j+1]]
+                y_voxel_center = (y_nodes[j+1] + y_nodes[j])/2
+                for k in range(z_ints) :
+                    #zVoxelNodes = [z_nodes[k], z_nodes[k+1]]
+                    z_voxel_center = (z_nodes[k+1] + z_nodes[k])/2
+                    new_dict = {}
+                    new_dict['id'] = voxel_id
+                    coords = [x_voxel_center, y_voxel_center,   z_voxel_center]
+                    new_dict['cent_coords_cm'] =  coords
+                    new_dict['cent_coords_m'] = [coord/100 for coord in coords]
+                    new_dict['volume_cm3'] = sampling_res_cm**3
+                    voxel_list.append(new_dict)
+                    voxel_id += 1
+
+
+        return xyz_nodes, voxel_list
+
+    def sample_scaled_vtk(self, precision):
+        """
+        this function samples the scaled vtk file
+        """
+
+        scaled_mesh = pv.read(self.scaled_vtk_file_path)
+
+        xyz_nodes, sample_dicts = self.calculate_sampling_coordinates(precision)
+        sample_coords = np.array([val['cent_coords_m'] for val in sample_dicts])
+        sample_points = pv.PolyData(sample_coords)
+
+        sampled_values = sample_points.sample(scaled_mesh)
+
+        print (sampled_values)
+        sys.exit()
+
+
+
+
+
+
+
+        return
+
