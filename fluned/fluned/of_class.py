@@ -1,12 +1,15 @@
 """
 class for the OF simulations, this can be used to parse and generate files
 """
-import os
-import re
 import copy
 import math
+import os
+import re
+import sys
+
 import numpy as np
 import pyvista as pv
+
 
 def is_float(s):
     """
@@ -306,6 +309,7 @@ class SimulationOF:
         self.average_rr_conc_atoms_m3 = []
         self.post_process_td_average = []
         self.average_ta = []
+        self.volume_m3 = 0
 
 
     def post_process_simulation(self):
@@ -346,7 +350,7 @@ class SimulationOF:
         #print (f"{self.average_ta[-1]:.2e}")
 
         self.vtk_file_path = self.get_vtk_file_path()
-        self.vtk_dimensions = self.get_vtk_dimensions()
+        self.vtk_dimensions, self.volume_m3 = self.get_vtk_dimensions()
 
 
     def get_vtk_file_path(self):
@@ -373,10 +377,11 @@ class SimulationOF:
         mesh = pv.read(self.vtk_file_path)
 
         bounds = mesh.bounds
+        volume_m3 = mesh.volume
 
-        print (bounds)
 
-        return bounds
+
+        return bounds, volume_m3
 
 
 
@@ -955,7 +960,7 @@ class SimulationOF:
         this function writes a vtk file with the concentration values
         """
 
-        print ("writing vtk file for FLUNED simulation ... ")
+        print ("writing vtk file for circuit calculation ... ")
 
         mesh = pv.read(self.vtk_file_path)
 
@@ -1049,22 +1054,27 @@ class SimulationOF:
         this function samples the scaled vtk file
         """
 
+        print ("interpolating scaled vtk file for CDGS production ... ")
+
         scaled_mesh = pv.read(self.scaled_vtk_file_path)
 
         xyz_nodes, sample_dicts = self.calculate_sampling_coordinates(precision)
         sample_coords = np.array([val['cent_coords_m'] for val in sample_dicts])
         sample_points = pv.PolyData(sample_coords)
 
-        sampled_values = sample_points.sample(scaled_mesh)
+        sampled_values = sample_points.sample(scaled_mesh, pass_cell_data=True,
+                                              pass_point_data=True,
+                                              progress_bar=True,
+                                              )
+        sampled_activity = sampled_values.point_data['average_vol_activity_bq_m3']
 
-        print (sampled_values)
-        sys.exit()
+        # remove possible small negative values
+        sampled_activity = [val if val > 0 else 0 for val in sampled_activity]
 
 
+        for coord_dict, sampled_val in zip(sample_dicts,sampled_activity):
+            coord_dict['average_vol_activity_bq_m3'] = sampled_val
 
 
-
-
-
-        return
+        return xyz_nodes, sample_dicts
 

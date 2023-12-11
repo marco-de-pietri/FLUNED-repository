@@ -2,8 +2,6 @@
 import re
 import sys
 import os
-import pathlib
-import shutil
 import copy
 #import matplotlib.pyplot as plt
 import math
@@ -11,7 +9,6 @@ import numpy as np
 import subprocess
 import argparse
 import linecache
-import os
 import tracemalloc
 import vtk
 import pyvista as pv

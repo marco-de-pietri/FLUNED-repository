@@ -38,8 +38,9 @@ TIME_TREATMENT  steadyState #steadyState or transient supported
 #ACTIVATION_DATASET    "Value - Total"
 #ACTIVATION_CONST 1e16
 #ACTIVATION_NORMALIZATION 0 #leave zero if no normalization is required
-#DECAY_CONSTANT 0.1661825   #N17 decay const
-DECAY_CONSTANT 0.09721559   #N16 decay const
+#DECAY_CONSTANT 0.0257867           #O19 decay const
+#DECAY_CONSTANT 0.1661825           #N17 decay const
+DECAY_CONSTANT 0.09721559           #N16 decay const
 INLET_CONC 1e10
 MOLECULAR_DIFFUSION 2e-09
 SCHMIDT_NUMBER   0.7
