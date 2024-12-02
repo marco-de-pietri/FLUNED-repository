@@ -7,16 +7,22 @@
 -------------------------------------------------------------------------------
 \*---------------------------------------------------------------------------*/
 
-#include "fvCFD.H"
+#include "argList.H"
+#include "timeSelector.H"
 #include "fvModels.H"
 #include "fvConstraints.H"
 #include "simpleControl.H"
+#include "fvmDiv.H"
+#include "fvmDdt.H"
+#include "fvmLaplacian.H"
+
+using namespace Foam;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
 {
-    #include "setRootCaseLists.H"
+    #include "setRootCase.H"
     #include "createTime.H"
     #include "createMesh.H"
 
@@ -39,7 +45,7 @@ int main(int argc, char *argv[])
 
     while (simple.loop(runTime))
     {
-        Info<< "Time = " << runTime.timeName() << nl << endl;
+        Info<< "Time = " << runTime.name() << nl << endl;
 
         while (simple.correctNonOrthogonal())
         {
