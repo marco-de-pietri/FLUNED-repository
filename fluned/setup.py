@@ -9,5 +9,13 @@ setuptools.setup(
             author_email="mdepietri@ind.uned.es",
             description="pre processor of fluned simuations",
             packages = setuptools.find_packages(),
-            entry_points = {'console_scripts': ['fluned = fluned.fluned:main']})
+            entry_points = {'console_scripts': ['fluned = fluned.fluned:main']},
+            install_requires=[
+            "h5py",
+            "numpy>=1.21,<2", 
+            "vtk",
+            "pyvista",
+            ],
+            python_requires=">=3.11",  # Specify supported Python versions
+            )
          
