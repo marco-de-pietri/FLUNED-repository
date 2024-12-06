@@ -19,7 +19,42 @@ from fluned.fluned_bin_utils import get_fluent_binarray_double
 from fluned.fluned_bin_utils import get_fluent_parse_headers
 from fluned.fluned_bin_utils import get_fluent_parse_regions
 from fluned.of_class import SimulationOF
+import gzip
 
+
+def open_utf8_or_gzip(file_path):
+    """
+    this function tries to open a file with utf-8 encoding, if it fails it
+    tries to open it with gzip. It returns the file object
+    """
+
+    try:
+        with open(file_path, 'rb') as f:
+            magic = f.read(2)
+    except OSError:
+        print("Couldn't open Volume V file")
+        sys.exit(1)
+
+    if magic == b'\x1f\x8b':
+
+        # The file is gzip-compressed
+        try:
+            with gzip.open(file_path, 'rt', encoding='utf-8') as inpFile:
+                data = inpFile.read()
+        except Exception as e:
+            print(f"Error reading gzip file: {e}")
+            sys.exit(1)
+
+    else:
+    # The file is a regular text file
+        try:
+            with open(file_path, 'r', encoding='utf-8') as inpFile:
+                data = inpFile.read()
+        except Exception as e:
+            print(f"Error reading text file: {e}")
+            sys.exit(1)
+
+    return data
 
 
 def create_input_template():
@@ -1035,7 +1070,7 @@ functions
     {{
         type            writeCellVolumes;
         libs            ("libfieldFunctionObjects.so");
-	    regionType      all;
+	    select      all;
 
         writeFields     false;
         writeControl {};
@@ -1054,7 +1089,7 @@ functions
         fields  (phi);
 
         operation sum;
-        regionType  patch;
+        select  patch;
         name        $patch;
 
         writeFields     false;
@@ -1074,7 +1109,7 @@ functions
         weightField phi;
 
         operation sum;
-        regionType  patch;
+        select  patch;
         name        $patch;
 
         writeFields     false;
@@ -1093,7 +1128,7 @@ functions
         fields  ({});
 
         operation       volAverage;
-	    regionType      all;
+	    select      all;
 
         writeFields     false;
         writeControl {};
@@ -1431,25 +1466,28 @@ method          scotch;
         return
 
 
-    def readVolumes(self):
-        """ this function reads the volumes from the V file located in the
-        zero folder """
+    def read_volumes(self):
+        """
+        this function reads the volumes from the V file located in the
+        zero folder
+        """
 
         # common patterns
         internalBlockPat = re.compile("internalField.*?\((.{1,}?)\)",
                                           re.MULTILINE | re.DOTALL )
 
-        vFile = os.path.join(self.fluned_path,'0','V')
-        try:
-            inpFile = open(vFile,'r',encoding="utf8", errors='ignore')
-        except IOError:
-            print("couldn't open Volume V file")
+        v_file_path = os.path.join(self.fluned_path,'0')
+        v_files = [f for f in os.listdir(v_file_path) if re.match(r'V(c)?(\..*)?$', f)]
+        if not v_files:
+            print("No V or Vc files found")
             sys.exit()
-        with inpFile:
-            text = inpFile.read()
-            numInternalBlocks = internalBlockPat.findall(text)
-            internalVolumes = numInternalBlocks[0].split('\n')[1:-1]
-            self.Volumes = np.array([float(val) for val in internalVolumes])
+
+        v_file = os.path.join(v_file_path, v_files[0])
+
+        text = open_utf8_or_gzip(v_file)
+        numInternalBlocks = internalBlockPat.findall(text)
+        internalVolumes = numInternalBlocks[0].split('\n')[1:-1]
+        self.Volumes = np.array([float(val) for val in internalVolumes])
 
         return
 
@@ -2156,14 +2194,14 @@ boundaryField
                 activ_sources = [0 for i in range(self.num_internal_cells)]
             else:
                 # case with constant value source
-                self.readVolumes()
+                self.read_volumes()
                 activ_sources = ([self.activation_const*vol for vol
                     in self.Volumes])
 
         else:
             #case with source file
             self.launchCentroidFuncObjects()
-            self.readVolumes()
+            self.read_volumes()
             self.readCentroids()
 
             # 1.sample the activation file

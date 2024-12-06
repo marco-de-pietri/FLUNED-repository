@@ -9,11 +9,18 @@
 
 #include "argList.H"
 #include "timeSelector.H"
+
 #include "fvModels.H"
 #include "fvConstraints.H"
+
 #include "simpleControl.H"
-#include "fvmDiv.H"
+
+#include "fvcDdt.H"
+#include "fvcGrad.H"
+#include "fvcFlux.H"
+
 #include "fvmDdt.H"
+#include "fvmDiv.H"
 #include "fvmLaplacian.H"
 
 using namespace Foam;
@@ -39,13 +46,16 @@ int main(int argc, char *argv[])
 
   bool includeDecayScalar ( runTime.controlDict().lookupOrDefault<bool>("includeDecayScalar", true) );
 
-  // Info << "includeDecayScalar = " << includeDecayScalar << endl;
+    
+//    volScalarField Dturbulent = nut/Sct;
 
 
 
     while (simple.loop(runTime))
     {
         Info<< "Time = " << runTime.name() << nl << endl;
+
+	
 
         while (simple.correctNonOrthogonal())
         {

@@ -183,11 +183,8 @@ volScalarField Dturbulent
         IOobject::NO_READ,
         IOobject::AUTO_WRITE//NO_WRITE
     ),
-    nut/Sct,
-    nut.boundaryField().types()
+    nut/Sct
 );
 
 
 
-#include "createFvModels.H"
-#include "createFvConstraints.H"

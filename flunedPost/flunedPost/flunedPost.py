@@ -3,7 +3,6 @@ import re
 import sys
 import os
 import copy
-#import matplotlib.pyplot as plt
 import math
 import numpy as np
 import subprocess
@@ -13,6 +12,41 @@ import tracemalloc
 import vtk
 import pyvista as pv
 from vtk.util import numpy_support as VN
+import gzip
+
+def open_utf8_or_gzip(file_path):
+    """
+    this function tries to open a file with utf-8 encoding, if it fails it
+    tries to open it with gzip. It returns the file object
+    """
+
+    try:
+        with open(file_path, 'rb') as f:
+            magic = f.read(2)
+    except OSError:
+        print("Couldn't open Volume V file")
+        sys.exit(1)
+
+    if magic == b'\x1f\x8b':
+
+        # The file is gzip-compressed
+        try:
+            with gzip.open(file_path, 'rt', encoding='utf-8') as inpFile:
+                data = inpFile.read()
+        except Exception as e:
+            print(f"Error reading gzip file: {e}")
+            sys.exit(1)
+
+    else:
+    # The file is a regular text file
+        try:
+            with open(file_path, 'r', encoding='utf-8') as inpFile:
+                data = inpFile.read()
+        except Exception as e:
+            print(f"Error reading text file: {e}")
+            sys.exit(1)
+
+    return data
 
 def mergeContinueRuns(time_lists,data_lists):
     """
@@ -786,9 +820,11 @@ class flunedCase:
 
 
 
-    def readVolumes(self):
-        """ this function reads the volumes from the V file located in the
-        zero folder """
+    def read_volumes(self):
+        """
+        this function reads the volumes from the V file located in the
+        zero folder
+        """
 
 
         print ("reading volume values...")
@@ -799,21 +835,23 @@ class flunedCase:
 
         nElPat = re.compile("internalField.*?(\d+).*?\(",
                                           re.MULTILINE | re.DOTALL )
-        vFile = os.path.join(self.fluned_path,'0','V')
-        try:
-            inpFile = open(vFile,'r',encoding="utf8", errors='ignore')
-        except IOError:
-            print("couldn't open Volume V file")
+        v_file_path = os.path.join(self.fluned_path,'0')
+        v_files = [f for f in os.listdir(v_file_path) if re.match(r'V(c)?(\..*)?$', f)]
+        if not v_files:
+            print("No V or Vc files found")
             sys.exit()
-        with inpFile:
-            text = inpFile.read()
-            cellNumberText = nElPat.findall(text)
-            self.n_elements = (int(cellNumberText[0]))
-            numInternalBlocks = internalBlockPat.findall(text)
-            internalVolumes = numInternalBlocks[0].split('\n')[1:-1]
-            self.Volumes = np.zeros(self.n_elements)
-            for i in range(self.n_elements):
-                self.Volumes[i] = float(internalVolumes[i])
+
+        v_file = os.path.join(v_file_path, v_files[0])
+
+        text = open_utf8_or_gzip(v_file)
+
+        cellNumberText = nElPat.findall(text)
+        self.n_elements = (int(cellNumberText[0]))
+        numInternalBlocks = internalBlockPat.findall(text)
+        internalVolumes = numInternalBlocks[0].split('\n')[1:-1]
+        self.Volumes = np.zeros(self.n_elements)
+        for i in range(self.n_elements):
+            self.Volumes[i] = float(internalVolumes[i])
 
         return
 
@@ -1800,7 +1838,7 @@ def main():
 
 
 
-    simCase.readVolumes()
+    simCase.read_volumes()
     simCase.readT()
     simCase.readPostProcess_flows()
     simCase.readPostProcess_Tflows()
