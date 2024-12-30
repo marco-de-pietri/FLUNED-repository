@@ -1,4 +1,0 @@
-numpy>=1.21.5,<2.0
-pyvista
-setuptools
-vtk

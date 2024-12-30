@@ -1,0 +1,3 @@
+         Cell_Number,           Node_Type,               Value,    Activity_Scaling,      Temperature[K],       Pressure[Mpa],                MCNP,     Length[cm],          Radius[cm],          Group_Name,
+                   1,                pipe,                  -1,                 1.0,                 310,                   2,                   1,        72.0986,               3.896,              LINE_0,
+                   2,                pipe,                  -1,                 1.0,                 310,                   2,                   1,        72.0986,               3.896,              LINE_0,
