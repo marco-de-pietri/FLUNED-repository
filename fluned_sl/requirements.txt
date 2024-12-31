@@ -1,4 +1,0 @@
-iapws==1.5.3
-numpy==1.23.3
-scipy==1.8.0
-setuptools==59.6.0

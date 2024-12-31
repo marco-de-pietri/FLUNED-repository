@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "FLUNED-repository"
+version = "1.0"
+description = "tools to simulate irradiated water in fusion installations"
+authors = [
+  { name = "Marco De Pietri", email = "mdepietri@ind.uned.es" }
+]
+# Python requirement
+requires-python = ">=3.11"
+
+# Project dependencies (install_requires)
+dependencies = [
+  "h5py",
+  "numpy>=1.21,<2",
+  "vtk",
+  "pyvista",
+  "iapws",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=6.0.0"
+]
+
+[project.scripts]
+flunedPost = "flunedPost.flunedPost:main"
+fluned = "fluned.fluned:main"
+fluned_sl = "fluned_sl.fluned_sl:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"fluned_sl" = ["*.total"]
+

@@ -9,7 +9,7 @@ import numpy as np
 from iapws.iapws97 import IAPWS97
 
 from .utils import bin_search, linear_interp
-from fluned.of_class import SimulationOF
+from  ofClass.ofClass import SimulationOF
 
 from .single_isotope_activation import (
     average_activity,

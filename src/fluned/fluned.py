@@ -10,16 +10,18 @@ import numpy as np
 import subprocess
 import argparse
 import h5py
-from fluned.fluned_h5_utils import get_dataset_keys
-from fluned.fluned_h5_utils import get_h5_dataset
-from fluned.fluned_h5_utils import get_h5_dataset_multi
-from fluned.fluned_h5_utils import get_h5_path_dataset
-from fluned.fluned_h5_utils import extract_multiblock
-from fluned.fluned_bin_utils import get_fluent_binarray_double
-from fluned.fluned_bin_utils import get_fluent_parse_headers
-from fluned.fluned_bin_utils import get_fluent_parse_regions
-from fluned.of_class import SimulationOF
+from .fluned_h5_utils import get_dataset_keys
+from .fluned_h5_utils import get_h5_dataset
+from .fluned_h5_utils import get_h5_dataset_multi
+from .fluned_h5_utils import get_h5_path_dataset
+from .fluned_h5_utils import extract_multiblock
+from .fluned_bin_utils import get_fluent_binarray_double
+from .fluned_bin_utils import get_fluent_parse_headers
+from .fluned_bin_utils import get_fluent_parse_regions
+from  ofClass.ofClass import SimulationOF
 import gzip
+
+__version__ = "0.1.0"
 
 
 def open_utf8_or_gzip(file_path):
@@ -3247,7 +3249,7 @@ def main():
 
 
 
-    parser = argparse.ArgumentParser(description = "FLUNED case generator")
+    parser = argparse.ArgumentParser(description = "FLUNED case generator version " + __version__)
     parser.add_argument('-i','--input', type=str, help="input")
     parser.add_argument('-l',"--launch_simulation", action ='store_true' ,
             help="launch simulation", default = False)

@@ -14,6 +14,8 @@ import pyvista as pv
 from vtk.util import numpy_support as VN
 import gzip
 
+__version__ = "0.1.0"
+
 def open_utf8_or_gzip(file_path):
     """
     this function tries to open a file with utf-8 encoding, if it fails it
@@ -1804,7 +1806,7 @@ class flunedCase:
 def main():
 
 
-    parser = argparse.ArgumentParser(description="flunedPost v0.0.1")
+    parser = argparse.ArgumentParser(description="flunedPost version " + __version__)
     parser.add_argument('-d',"--debug", action ='store_true' ,
             help="debug mode", default = False)
     parser.add_argument('-c',"--check", action ='store_true' ,
