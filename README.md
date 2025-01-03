@@ -21,7 +21,7 @@ For additional information contact: mdepietri@ind.uned.es
 
  - linux environment
  - OpenFOAM v10 (from openfoam.org)
- - python v3.10 (or higher)
+ - python v3.11
  
 ## Installation
 

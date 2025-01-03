@@ -4,19 +4,19 @@ fluned_sl testing
 import os
 from fluned_sl.fluned_sl_case import FlunedSlCase
 
-TEST_REL_PATH_CASE_1 = "test/case_1"
-TEST_REL_PATH_CASE_2 = "test/case_2"
-TEST_REL_PATH_CASE_3 = "test/case_3"
-TEST_REL_PATH_CASE_4 = "test/case_4"
-TEST_REL_PATH_CASE_5 = "test/case_5"
-TEST_REL_PATH_CASE_6 = "test/case_6"
-TEST_REL_PATH_CASE_7 = "test/case_7"
-TEST_REL_PATH_CASE_8 = "test/case_8"
-TEST_REL_PATH_CASE_9 = "test/case_9"
+TEST_REL_PATH_CASE_1 = "tests/case_1"
+TEST_REL_PATH_CASE_2 = "tests/case_2"
+TEST_REL_PATH_CASE_3 = "tests/case_3"
+TEST_REL_PATH_CASE_4 = "tests/case_4"
+TEST_REL_PATH_CASE_5 = "tests/case_5"
+TEST_REL_PATH_CASE_6 = "tests/case_6"
+TEST_REL_PATH_CASE_7 = "tests/case_7"
+TEST_REL_PATH_CASE_8 = "tests/case_8"
+TEST_REL_PATH_CASE_9 = "tests/case_9"
 
 
-def isclose(a, b, rel_tol=1e-04, abs_tol=1e-08):
-    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+def isclose(a, b, rtol=1e-04, atol=1e-08):
+    return abs(a - b) <= max(rtol * max(abs(a), abs(b)), atol)
 
 
 def test_tot_inflows_case_2():

@@ -1,2 +1,2 @@
                        circuit,                    group_name,                       node_id,                    length [m],      average_activity [Bq/m3],           total_activity [Bq],             mc_relative_error,
-                  04_CIRCUIT_D,                        LINE_1,                             1,                  1.441970e+00,                  9.460693e+01,                  6.505295e-01,                  5.227127e-09
+                  04_CIRCUIT_D,                        LINE_1,                             1,                  1.441970e+00,                  9.460693e+01,                  6.505295e-01,                  5.178031e-09
