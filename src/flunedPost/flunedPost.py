@@ -1063,6 +1063,9 @@ class flunedCase:
         outletAtoms = 0
         outletFlow = 0
 
+
+        self.facesPost = sorted(self.facesPost,key=lambda x: x['faceID'])
+
         for face in self.facesPost:
 
             if face['typeFile'] == 'inlet':
@@ -1250,6 +1253,8 @@ class flunedCase:
         inletFlow = 0
         outletAtoms = 0
         outletFlow = 0
+
+        self.facesPost = sorted(self.facesPost,key=lambda x: x['faceID'])
 
         for face in self.facesPost:
 

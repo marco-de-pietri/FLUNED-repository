@@ -12,6 +12,8 @@ rm get-pip.py
 
 python3.11 -m pip install --user pipx
 
+# Ensure pipx is in PATH for the current script execution
+export PATH="$HOME/.local/bin:$PATH"
 
 
 
@@ -24,7 +26,8 @@ sudo apt-get -y install pkg-config
 
 sed -i '$ a . /opt/openfoam12/etc/bashrc' ~/.bashrc
 
-source /home/marco/.bashrc
+source ~/.bashrc
+source /opt/openfoam12/etc/bashrc
 
 cd ~
 

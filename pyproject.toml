@@ -10,7 +10,7 @@ authors = [
   { name = "Marco De Pietri", email = "mdepietri@ind.uned.es" }
 ]
 # Python requirement
-requires-python = "==3.11"
+requires-python = ">=3.11, <3.12"
 
 # Project dependencies (install_requires)
 dependencies = [
