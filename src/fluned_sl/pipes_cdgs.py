@@ -1,11 +1,6 @@
 """
 code to write the CDGS for cylindrical pipes - author J. Alguacil UNED, M. De Pietri UNED
 """
-import sys
-from .endf_extract_data import ENDF_library
-
-# Global Variables
-endf = ENDF_library()
 
 def write_vec_f(vec,npos):
     """
@@ -48,7 +43,7 @@ def get_header(nodes):
         nmesh = nmesh + 1
     return nmesh,act_tot
 
-def write_source_data(pipe,yld,e_probs):
+def write_source_data(pipe,yld,p_bins):
     """
     function description
     """
@@ -58,18 +53,18 @@ def write_source_data(pipe,yld,e_probs):
     # index of the mesh, i_tot (ph/s), vol(cm**3), ncel
     vol_cyl = pipe.volume_cm3
 
-    dec_pipe       = pipe.tot_activity_bq*yld
+    pipe_emission_rate       = pipe.tot_activity_bq*yld
     stat_error = pipe.mc_error
 
-    line = line + f"1  {dec_pipe:12.8e}  {vol_cyl:12.8e} 1\n"
+    line = line + f"1  {pipe_emission_rate:12.8e}  {vol_cyl:12.8e} 1\n"
 
-    # Cell activity             [celda  relative vol  ac]
-    line = line + f"{pipe.mcnp_cell} 1.00000000e+00  {dec_pipe:12.8e} \n"
+    # [cell  relative_vol  emission_rate]
+    line = line + f"{pipe.mcnp_cell} 1.00000000e+00  {pipe_emission_rate:12.8e} \n"
     gammas = []
     error  = []
-    for prb in e_probs:
-        gammas.append(prb*dec_pipe) # prb is already normalized to yield
-        if prb == 0.0:
+    for prob in p_bins:
+        gammas.append(prob*pipe_emission_rate)
+        if prob == 0.0:
             error.append(0.0)
         else:
             error.append(stat_error)
@@ -165,7 +160,7 @@ def format_values_cdgs(vector):
 
     return return_st
 
-def make_pipes_cdgs(pipes,dec_lambda, dec_yield,e_bins,e_probs, full_path):
+def make_pipes_cdgs(pipes,dec_lambda, dec_yield,e_bins,p_bins, full_path):
     """
     function to write the CDGS for cylindrical pipes
     """
@@ -212,7 +207,7 @@ def make_pipes_cdgs(pipes,dec_lambda, dec_yield,e_bins,e_probs, full_path):
                 out.write(line)
 
                 # Source Data
-                line = write_source_data(pipe,dec_yield,e_probs)
+                line = write_source_data(pipe,dec_yield,p_bins)
                 out.write(line)
 
             if pipe.node_type == 'cfd':
@@ -289,7 +284,7 @@ def make_pipes_cdgs(pipes,dec_lambda, dec_yield,e_bins,e_probs, full_path):
                     out.write(voxel_string_2.format(voxel['voxel_emission']))
 
                     emitting_spectrum =  ([prob*voxel['voxel_emission']
-                                         for prob in  e_probs])
+                                         for prob in  p_bins])
                     spectrum_string=format_values_cdgs(emitting_spectrum)
                     out.write(spectrum_string)
                     out.write(spec_err_string)
@@ -299,65 +294,6 @@ def make_pipes_cdgs(pipes,dec_lambda, dec_yield,e_bins,e_probs, full_path):
 
 
     return 0
-
-def get_bins_from_lines(energy,prob,eps=1e-5):
-    """
-    convert the enegy lines to bins
-    """
-    eb_vals = [0.0]
-    for ener in energy:
-        dl_val = ener*eps
-        eb_vals.append(ener-dl_val)
-        eb_vals.append(ener+dl_val)
-    pb_vals = []
-    for p_val in prob:
-        pb_vals.append(0.0)
-        pb_vals.append(p_val)
-    return eb_vals,pb_vals
-
-
-
-def isotope_features(isotope,kind="photon",delete=1e-6):
-    """
-    get the decay constant and the energy and probability of the decay
-    """
-    # Landa
-
-
-    landa = endf.get_lambda(isotope)
-
-    energy = []
-    probs   = []
-    yld    = 0.0
-    if kind == "photon":
-        # gamma_spectra
-        spectra = endf.gamma_spectra(isotope)
-    elif kind == "neutron":
-        # spectra = endf.neutron_spectra(isotope) # no esta hecho
-        # neutron spcetra
-        if isotope.capitalize() != "N17":
-            sys.exit("Only neutrons of N17 are avialable")
-        en_vals = [0.3828,0.884,1.1709,1.700300]
-        y_vals  = [0.348066,0.005706,0.527805,0.070374]
-        ex = [0,0,0,0]
-        spectra = []
-        # In eV
-        for i in range(4):
-            spectra.append( [en_vals[i]*1e6,y_vals[i],ex[i]])
-
-    else:
-        sys.exit( f"Bad particle type {kind:s}")
-    for (en_vals,y_vals,_) in spectra:
-        # Filter with also Pat uses
-        if (en_vals*1e-6*y_vals) < delete:
-            continue
-        energy.append(en_vals*1e-6)
-        probs.append(y_vals)
-    yld = sum(probs)
-    if yld == 0.0:
-        print( f"Fatal Error: No gamma from the isotope {isotope:s}")
-        sys.exit()
-    return landa, energy, probs, yld
 
 
 def write_vec_ff(vec,npos):

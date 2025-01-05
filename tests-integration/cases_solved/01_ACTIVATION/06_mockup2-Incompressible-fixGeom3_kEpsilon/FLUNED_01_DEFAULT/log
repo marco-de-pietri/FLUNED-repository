@@ -1,0 +1,203 @@
+
+postProcess has been superseded and replaced by the more general foamPostProcess
+utility which will be executed instead:
+
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 12-6aa359dae696
+Exec   : foamPostProcess -func writeCellVolumes
+Date   : Jan 05 2025
+Time   : 22:54:06
+Host   : "LAPTOP-9VOHN090"
+PID    : 113762
+I/O    : uncollated
+Case   : /home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/pointZones" at line 15
+    Unexpected class name regIOobject, expected pointZoneList
+    while reading object pointZones
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/faceZones" at line 15
+    Unexpected class name regIOobject, expected faceZoneList
+    while reading object faceZones
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/cellZones" at line 15
+    Unexpected class name regIOobject, expected cellZoneList
+    while reading object cellZones
+Time = 0s
+
+Reading fields:
+
+Executing functionObjects
+    Writing cell-volumes field Vc to 0
+
+End
+
+
+postProcess has been superseded and replaced by the more general foamPostProcess
+utility which will be executed instead:
+
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 12-6aa359dae696
+Exec   : foamPostProcess -func writeCellCentres
+Date   : Jan 05 2025
+Time   : 22:54:07
+Host   : "LAPTOP-9VOHN090"
+PID    : 113765
+I/O    : uncollated
+Case   : /home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/pointZones" at line 15
+    Unexpected class name regIOobject, expected pointZoneList
+    while reading object pointZones
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/faceZones" at line 15
+    Unexpected class name regIOobject, expected faceZoneList
+    while reading object faceZones
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/cellZones" at line 15
+    Unexpected class name regIOobject, expected cellZoneList
+    while reading object cellZones
+Time = 0s
+
+Reading fields:
+
+Executing functionObjects
+    Writing cell-centre field C to 0
+    Writing the x component field of the cell-centres Ccx to 0
+    Writing the y component field of the cell-centres Ccy to 0
+    Writing the z component field of the cell-centres Ccz to 0
+
+End
+
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 12-6aa359dae696
+Exec   : foamToVTK -latestTime -noFaceZones -noFunctionObjects -fields (T Ta Td) -excludePatches (".*")
+Date   : Jan 05 2025
+Time   : 23:07:32
+Host   : "LAPTOP-9VOHN090"
+PID    : 115690
+I/O    : uncollated
+Case   : /home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Not including patches 1(".*")
+
+Create mesh for time = 32
+
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/pointZones" at line 15
+    Unexpected class name regIOobject, expected pointZoneList
+    while reading object pointZones
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/faceZones" at line 15
+    Unexpected class name regIOobject, expected faceZoneList
+    while reading object faceZones
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/cellZones" at line 15
+    Unexpected class name regIOobject, expected cellZoneList
+    while reading object cellZones
+Time: 32
+    volScalarFields            : Ta T Td
+
+    Internal  : "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/VTK/FLUNED_01_DEFAULT_32.vtk"
+    Original cells:143879 points:46517   Additional cells:0  additional points:0
+
+Combining patches:
+    excluding patch 0 face1
+    excluding patch 1 face2
+    excluding patch 2 face3
+    excluding patch 3 face4
+    excluding patch 4 face5
+    excluding patch 5 face6
+    excluding patch 6 face7
+    excluding patch 7 face8
+    excluding patch 8 face9
+    excluding patch 9 face10
+    excluding patch 10 face11
+    excluding patch 11 face12
+    excluding patch 12 face13
+    excluding patch 13 face14
+    excluding patch 14 face15
+    excluding patch 15 face16
+    excluding patch 16 face17
+    excluding patch 17 face18
+    excluding patch 18 face19
+    excluding patch 19 face20
+    excluding patch 20 face21
+    excluding patch 21 face22
+    excluding patch 22 face23
+    excluding patch 23 face24
+    excluding patch 24 face25
+    excluding patch 25 face26
+    excluding patch 26 face27
+    excluding patch 27 face28
+    excluding patch 28 face29
+    excluding patch 29 face30
+    excluding patch 30 face31
+    excluding patch 31 face32
+    excluding patch 32 face33
+    excluding patch 33 face34
+End
+

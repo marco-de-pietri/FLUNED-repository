@@ -1,0 +1,361 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 12-6aa359dae696
+Exec   : FLUNED-solver
+Date   : Jan 05 2025
+Time   : 22:54:08
+Host   : "LAPTOP-9VOHN090"
+PID    : 113772
+I/O    : uncollated
+Case   : /home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/pointZones" at line 15
+    Unexpected class name regIOobject, expected pointZoneList
+    while reading object pointZones
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/faceZones" at line 15
+    Unexpected class name regIOobject, expected faceZoneList
+    while reading object faceZones
+--> FOAM Warning : 
+    From function Foam::Istream& Foam::regIOobject::readStream(const Foam::word&, bool)
+    in file db/regIOobject/regIOobjectRead.C at line 169
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/constant/polyMesh/cellZones" at line 15
+    Unexpected class name regIOobject, expected cellZoneList
+    while reading object cellZones
+
+SIMPLE: Convergence criteria found
+        T: tolerance 1e-06
+        Tr: tolerance 1e-06
+        Ta: tolerance 1e-06
+        Td: tolerance 1e-06
+
+Reading field T
+
+Reading field Source
+
+Reading field Tr
+
+Reading field nut
+
+Reading face flux field phi
+
+Reading field U
+
+Reading transportProperties
+
+Reading diffusivity DT
+
+Reading lambda value
+
+Reading turbulent Schmidt number
+
+
+Calculating scalar transport
+
+Courant Number mean: 655.084 max: 60866.7
+    - selecting all cells
+    - selected 143879 cell(s) with volume 0.000324296
+
+
+    - selecting all cells
+    - selected 143879 cell(s) with volume 0.000324296
+
+
+    - selecting all cells
+    - selected 143879 cell(s) with volume 0.000324296
+
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volFlow-face14" from line 116 to line 126
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volFlow-face14"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volFlow-face14:
+    total faces  = 104
+    total area   = 0.000150617
+
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTFlow-face14" from line 134 to line 145
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTFlow-face14"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volTFlow-face14:
+    total faces  = 104
+    total area   = 0.000150617
+volTFlow-face14 sum weight field phi
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTrFlow-face14" from line 153 to line 164
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTrFlow-face14"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volTrFlow-face14:
+    total faces  = 104
+    total area   = 0.000150617
+volTrFlow-face14 sum weight field phi
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTdFlow-face14" from line 172 to line 183
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTdFlow-face14"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volTdFlow-face14:
+    total faces  = 104
+    total area   = 0.000150617
+volTdFlow-face14 sum weight field phi
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTaFlow-face14" from line 191 to line 202
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTaFlow-face14"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volTaFlow-face14:
+    total faces  = 104
+    total area   = 0.000150617
+volTaFlow-face14 sum weight field phi
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volFlow-face27" from line 210 to line 220
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volFlow-face27"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volFlow-face27:
+    total faces  = 106
+    total area   = 0.000150628
+
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTFlow-face27" from line 228 to line 239
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTFlow-face27"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volTFlow-face27:
+    total faces  = 106
+    total area   = 0.000150628
+volTFlow-face27 sum weight field phi
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTrFlow-face27" from line 247 to line 258
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTrFlow-face27"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volTrFlow-face27:
+    total faces  = 106
+    total area   = 0.000150628
+volTrFlow-face27 sum weight field phi
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTdFlow-face27" from line 266 to line 277
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTdFlow-face27"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volTdFlow-face27:
+    total faces  = 106
+    total area   = 0.000150628
+volTdFlow-face27 sum weight field phi
+
+--> FOAM Warning : 
+    From function const Foam::entry* Foam::dictionary::lookupEntryPtrBackwardsCompatible(const Foam::wordList&, bool, bool) const
+    in file db/dictionary/dictionary.C at line 648
+    Reading "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTaFlow-face27" from line 285 to line 296
+    Duplicate backwards compatible keywords "patch" and "name" are defined in dictionary "/home/marco/FLUNED-repository/tests-integration/cases/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/system/functions/volTaFlow-face27"
+The preferred keyword for this entry is "patch"
+surfaceFieldValue volTaFlow-face27:
+    total faces  = 106
+    total area   = 0.000150628
+volTaFlow-face27 sum weight field phi
+
+Time = 1
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 1, Final residual = 0.00588361, No Iterations 75
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1, Final residual = 0.00982859, No Iterations 79
+Time = 2
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.316605, Final residual = 0.0020156, No Iterations 31
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.286943, Final residual = 0.00284306, No Iterations 30
+Time = 3
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.160642, Final residual = 0.00071665, No Iterations 33
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.154991, Final residual = 0.00142064, No Iterations 33
+Time = 4
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.0845717, Final residual = 0.000767595, No Iterations 31
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0822704, Final residual = 0.000798521, No Iterations 25
+Time = 5
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.0487799, Final residual = 0.000407455, No Iterations 33
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0468017, Final residual = 0.000426745, No Iterations 27
+Time = 6
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.0298707, Final residual = 0.000257603, No Iterations 28
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0288783, Final residual = 0.000279129, No Iterations 28
+Time = 7
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.01892, Final residual = 0.000165643, No Iterations 37
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.018183, Final residual = 0.000169545, No Iterations 33
+Time = 8
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.0123222, Final residual = 0.00011932, No Iterations 23
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.0116184, Final residual = 0.000113346, No Iterations 24
+Time = 9
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.00817939, Final residual = 6.92035e-05, No Iterations 26
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00756092, Final residual = 6.61395e-05, No Iterations 30
+Time = 10
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.00554083, Final residual = 2.91608e-05, No Iterations 36
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00504578, Final residual = 4.87263e-05, No Iterations 29
+Time = 11
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.00376781, Final residual = 3.2457e-05, No Iterations 47
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00339817, Final residual = 3.35732e-05, No Iterations 32
+Time = 12
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.00257336, Final residual = 2.54032e-05, No Iterations 21
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00232014, Final residual = 1.93921e-05, No Iterations 24
+Time = 13
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.00175159, Final residual = 1.72348e-05, No Iterations 20
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00158737, Final residual = 1.58035e-05, No Iterations 27
+Time = 14
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.00119062, Final residual = 1.04084e-05, No Iterations 21
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.00109215, Final residual = 1.04995e-05, No Iterations 20
+Time = 15
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.000815891, Final residual = 6.83837e-06, No Iterations 23
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000743107, Final residual = 4.47219e-06, No Iterations 29
+Time = 16
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.000553226, Final residual = 5.09086e-06, No Iterations 28
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000507767, Final residual = 3.14733e-06, No Iterations 21
+Time = 17
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.000372226, Final residual = 1.87766e-06, No Iterations 20
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000343885, Final residual = 3.35614e-06, No Iterations 21
+Time = 18
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.000249145, Final residual = 1.63617e-06, No Iterations 20
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000232632, Final residual = 1.05048e-06, No Iterations 28
+Time = 19
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.000166484, Final residual = 1.57224e-06, No Iterations 16
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000155187, Final residual = 1.5298e-06, No Iterations 12
+Time = 20
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 0.000110794, Final residual = 1.05863e-06, No Iterations 11
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 0.000102856, Final residual = 1.02718e-06, No Iterations 14
+Time = 21
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 7.35154e-05, Final residual = 7.01858e-07, No Iterations 12
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 6.88844e-05, Final residual = 6.66021e-07, No Iterations 19
+Time = 22
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 4.91696e-05, Final residual = 4.31836e-07, No Iterations 17
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 4.60086e-05, Final residual = 3.64456e-07, No Iterations 19
+Time = 23
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 3.30024e-05, Final residual = 2.57909e-07, No Iterations 12
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 3.06625e-05, Final residual = 3.05712e-07, No Iterations 19
+Time = 24
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 2.19374e-05, Final residual = 1.7899e-07, No Iterations 11
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 2.04601e-05, Final residual = 1.99068e-07, No Iterations 11
+Time = 25
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 1.46177e-05, Final residual = 1.32069e-07, No Iterations 8
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.35765e-05, Final residual = 1.30696e-07, No Iterations 11
+Time = 26
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 9.68729e-06, Final residual = 4.47909e-08, No Iterations 13
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 9.04692e-06, Final residual = 7.10578e-08, No Iterations 12
+Time = 27
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 6.45554e-06, Final residual = 6.50031e-08, No Iterations 7
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 6.05897e-06, Final residual = 8.85186e-08, No Iterations 7
+Time = 28
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 4.26007e-06, Final residual = 4.48516e-08, No Iterations 7
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 4.03282e-06, Final residual = 6.20924e-08, No Iterations 7
+Time = 29
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 2.81272e-06, Final residual = 8.11565e-08, No Iterations 4
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 2.68582e-06, Final residual = 9.28354e-08, No Iterations 4
+Time = 30
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 1.83889e-06, Final residual = 6.0054e-08, No Iterations 4
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.77869e-06, Final residual = 9.33508e-08, No Iterations 3
+Time = 31
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 1.21987e-06, Final residual = 7.42223e-08, No Iterations 3
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 1.16962e-06, Final residual = 5.61749e-08, No Iterations 4
+Time = 32
+
+DILUPBiCGStab:  Solving for Ta, Initial residual = 8.33576e-07, Final residual = 8.39976e-08, No Iterations 2
+DILUPBiCGStab:  Solving for Td, Initial residual = 0, Final residual = 0, No Iterations 0
+DILUPBiCGStab:  Solving for Tr, Initial residual = 8.24119e-07, Final residual = 9.99008e-08, No Iterations 2
+
+SIMPLE solution converged in 32 iterations
+
+End
+

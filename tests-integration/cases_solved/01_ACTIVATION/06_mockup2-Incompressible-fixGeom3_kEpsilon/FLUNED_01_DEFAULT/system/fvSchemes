@@ -1,0 +1,52 @@
+
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+
+ddtSchemes
+{
+    default         steadyState;
+}
+
+gradSchemes
+{
+    default         cellLimited Gauss linear 0.5;
+}
+
+divSchemes
+{
+    default         none;
+    div(phi,T)      Gauss linearUpwind default;
+    div(phi,Ta)      Gauss linearUpwind default;
+    div(phi,Td)      Gauss linearUpwind default;
+    div(phi,Tr)      Gauss linearUpwind default;
+}
+
+laplacianSchemes
+{
+    default         none;
+    laplacian(DT,T) Gauss linear corrected;
+    laplacian(Dturbulent,T) Gauss linear corrected;
+    laplacian(DT,Tr) Gauss linear corrected;
+    laplacian(Dturbulent,Tr) Gauss linear corrected;
+    laplacian(DT,Ta) Gauss linear corrected;
+    laplacian(Dturbulent,Ta) Gauss linear corrected;
+    laplacian(DT,Td) Gauss linear corrected;
+    laplacian(Dturbulent,Td) Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default         linear;
+}
+
+snGradSchemes
+{
+    default         limited 1;
+}
+

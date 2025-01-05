@@ -1,0 +1,300 @@
+
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+
+application    FLUNED-solver;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         1000;
+
+deltaT          1;
+
+writeControl    timeStep;
+
+writeInterval   100;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+includeDecayScalar true;
+
+
+
+
+functions
+{
+
+
+    volumeCalc
+    {
+        type            writeCellVolumes;
+        libs            ("libfieldFunctionObjects.so");
+	    select      all;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTSum
+    {
+
+        type            volFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        fields  (T);
+
+        operation       volAverage;
+	    select      all;
+
+        writeFields     false;
+        writeControl outputTime;
+
+
+    }
+
+ 
+    volTaSum
+    {
+
+        type            volFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        fields  (Ta);
+
+        operation       volAverage;
+	    select      all;
+
+        writeFields     false;
+        writeControl outputTime;
+
+
+    }
+
+ 
+    volTdSum
+    {
+
+        type            volFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        fields  (Td);
+
+        operation       volAverage;
+	    select      all;
+
+        writeFields     false;
+        writeControl outputTime;
+
+
+    }
+
+ 
+    volFlow-face14
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face14;
+        fields  (phi);
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTFlow-face14
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face14;
+        fields  (T);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTrFlow-face14
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face14;
+        fields  (Tr);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTdFlow-face14
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face14;
+        fields  (Td);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTaFlow-face14
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face14;
+        fields  (Ta);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volFlow-face27
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face27;
+        fields  (phi);
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTFlow-face27
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face27;
+        fields  (T);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTrFlow-face27
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face27;
+        fields  (Tr);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTdFlow-face27
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face27;
+        fields  (Td);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ 
+    volTaFlow-face27
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face27;
+        fields  (Ta);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ }

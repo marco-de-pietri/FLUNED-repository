@@ -13,6 +13,7 @@ import vtk
 import pyvista as pv
 from vtk.util import numpy_support as VN
 import gzip
+from water_isotopes.water_isotopes import get_isotope_data
 
 __version__ = "0.1.0"
 
@@ -26,7 +27,7 @@ def open_utf8_or_gzip(file_path):
         with open(file_path, 'rb') as f:
             magic = f.read(2)
     except OSError:
-        print("Couldn't open Volume V file")
+        print("Could not open file: ", file_path)
         sys.exit(1)
 
     if magic == b'\x1f\x8b':
@@ -221,7 +222,9 @@ def getVTKsize(vtkFile):
     return bounds
 
 def getTotalAtomsVtk(vtkFile, datasetName):
-    """this function reads the vtk and calulates the total conc"""
+    """
+    this function reads the vtk and calulates the total conc
+    """
 
     checkFile = os.path.isfile(vtkFile)
     if not checkFile:
@@ -1491,106 +1494,39 @@ class flunedCase:
         N17_decay_constant = 0.1661825
         O19_decay_constant = 0.02578672546
 
-        N16_branching_ratio = 0.749577982
-        N17_branching_ratio = 0.951951
-        O19_branching_ratio = 1.5299368
-
-        n16Spectrum = [
-        [0.0000000e+00,0          ],
-        [9.8649013e-01,3.49995E-05],
-        [9.8650986e-01,0          ],
-        [1.7549824e+00,0.00140000],
-        [1.7550175e+00,0          ],
-        [1.9547805e+00,0.00040000],
-        [1.9548195e+00,0          ],
-        [2.7414726e+00,0.00840000],
-        [2.7415274e+00,0          ],
-        [2.8224718e+00,1.3000E-05],
-        [2.8225282e+00,0          ],
-        [6.0481395e+00,0.00013000],
-        [6.0482605e+00,0          ],
-        [6.1291087e+00,0.688000],
-        [6.1292313e+00,0          ],
-        [6.9154308e+00,0.00040000],
-        [6.9155692e+00,0          ],
-        [7.1150788e+00,0.05000],
-        [7.1152212e+00,0          ],
-        [8.8691113e+00,0.00080000],
-        [8.8692887e+00,0]
-        ]
-
-        # JEFF 3.3
-        n17Spectrum = [
-        [0.0000000    ,0.0],
-        [0.3859999    ,0.377],
-        [0.3860001    ,0.0],
-        [0.8859999    ,0.006],
-        [0.8860001    ,0.0],
-        [1.1629999    ,0.498],
-        [1.1630001    ,0.0],
-        [1.6889999    ,0.069],
-        [1.6890001    ,0.0],
-        [3.6139999    ,0.00024],
-        [3.6140001    ,0.0],
-        [3.8199999    ,0.00012],
-        [3.8200001    ,0.0],
-        ]
-
-        o19Spectrum = [
-        [0.0000000e+00,0],
-        [1.0989890e-01,0.019048696],
-        [1.0990110e-01,0],
-        [1.9719803e-01,0.608294369],
-        [1.9720197e-01,0],
-        [1.3569864e+00,0.34351231],
-        [1.3570136e+00,0],
-        [1.4439856e+00,0.019048696],
-        [1.4440144e+00,0],
-        [1.5539845e+00,0.008889519],
-        [1.5540155e+00,0],
-        [1.5969840e+00,0.000190487],
-        [1.5970160e+00,0],
-        [2.5819742e+00,0.000190487],
-        [2.5820258e+00,0],
-        [4.1789582e+00,0.000825437],
-        [4.1790418e+00,0],
-        ]
         dummySpectrum = [
         [ 0 ,0 ],
         [1  , 1],
         ]
+
+        dummy_branching_ratio = 1
         if math.isclose(self.decay_constant,N16_decay_constant,rel_tol=1e-3):
             self.isotope = 'N16'
-            spectrum =  n16Spectrum
-            self.branching_ratio = N16_branching_ratio
         elif math.isclose(self.decay_constant,N17_decay_constant,
                 rel_tol=1e-3):
             self.isotope = 'N17'
-            spectrum =  n17Spectrum
-            self.branching_ratio = N17_branching_ratio
         elif math.isclose(self.decay_constant,O19_decay_constant,
                 rel_tol=1e-3):
             self.isotope = 'O19'
-            spectrum =  o19Spectrum
-            self.branching_ratio = O19_branching_ratio
         else:
             self.isotope = 'dummy'
-            spectrum =  dummySpectrum
-            print ("WARNING decay constant isotope not recognized")
-            print (self.decay_constant)
+            print ("WARNING decay constant isotope not recognized, simulation decay constant: ", self.decay_constant)
             print ("a dummy spectrum is assigned")
 
-        # normalize spectrum
+        if self.isotope != 'dummy':
+            isotope_database = get_isotope_data()
+            if self.isotope.lower() not in isotope_database:
+                print ("ERROR isotope not found in the database")
+                sys.exit()
+            isotope_data = isotope_database[self.isotope.lower()]
+            self.spectrum = isotope_data['energy_spectrum_normalized']
+            self.e_bins = isotope_data['e_bins']
+            self.p_bins = isotope_data['p_bins']
+            self.branching_ratio = isotope_data['branching_ratio']
+        else:
+            self.spectrum =  dummySpectrum
+            self.branching_ratio = dummy_branching_ratio
 
-
-        sumOriginal = sum([val[1] for val in spectrum])
-
-        normalizingFactor = 1/sumOriginal
-
-        for val in spectrum:
-            val.append(val[1]*normalizingFactor)
-
-        self.spectrum = spectrum
 
 
 
@@ -1684,7 +1620,6 @@ class flunedCase:
 
         vtkFile = self.vtk_path
         vtkDataSet = self.dataset
-        spectrumVector = self.spectrum
 
 
 
@@ -1703,8 +1638,6 @@ class flunedCase:
                                  self.branching_ratio*
                                  self.scaling*
                                  1e-06)  #atoms per m3 to cm3
-            #voxel['emittingSpectrum'] = [val[2]*voxel['emission']
-            #                            for val in spectrumVector]
 
             totalEmission += voxel['emission']
 
@@ -1715,10 +1648,7 @@ class flunedCase:
         totalEmissionScaled = 0
 
         for voxel,concentration in zip(self.voxelVector,sampledRates):
-            #voxel['emittingDensity'] = concentration*1e-06 #from m3 to cm3
             voxel['emission'] = voxel['emission']*ratioVtkSampling
-            #voxel['emittingSpectrum'] = [val[2]*voxel['emission']
-            #                            for val in spectrumVector]
 
             totalEmissionScaled += voxel['emission']
 
@@ -1733,7 +1663,7 @@ class flunedCase:
 
         cdgsFile = self.vtk_path[:-3] + 'CDGS'
 
-        spectrumVector = self.spectrum
+        #spectrumVector = self.spectrum
 
         with open(cdgsFile,'w') as fw:
             fw.write("num_meshes 1\n")
@@ -1743,10 +1673,9 @@ class flunedCase:
             fw.write("Cooling_time 0.0\n")
             fw.write("total_source {:e}\n".format(self.scaledEmissionRate))
             fw.write("energy_type {}\n".format('bins'))
-            fw.write("energy_boundaries {:d}\n".format(len(spectrumVector)))
+            fw.write("energy_boundaries {:d}\n".format(len(self.e_bins)))
             # WRITE SPECTRUM BINS
-            specValues = [val[0] for val in spectrumVector]
-            specString = formatValues(specValues)
+            specString = formatValues(self.e_bins)
             fw.write(specString)
 
             fw.write("mesh_type rec\n")
@@ -1766,7 +1695,7 @@ class flunedCase:
 
             voxelString1 = "{:d} {:.5e} {:.5e} 1\n"
             voxelString2 = "0 1.0 {:.5e}\n"
-            specErrorString = formatValues([0]*(len(spectrumVector)-1))
+            specErrorString = formatValues([0]*(len(self.p_bins)))
 
             for vox in self.voxelVector:
                 if vox['emission'] > 0:
@@ -1774,9 +1703,9 @@ class flunedCase:
                                                  vox['emission'],
                                                  self.voxelVolume))
                     fw.write(voxelString2.format(vox['emission']))
-                    emittingSpectrum =  ([val[2]*vox['emission']
-                                         for val in self.spectrum])
-                    spectrumString=formatValues(emittingSpectrum[:-1])
+                    emittingSpectrum =  ([val*vox['emission']
+                                         for val in self.p_bins])
+                    spectrumString=formatValues(emittingSpectrum)
                     fw.write(spectrumString)
                     fw.write(specErrorString)
 

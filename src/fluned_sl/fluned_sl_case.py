@@ -13,11 +13,13 @@ from scipy.sparse.linalg import spsolve
 from .circuit_object import CircuitObject
 from .utils import unpack_mcnp, search_circuits
 
-from .pipes_cdgs import isotope_features, get_bins_from_lines, make_pipes_cdgs
+from .pipes_cdgs import make_pipes_cdgs
 
 from .pipes_vtk import write_vtk_files
 
-from .single_isotope_activation import outlet_activity
+#from .single_isotope_activation import outlet_activity
+
+from water_isotopes.water_isotopes import get_isotope_data
 
 class FlunedSlCase:
     """
@@ -134,15 +136,15 @@ class FlunedSlCase:
         else:
             self.isotope_particle = "photon"
 
-        dec_lambda, dec_lines, dec_probs, dec_yield =isotope_features(
-                                self.isotope,self.isotope_particle)
+        isotope_database = get_isotope_data()
 
-        dec_bins,dec_bins_probs = get_bins_from_lines(dec_lines,dec_probs)
+        isotope_data = isotope_database[self.isotope]
 
-        self.isotope_decay_constant    = dec_lambda
-        self.isotope_branching_ratio   = dec_yield
-        self.isotope_energy_bins     = dec_bins
-        self.isotope_energy_probs    = dec_bins_probs
+
+        self.isotope_decay_constant    = isotope_data['decay_constant']
+        self.isotope_branching_ratio   = isotope_data['branching_ratio']
+        self.isotope_energy_bins     = isotope_data['e_bins']
+        self.isotope_energy_probs    = isotope_data['p_bins']
 
         return 0
 
