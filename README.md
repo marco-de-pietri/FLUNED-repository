@@ -4,7 +4,7 @@ This repository includes two tools for the simulation of activated water in fusi
 
 The first one is FLUNED, a tool that allow the mesh-based activation calculation at the component level.
 
-The second one is FLUNED-SL, a tool that allows performing its calculation at the system level in networks piping systems.
+The second one is FLUNED-SL, a tool for activation calculations at the system level for pipe networks.
 
 More detail on the usage, installation and testing is provided below.
 
@@ -29,9 +29,9 @@ wget https://raw.githubusercontent.com/marco-de-pietri/FLUNED-repository/refs/he
 ```
 chmod +x fluned-repo-install.sh
 ```
-3. Source it
+3. Install it
 ```
-source fluned-repo-install.sh
+./fluned-repo-install.sh
 ```
 
 
