@@ -1,0 +1,3 @@
+  Ext_Source_ID,           Type,     Type-Value,        Isotope,  Isotope-Value,
+              2,    circuit-node,  02_CIRCUIT_B/2,          N16,            100,
+              1,    source-node,             10,            N16,            600,

@@ -5,7 +5,7 @@ volScalarField T
     IOobject
     (
         "T",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::MUST_READ,
         IOobject::AUTO_WRITE
@@ -18,7 +18,7 @@ volScalarField Ta
     IOobject
     (
         "Ta",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::MUST_READ,
         IOobject::AUTO_WRITE
@@ -31,7 +31,7 @@ volScalarField Td
     IOobject
     (
         "Td",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::MUST_READ,
         IOobject::AUTO_WRITE
@@ -46,7 +46,7 @@ volScalarField Source
     IOobject
     (
         "Source",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::MUST_READ_IF_MODIFIED,
         IOobject::AUTO_WRITE
@@ -61,7 +61,7 @@ volScalarField Tr
     IOobject
     (
         "Tr",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::MUST_READ,
         IOobject::AUTO_WRITE
@@ -76,7 +76,7 @@ volScalarField nut
     IOobject
     (
         "nut",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::READ_IF_PRESENT,//MUST_READ,
         IOobject::AUTO_WRITE
@@ -94,7 +94,7 @@ surfaceScalarField phi
     IOobject
     (
         "phi",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::MUST_READ,
         IOobject::AUTO_WRITE
@@ -109,7 +109,7 @@ volVectorField U
     IOobject
     (
         "U",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::MUST_READ,
         IOobject::AUTO_WRITE
@@ -125,7 +125,7 @@ volScalarField  TrSource
     IOobject
     (
         "TrSource",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::MUST_READ,
         IOobject::AUTO_WRITE
@@ -178,16 +178,13 @@ volScalarField Dturbulent
     IOobject
     (
         "Dturbulent",
-        runTime.timeName(),
+        runTime.name(),
         mesh,
         IOobject::NO_READ,
         IOobject::AUTO_WRITE//NO_WRITE
     ),
-    nut/Sct,
-    nut.boundaryField().types()
+    nut/Sct
 );
 
 
 
-#include "createFvModels.H"
-#include "createFvConstraints.H"

@@ -1,0 +1,169 @@
+
+/*------------------------------*- C++ -*----------------------------------\
+  =========                 |
+  \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \    /   O peration     | Website:  https://openfoam.org
+    \  /    A nd           | Version:  8
+     \/     M anipulation  |
+\*-------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application    FLUNED-solver;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         1000;
+
+deltaT          1;
+
+writeControl    timeStep;
+
+writeInterval   100;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+
+
+// *********************************************************************** //
+
+
+functions
+{
+
+
+    volFlow-face1
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face1;
+        fields  (phi);
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+
+    volTFlow-face1
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face1;
+        fields  (T);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+
+    volTrFlow-face1
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face1;
+        fields  (Tr);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+
+    volFlow-face2
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face2;
+        fields  (phi);
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+
+    volTFlow-face2
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face2;
+        fields  (T);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+
+    volTrFlow-face2
+    {
+
+        type            surfaceFieldValue;
+        libs            ("libfieldFunctionObjects.so");
+        patch   face2;
+        fields  (Tr);
+        weightField phi;
+
+        operation sum;
+        select  patch;
+        name        $patch;
+
+        writeFields     false;
+        writeControl outputTime;
+
+    }
+
+ }

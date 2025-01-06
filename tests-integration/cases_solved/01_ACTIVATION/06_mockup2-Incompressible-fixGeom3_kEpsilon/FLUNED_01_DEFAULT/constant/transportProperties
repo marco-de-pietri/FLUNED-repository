@@ -1,0 +1,22 @@
+
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+
+transportModel  Newtonian;
+
+
+DT             DT [0 2 -1 0 0 0 0] 2e-09;
+
+lambda         lambda [0 0 -1 0 0 0 0] 0.09721559;
+
+Sct            Sct [ 0 0 0 0 0 0 0 ] 0.7;
+
+// ************************************************************************ //

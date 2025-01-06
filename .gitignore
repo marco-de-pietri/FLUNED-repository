@@ -6,4 +6,7 @@ linux64GccDPInt32Opt/
 __pycache__/
 *.xlsx
 *.scdoc
+Vc.gz
+*.swp
+
 
