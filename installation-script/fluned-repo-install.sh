@@ -43,7 +43,7 @@ sudo apt-get -y install libhdf5-dev pkg-config
 
 # 8) Append the OpenFOAM source command to .bashrc
 echo "Configuring OpenFOAM environment..."
-grep -qxF 'source /opt/openfoam12/etc/bashrc' ~/.bashrc 
+grep -qxF 'source /opt/openfoam12/etc/bashrc' ~/.bashrc || echo 'source /opt/openfoam12/etc/bashrc' >> ~/.bashrc
 source /opt/openfoam12/etc/bashrc  # Source OpenFOAM environment for this subshell
 
 
