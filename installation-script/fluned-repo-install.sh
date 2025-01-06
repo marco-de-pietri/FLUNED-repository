@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status
-set -e
-
 # Define variables
 INSTALL_DIR="$HOME"
 
@@ -44,9 +41,11 @@ sudo apt-get -y install openfoam12
 echo "Installing additional dependencies..."
 sudo apt-get -y install libhdf5-dev pkg-config
 
-# 8) Append the OpenFOAM source command to .bashrc if not already present
+# 8) Append the OpenFOAM source command to .bashrc
 echo "Configuring OpenFOAM environment..."
-grep -qxF 'source /opt/openfoam12/etc/bashrc' ~/.bashrc || echo 'source /opt/openfoam12/etc/bashrc' >> ~/.bashrc
+grep -qxF 'source /opt/openfoam12/etc/bashrc' ~/.bashrc 
+source /opt/openfoam12/etc/bashrc  # Source OpenFOAM environment for this subshell
+
 
 # 9) Clone the FLUNED-repository from GitHub using HTTPS
 echo "Cloning FLUNED repository..."
@@ -63,7 +62,6 @@ export PATH="$HOME/.local/bin:$PATH"
 # 11) Compile the FLUNED-solver (wmake requires the OpenFOAM environment to be sourced)
 echo "Compiling FLUNED-solver..."
 cd ~/FLUNED-repository/FLUNED-solver/
-source /opt/openfoam12/etc/bashrc  # Source OpenFOAM environment for this subshell
 wmake
 
 echo "Installation and compilation completed successfully."
