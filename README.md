@@ -29,9 +29,15 @@ wget https://raw.githubusercontent.com/marco-de-pietri/FLUNED-repository/refs/he
 ```
 chmod +x fluned-repo-install.sh
 ```
+
 3. Install it
 ```
 ./fluned-repo-install.sh
+```
+
+4. Restart shell or source the .bashrc file
+```
+source ~/.bashrc
 ```
 
 
