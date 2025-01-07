@@ -57,7 +57,8 @@ cd ~/FLUNED-repository/
 # 10) Install FLUNED with pipx using Python 3.11
 echo "Installing FLUNED using pipx..."
 pipx install --python python3.11 .
-export PATH="$HOME/.local/bin:$PATH"
+grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' ~/.bashrc || echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+
 
 # 11) Compile the FLUNED-solver (wmake requires the OpenFOAM environment to be sourced)
 echo "Compiling FLUNED-solver..."
