@@ -81,7 +81,7 @@ python3.11 -m venv test_env
 
 2. Activate the virtual environment
 ```
-source /test_env/bin/activate
+source ./test_env/bin/activate
 ```
 
 3. Install the required packages within the virtual environment
