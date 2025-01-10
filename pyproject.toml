@@ -19,6 +19,7 @@ dependencies = [
   "vtk",
   "pyvista",
   "iapws",
+  "tqdm",
 ]
 
 [project.optional-dependencies]
