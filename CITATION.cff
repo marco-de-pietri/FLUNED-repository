@@ -6,6 +6,13 @@ authors:
     orcid: "https://orcid.org/0000-0002-2815-6889"
 title: "FLUNED"
 version: 1.0
-doi: 10.5281/zenodo.8301177
-date-released: 2023-03-28
+date-released: 2025-01-20
+doi: 10.5281/zenodo.14697837
 url: "https://github.com/marco-de-pietri/FLUNED-repository"
+identifiers:
+  - description: Generic FLUNED citation
+    type: doi
+    value: "10.5281/zenodo.8301176"
+  - description: Version 1.0 of FLUNED-repository
+    type: doi
+    value: "10.5281/zenodo.14697837"
