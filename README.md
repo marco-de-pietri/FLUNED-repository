@@ -53,7 +53,7 @@ it can simulate steady-states and transients and more features are being impleme
 
 ![mcflow output example](/doc/example.png)
 
-### Usage
+### FLUNED-SL Usage
 
 FLUNED-SL requires a set of files that describe the pipe topology, the radioisotopes entering the circuit and the reaction rates. Examples of the file format describing the circuit can be found in the test folder or generated automatically with a SpaceClaim scripts that can be found in the folder _FLUNED-Repository/spaceclaim-script/_.
 
@@ -68,7 +68,7 @@ Finally, the simulation is run with the command:
 ```
 fluned_sl -i input_file
 ```
-### Tests
+### FLUNED-SL Tests
 
 the test folder contain a set of tests to check the proper working of the different features.
 
@@ -115,7 +115,7 @@ A paper describing its development and validation can be found in [3]
 [2]doi: 10.1016/j.fusengdes.2020.111743\
 [3]doi: 10.1016/j.cpc.2023.108807
 
-## Usage
+## FLUNED Usage
 
 The pre/post-processor scripts and the solver are designed to simplify the user simulation process. From the command line in the folder where the Ansys - FLUENT or OpenFOAM files are located the following workflow is recommended.
 
@@ -147,7 +147,7 @@ FLUNED-solver
 flunedPost
 ```
 
-## Tests
+## FLUNED Tests
 
 A set of tests are present in the tests folder. These cases are very simple and have no physical accuracy, are just meant to test the integrated working of the scripts functionalities.
 To run these execute the following commands from a bash shell inside the tests folder called _FLUNED-Repository/tests-integration_
