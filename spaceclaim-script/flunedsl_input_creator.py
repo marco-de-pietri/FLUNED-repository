@@ -2,7 +2,7 @@ import os
 import re
 import sys
 
-# tested with v23
+# tested with v24
 
 # start by selecting the spaceclaim folder that contains the lines.
 
@@ -190,7 +190,7 @@ def get_lines_info(comps_list):
 
         # find the LINE/TANK name - fill the LINE/TANK dictionaries
         body_parent_vector = getParentComponents(bodies[0])
-        pat_line = re.compile("\A(\d+)_((LINE)|(TANK)|(CFD))_", re.IGNORECASE)
+        pat_line = re.compile("\A(\d+)_((LINE)|(TANK)|(CFD)|(STL))_", re.IGNORECASE)
         line_parents_pat = re.compile("\((.+?)\)")
 
         line_temp_pat = re.compile("_T(\d+(?:\.\d+)?)_?", re.IGNORECASE)
@@ -309,6 +309,10 @@ def get_lines_info(comps_list):
                     node_dict["body_type"] = "tank"
             if line_type == "CFD":
                 node_dict["body_type"] = "cfd"
+
+            if line_type == "STL":
+                node_dict["body_type"] = "stl"
+                node_dict["body_object"] = b
 
 
             node_dict["Name"] = int(b.GetName())
@@ -731,6 +735,38 @@ c ***********************************
 
     return 0
 
+def write_stl_nodes(node_list):
+    """
+    this function write the stl of the nodes represented with a stl
+    """
+
+    doc_path = GetRootPart().Document.Path
+    path_base = os.path.dirname(doc_path) + '\\'
+
+    for node in node_list:
+        if node["body_type"] == 'stl':
+            file_name = path_base + node["GroupName"] + "_" + str(node["Name"]) + ".stl"
+            comp_bodies = BodySelection.Create([node["body_object"]])
+
+
+            # copy the bodies to a new document
+            DocumentHelper.CreateNewDocument()
+            paste_result = Copy.Execute(comp_bodies)
+
+            # Save File
+            options = ExportOptions.Create()
+            DocumentSave.Execute(file_name, options)
+            options = STLExportOptions()
+
+            options.ExportStlUnits = LengthUnits.M
+
+            STLFile.Export(file_name, options)
+
+            # close new design
+            DocumentHelper.CloseDocument()
+
+
+
 
 def write_pipes_dat(pipe_list, name):
     """
@@ -814,6 +850,28 @@ def write_pipes_dat(pipe_list, name):
                 )
 
             elif element['body_type'] == 'cfd':
+                write_str = data_str.format(
+                    int(element["Name"]),
+                    element["GroupName"],
+                    element["body_type"],
+                    int(0),
+                    int(1),
+                    element["Temperature"],
+                    element["Pressure"],
+                    int(element["cell_number"]),
+                    float(element["Volume"]),
+                    int(0),
+                    float(0),
+                    float(0),
+                    float(0),
+                    float(0),
+                    float(0),
+                    float(0),
+                    float(0),
+                    float(0),
+                )
+
+            elif element['body_type'] == 'stl':
                 write_str = data_str.format(
                     int(element["Name"]),
                     element["GroupName"],
@@ -1238,10 +1296,12 @@ write_pipes_dat(sorted_body_list, comp_name)
 print("write links.DAT")
 write_links_dat(body_list, lines_dict, comp_name)
 
-
 # write  Inlets.dat
 print("write inlets.DAT")
 write_inlets_dat(lines_dict, comp_name)
+
+#write stl nodes
+write_stl_nodes(sorted_body_list)
 
 # write geometry file in STL format - scale in meters
 print("write STL file")
