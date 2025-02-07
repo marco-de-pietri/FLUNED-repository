@@ -216,7 +216,7 @@ def test_res_time_pipe_uniform_case_3():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_3)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_res_time')
     expected_values = {('01_DECAY_TEST', 1):0.312355991,
                        ('01_DECAY_TEST', 2):2.811203921,
@@ -256,7 +256,7 @@ def test_out_activity_pipe_uniform_case_3():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_3)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -297,7 +297,7 @@ def test_out_activity_pipe_uniform_case_3_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_3)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -335,7 +335,7 @@ def test_av_activity_pipe_uniform_case_3():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_3)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):98.49695854,
                        ('01_DECAY_TEST', 2):84.88250417,
@@ -374,7 +374,7 @@ def test_av_activity_pipe_uniform_case_3_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_3)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):98.49695854,
                        ('01_DECAY_TEST', 2):84.88250417,
@@ -412,7 +412,7 @@ def test_tot_activity_pipe_uniform_case_3():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_3)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('tot_activity_bq')
     expected_values = {('01_DECAY_TEST', 1):0.030943732,
                        ('01_DECAY_TEST', 2):0.239999626,
@@ -451,7 +451,7 @@ def test_tot_activity_pipe_uniform_case_3_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_3)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('tot_activity_bq')
     expected_values = {('01_DECAY_TEST', 1):0.030943732,
                        ('01_DECAY_TEST', 2):0.239999626,
@@ -490,7 +490,7 @@ def test_cumulated_res_time_pipe_uniform_case_3():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_3)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_time_cumulated')
     expected_values = {('01_DECAY_TEST', 1):0.312355991,
                        ('01_DECAY_TEST', 2):3.123559912,
@@ -740,7 +740,7 @@ def test_out_activity_pipe_uniform_case_4():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_4)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 
     expected_values = {('branches', 1):98.41270456,
@@ -789,7 +789,7 @@ def test_out_activity_pipe_uniform_case_4_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_4)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 
     expected_values = {('branches', 1):98.41270456,
@@ -837,7 +837,7 @@ def test_cumulated_res_time_uniform_case_4():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_4)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_time_cumulated')
 
     expected_values = {('branches', 1):0.164585525,
@@ -928,7 +928,7 @@ def test_out_activity_pipe_uniform_case_5():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_5)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 
     expected_values = {('01_CIRCUIT_A', 1):98.41270456,
@@ -976,7 +976,7 @@ def test_out_activity_pipe_uniform_case_5_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_5)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 
     expected_values = {('01_CIRCUIT_A', 1):98.41270456,
@@ -1025,7 +1025,7 @@ def test_out_activity_pipe_uniform_transient_10s_case_5():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_5)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
 
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 
@@ -1076,7 +1076,7 @@ def test_out_activity_pipe_uniform_transient_01s_case_5():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_5)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 
     expected_values = {('01_CIRCUIT_A', 1):0,
@@ -1125,7 +1125,7 @@ def test_average_activity_pipe_uniform_transient_01s_case_5():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_5)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
 
     expected_values = {('01_CIRCUIT_A', 1):60.27518882,
@@ -1174,7 +1174,7 @@ def test_average_activity_pipe_uniform_transient_1s_case_5():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_5)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
 
     expected_values = {('01_CIRCUIT_A', 1):99.20423586,
@@ -1221,7 +1221,7 @@ def test_out_activity_pipe_uniform_case_6():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_6)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -1263,7 +1263,7 @@ def test_out_activity_pipe_uniform_case_6_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_6)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -1304,7 +1304,7 @@ def test_out_activity_pipe_uniform_case_7():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -1344,7 +1344,7 @@ def test_out_activity_pipe_uniform_case_7_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -1384,7 +1384,7 @@ def test_average_activity_pipe_uniform_case_7():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):98.49695854,
                        ('01_DECAY_TEST', 2):84.88250417,
@@ -1424,7 +1424,7 @@ def test_average_activity_pipe_uniform_case_7_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):98.49695854,
                        ('01_DECAY_TEST', 2):84.88250417,
@@ -1467,7 +1467,7 @@ def test_out_activity_pipe_uniform_case_7_100s():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -1512,7 +1512,7 @@ def test_out_activity_pipe_uniform_case_7_5s():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -1558,7 +1558,7 @@ def test_average_activity_pipe_uniform_case_7_5s():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
     # the values for nodes 3 and 4 have been simulated, as it is not possible
     # to calculate them analytically. The important is that the rtd
@@ -1610,7 +1610,7 @@ def test_out_activity_pipe_uniform_case_7_10s():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):97.00905397,
                        ('01_DECAY_TEST', 2):73.81127268,
@@ -1655,7 +1655,7 @@ def test_average_activity_pipe_uniform_case_7_10s():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_7)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
 
     # the values for nodes 3 and 4 have been simulated, as it is not possible
@@ -1709,7 +1709,7 @@ def test_out_activity_pipe_uniform_case_8():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_8)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     #test_case.print_all_nodes()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 
@@ -1758,7 +1758,7 @@ def test_out_activity_pipe_uniform_case_8_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_8)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     #test_case.print_all_nodes()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 
@@ -1806,7 +1806,7 @@ def test_average_activity_pipe_uniform_case_8():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_8)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
 
     expected_values = {('branches', 1):12.30771601,
@@ -1853,7 +1853,7 @@ def test_average_activity_pipe_uniform_case_8_det():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_8)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
 
     expected_values = {('branches', 1):12.30771601,
@@ -1901,7 +1901,7 @@ def test_average_activity_pipe_uniform_case_8_det():
 #                   }
 #    test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_8)
 #    test_case = FlunedSlCase(test_setting, test_path)
-#    test_case.mc_solve()
+#    test_case.solve()
 #    test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 #
 #    expected_values = {('branches', 1):14.60315678,
@@ -1950,7 +1950,7 @@ def test_average_activity_pipe_uniform_case_8_det():
 #                   }
 #    test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_8)
 #    test_case = FlunedSlCase(test_setting, test_path)
-#    test_case.mc_solve()
+#    test_case.solve()
 #    test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
 #
 #    expected_values = {('branches', 1):12.30771601,
@@ -1998,7 +1998,7 @@ def test_average_activity_pipe_uniform_case_8_det():
 #                   }
 #    test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_8)
 #    test_case = FlunedSlCase(test_setting, test_path)
-#    test_case.mc_solve()
+#    test_case.solve()
 #    test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 #
 #    expected_values = {('branches', 1):2.902337221,
@@ -2047,7 +2047,7 @@ def test_average_activity_pipe_uniform_case_8_det():
 #                   }
 #    test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_8)
 #    test_case = FlunedSlCase(test_setting, test_path)
-#    test_case.mc_solve()
+#    test_case.solve()
 #    test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
 #    # the values of all nodes except 1 and 8 have been simulated as it is not
 #    # possible to calculate them analytically. The important is that the
@@ -2099,7 +2099,7 @@ def test_out_activity_pipe_uniform_case_9():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_9)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):2.990946033,
                        ('01_DECAY_TEST', 2):2.275720916,
@@ -2142,7 +2142,7 @@ def test_average_activity_pipe_uniform_case_9():
                    }
     test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_9)
     test_case = FlunedSlCase(test_setting, test_path)
-    test_case.mc_solve()
+    test_case.solve()
     test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
     expected_values = {('01_DECAY_TEST', 1):1.503041457,
                        ('01_DECAY_TEST', 2):2.617064889,
@@ -2189,7 +2189,7 @@ def test_average_activity_pipe_uniform_case_9():
 #                    }
 #    test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_9)
 #    test_case = FlunedSlCase(test_setting, test_path)
-#    test_case.mc_solve()
+#    test_case.solve()
 #    test_dict = test_case.get_all_attr('mc_out_activity_bq_m3')
 #    expected_values = {('01_DECAY_TEST', 1):2.990946033,
 #                       ('01_DECAY_TEST', 2):2.275720916,
@@ -2234,7 +2234,7 @@ def test_average_activity_pipe_uniform_case_9():
 #                    }
 #    test_path = os.path.join(os.getcwd(),TEST_REL_PATH_CASE_9)
 #    test_case = FlunedSlCase(test_setting, test_path)
-#    test_case.mc_solve()
+#    test_case.solve()
 #    test_dict = test_case.get_all_attr('mc_average_activity_bq_m3')
 #    expected_values = {('01_DECAY_TEST', 1):1.503041457,
 #                       ('01_DECAY_TEST', 2):2.617064889,

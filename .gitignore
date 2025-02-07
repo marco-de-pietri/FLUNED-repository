@@ -8,5 +8,6 @@ __pycache__/
 *.scdoc
 Vc.gz
 *.swp
-
+uv.lock
+.venv/
 

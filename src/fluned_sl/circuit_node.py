@@ -8,7 +8,7 @@ import numpy as np
 
 from iapws.iapws97 import IAPWS97
 
-from .utils import bin_search, linear_interp
+from .utils import bin_search, linear_interp, extend_pnt, vtk_sampling
 from  ofClass.ofClass import SimulationOF
 
 from .single_isotope_activation import (
@@ -67,6 +67,8 @@ class CircuitNode:
         self.rtd_time = node_params["node_rtd_time"]
         self.rtd_data = node_params["node_rtd_data"]
         self.cfd_path = node_params["node_cfd_path"]
+
+        self.stl_path = node_params["node_stl_path"]
 
         if self.cfd_path != '':
             # initialize the cfd data
@@ -324,6 +326,60 @@ class CircuitNode:
         self.children_indexes = child_indexes
 
         return 0
+
+    def probe_rrmesh(self, rr_file, parameters):
+        """
+        this function probes the rr mesh to get the activity at the node
+        the methods depends on the node type
+        """
+        print ("probing node", self.node_keys)
+
+        if self.node_type == "cfd":
+            pass
+        elif self.node_type == "tank":
+            print ("WARNING: rrmesh probing of a tank not possible")
+            pass
+        elif self.node_type == "stl":
+            print ("WARNING: stl probing of a tank not implemented")
+            pass
+        elif self.node_type in ["pipe", "tank-cyl"]:
+            coords_cm = self.generate_pipe_probing_points(parameters["rrmesh_sampling_cm"])
+            print ("n coords_cm", len(coords_cm))
+            sampled_val = vtk_sampling(rr_file, coords_cm, parameters)
+            print ("sampled value", sampled_val)
+            self.reaction_rate_m3 = sampled_val*1e6*parameters["rrmesh_scaling_factor"]
+
+        return 0
+
+    def generate_pipe_probing_points(self, distance_cm):
+        """
+        this function generates probing points in cm for a cylinder to be used in
+        calculating the reaction rate
+        """
+
+        coords = []
+        num_points = int(self.length_cm / distance_cm) + 1
+        pipe_origin_cm = [self.origin_x_cm,
+                         self.origin_y_cm,
+                         self.origin_z_cm]
+        pipe_axis = [self.axis_x, self.axis_y, self.axis_z]
+
+        coords = [extend_pnt(pipe_origin_cm, pipe_axis, i*distance_cm) for i in range(num_points)]
+
+        if len(coords) < 3:
+            pipe_end_cm = extend_pnt(pipe_origin_cm,
+                                           pipe_axis,
+                                           self.length_cm)
+            pipe_mid_cm = extend_pnt(pipe_origin_cm,
+                                           pipe_axis,
+                                           self.length_cm/2)
+
+            coords = [pipe_origin_cm, pipe_mid_cm, pipe_end_cm]
+
+
+
+        return coords
+
 
     def assign_node_water_properties(self):
         """
@@ -678,6 +734,19 @@ class CircuitNode:
         # default methods
         if self.node_type_value == -1:
             if self.node_type == "tank":
+                method = tank_method
+                act_out, act_average = self.calculate_outlet_average_activity_method(
+                    act_in,
+                    lambda_decay,
+                    self.sample_res_time,
+                    reac_rate,
+                    method,
+                    res_t_fraction,
+                    res_t_complete_fraction,
+                    steady_state,
+                )
+
+            elif self.node_type == "stl":
                 method = tank_method
                 act_out, act_average = self.calculate_outlet_average_activity_method(
                     act_in,
@@ -1204,8 +1273,8 @@ class CircuitNode:
         res_a_fraction = 1
         transient_activ_flag = False
 
-        # this is used for the transient study of circuits with multiple
-        # sources.
+        # this is used for the monte carlo transient study of circuits
+        # with multiple sources.
         if mc_counter == 0:
             found_source_flag = True
             transient_activ_flag = False
@@ -1223,6 +1292,12 @@ class CircuitNode:
         # default method
         if self.node_type_value == -1:
             if self.node_type == "tank":
+                method = tank_method
+                res_time = self.calculate_residence_time_method(
+                    radius_norm,
+                    method,
+                )
+            if self.node_type == "stl":
                 method = tank_method
                 res_time = self.calculate_residence_time_method(
                     radius_norm,
@@ -1285,7 +1360,7 @@ class CircuitNode:
 
         elif self.node_type_value == -2:
             # a rtd is defined
-            if self.node_type in ["tank", "tank-cyl","pipe"]:
+            if self.node_type in ["tank", "tank-cyl","pipe","stl"]:
                 res_time = random.choices(self.rtd_time, weights=self.rtd_norm)[0]
 
                 if transient_activ_flag:

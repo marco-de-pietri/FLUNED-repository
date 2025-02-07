@@ -4,6 +4,10 @@ this module is able to write a vtk file of the pipe circuit
 import sys
 import math
 import numpy as np
+import pyvista as pv
+import vtk
+
+from .utils import extend_pnt
 
 def orthogonal_vector(axis):
     """
@@ -36,17 +40,6 @@ def orthogonal_vector(axis):
 
     return unity_norm
 
-def extend_pnt(point,axis, distance):
-    """
-    this function returns a point by extending a point, along a vector,
-    by a given distance
-    """
-
-    newpoint = [point[0] + axis[0]*distance,
-                point[1] + axis[1]*distance,
-                point[2] + axis[2]*distance]
-
-    return newpoint
 
 def rotation_matrix(axis, theta):
     """
@@ -77,9 +70,14 @@ def write_vtk_files(nodes,full_path, decay_const, steady_state_flag):
 
     pipes = {key:value for key,value in nodes.items() if value.node_type in ["pipe","tank-cyl"]}
 
+    polyhedron_nodes = {key:value for key,value in nodes.items() if value.node_type in ["pipe","tank-cyl","stl"]}
+
     cfd_nodes = {key:value for key,value in nodes.items() if value.node_type in ["cfd"]}
 
     write_vtk_pipes(pipes,full_path, steady_state_flag)
+
+    write_vtk_pipes_polyhedron(polyhedron_nodes, full_path, steady_state_flag )
+
 
     write_vtk_cfd_nodes(cfd_nodes,full_path, steady_state_flag, decay_const)
 
@@ -250,19 +248,13 @@ DATASET UNSTRUCTURED_GRID\r\n"""
             error = pipe.mc_error
             out.write(f"{error:.5f}\r\n")
 
-        if steady_state_flag == "steady_state":
+        if steady_state_flag is True:
 
             out.write("SCALARS reynolds double 1 \r\n")
             out.write("LOOKUP_TABLE default\r\n")
             for pipe in pipes.values():
                 reynolds = pipe.reynolds
                 out.write(f"{reynolds:.5f}\r\n")
-
-            out.write("SCALARS cumulated_time_s double 1 \r\n")
-            out.write("LOOKUP_TABLE default\r\n")
-            for pipe in pipes.values():
-                cum_time = pipe.mc_out_time_cumulated
-                out.write(f"{cum_time:.5f}\r\n")
 
             out.write("SCALARS res_time_s double 1 \r\n")
             out.write("LOOKUP_TABLE default\r\n")
@@ -284,3 +276,179 @@ DATASET UNSTRUCTURED_GRID\r\n"""
 
     return 0
 
+
+
+
+def create_cylinder_polyhedron(pipe, resolution=24):
+    """
+    Create a cylinder as a single vtkPolyhedron cell.
+    The cylinder is built from two rings of points (bottom and top)
+    and the cell is defined by resolution lateral quadrilaterals plus
+    one bottom and one top polygon face.
+    """
+    # Normalize pipe axis and convert dimensions (cm -> m)
+    axis = np.array([pipe.axis_x, pipe.axis_y, pipe.axis_z], dtype=float)
+    norm = np.linalg.norm(axis)
+    if norm == 0:
+        raise ValueError("Pipe axis is zero-length.")
+    axis /= norm
+    radius = pipe.radius_cm / 100.0
+    height = pipe.length_cm / 100.0
+    origin = np.array([pipe.origin_x_cm, pipe.origin_y_cm, pipe.origin_z_cm], dtype=float) / 100.0
+
+    # Build an orthonormal basis for the circle.
+    arbitrary = np.array([1, 0, 0], dtype=float)
+    if np.allclose(axis, arbitrary):
+        arbitrary = np.array([0, 1, 0], dtype=float)
+    v = np.cross(axis, arbitrary)
+    v /= np.linalg.norm(v)
+    w = np.cross(axis, v)
+
+    # Generate the bottom ring points
+    theta = np.linspace(0, 2*np.pi, resolution, endpoint=False)
+    bottom_ring = np.array([origin + radius * (np.cos(t) * v + np.sin(t) * w)
+                            for t in theta])
+    # The top ring is translated along the axis
+    top_ring = bottom_ring + axis * height
+
+    # Combine points: bottom ring indices 0...resolution-1, top ring indices resolution...2*resolution-1
+    pts = np.vstack((bottom_ring, top_ring))
+
+    # Define faces for the polyhedron:
+    faces = []
+    # Lateral faces (each quad uses one adjacent pair of bottom and top ring points)
+    for i in range(resolution):
+        i_next = (i + 1) % resolution
+        faces.append([i, i_next, i_next + resolution, i + resolution])
+    # Bottom cap (using bottom ring in order)
+    faces.append(list(range(0, resolution)))
+    # Top cap (using top ring in reverse order to maintain outward normals)
+    faces.append(list(range(resolution, 2 * resolution))[::-1])
+
+    nfaces = len(faces)  # should equal resolution + 2
+
+    # Create vtkPoints from pts
+    vtk_pts = vtk.vtkPoints()
+    for p in pts:
+        vtk_pts.InsertNextPoint(p.tolist())
+
+    # Build the connectivity list for the vtkPolyhedron.
+    # The required format is: [nfaces, n0, id0, id1, ..., n1, id0, id1, ...]
+    id_list = vtk.vtkIdList()
+    id_list.InsertNextId(nfaces)
+    for face in faces:
+        id_list.InsertNextId(len(face))
+        for pid in face:
+            id_list.InsertNextId(pid)
+
+    # Create an empty unstructured grid and add the polyhedron cell.
+    ug = vtk.vtkUnstructuredGrid()
+    ug.SetPoints(vtk_pts)
+    # vtk.VTK_POLYHEDRON is the cell type for a polyhedron (its integer value is 42)
+    ug.InsertNextCell(vtk.VTK_POLYHEDRON, id_list)
+
+    return pv.wrap(ug)
+
+def load_stl_polyhedron(stl_path):
+    """
+    Load an STL file and return its mesh wrapped as a PyVista object.
+    Assumes the STL file represents a single closed polyhedron.
+    If the loaded mesh contains more than one cell, all cells are assigned
+    the same data later.
+    """
+    mesh = pv.read(stl_path)
+    # Optionally, you might want to clean or merge the mesh here if needed:
+    # mesh = mesh.clean()
+    return mesh
+
+
+def write_vtk_pipes_polyhedron(pipes, full_path, steady_state_flag, resolution=24):
+    """
+    Load an STL file and convert its closed, triangulated surface into a single
+    vtkPolyhedron cell.
+
+    This is done by extracting the triangle connectivity from the STL polydata,
+    and then constructing a connectivity list in the polyhedron format.
+    """
+    # Read the STL file (assumed to represent a closed manifold).
+    poly = pv.read(stl_path)
+    # Clean the mesh (merge duplicate points, etc.)
+    poly = poly.clean()
+    # The STL surface is triangulated.
+    # Get the flat faces array and reshape it so that each row is [3, id0, id1, id2].
+    faces_flat = poly.faces.reshape((-1, 4))
+    nfaces = faces_flat.shape[0]
+    # Build connectivity: first the number of faces, then for each face:
+    # number_of_points followed by the point indices.
+    connectivity = [nfaces]
+    for row in faces_flat:
+        connectivity.append(int(row[0]))  # should be 3
+        connectivity.extend(row[1:].astype(int).tolist())
+
+    # Build vtkPoints from the polydata.
+    vtk_pts = vtk.vtkPoints()
+    for p in poly.points:
+        vtk_pts.InsertNextPoint(p.tolist())
+
+    # Build the vtkIdList.
+    id_list = vtk.vtkIdList()
+    id_list.InsertNextId(len(connectivity))
+    for num in connectivity:
+        id_list.InsertNextId(num)
+
+    # Create an unstructured grid and insert one polyhedron cell.
+    ug = vtk.vtkUnstructuredGrid()
+    ug.SetPoints(vtk_pts)
+    ug.InsertNextCell(vtk.VTK_POLYHEDRON, id_list)
+
+    return pv.wrap(ug)
+
+
+
+def write_vtk_pipes_polyhedron(pipes, full_path, steady_state_flag, resolution=24):
+    """
+    For each pipe node, create a polyhedron cell.
+    If pipe.node_type is 'stl', load the geometry from pipe.stl_path.
+    Otherwise, build a cylinder polyhedron.
+    Then assign the pipe properties as cell data and merge all into one grid,
+    which is saved to file.
+    """
+    full_path = full_path + "_polyhedron.vtk"
+    merged = None
+
+    for pipe in pipes.values():
+        # Decide which geometry to use based on node_type.
+        if hasattr(pipe, "node_type") and pipe.node_type == 'stl':
+            try:
+                cell_mesh = load_stl_polyhedron(pipe.stl_path)
+            except Exception as e:
+                print(f"Error loading STL for node {pipe.node_id}: {e}")
+                continue
+        else:
+            cell_mesh = create_cylinder_polyhedron(pipe, resolution=resolution)
+
+        # For consistency, assign the same property value to every cell in this mesh.
+        n_cells = cell_mesh.n_cells
+        cell_mesh.cell_data["node_id"] = np.full(n_cells, pipe.node_id, dtype=int)
+        cell_mesh.cell_data["average_vol_activity_bq_m3"] = np.full(n_cells, pipe.mc_average_activity_bq_m3, dtype=float)
+        cell_mesh.cell_data["total_activity_bq"] = np.full(n_cells, pipe.tot_activity_bq, dtype=float)
+        cell_mesh.cell_data["reaction_rate_m3"] = np.full(n_cells, pipe.reaction_rate_m3, dtype=float)
+        if steady_state_flag:
+            cell_mesh.cell_data["reynolds"] = np.full(n_cells, pipe.reynolds, dtype=float)
+            cell_mesh.cell_data["res_time_s"] = np.full(n_cells, pipe.mc_res_time, dtype=float)
+            cell_mesh.cell_data["mass_flow_kg_s"] = np.full(n_cells, pipe.mass_flow, dtype=float)
+            cell_mesh.cell_data["linear_velocity_m_s"] = np.full(n_cells, pipe.linear_velocity_m_s, dtype=float)
+
+        # Merge this cell into the overall grid.
+        if merged is None:
+            merged = cell_mesh
+        else:
+            merged = merged.merge(cell_mesh)
+
+    if merged is None:
+        print("No pipes to write.")
+        return 0
+
+    # Save the merged unstructured grid containing one polyhedron cell per node.
+    merged.save(full_path)
+    return 0

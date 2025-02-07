@@ -179,12 +179,22 @@ def make_pipes_cdgs(pipes,dec_lambda, dec_yield,e_bins,p_bins, full_path):
         line = f"num_meshes {nmesh:d} \nglobal_source {source_factor:9.7e} \n"
         out.write(line)
 
+        node_types = set([pipe.node_type for pipe in pipes.values()])
+
+        if any([node_type == 'stl' for node_type in node_types]):
+            print ("WARNING: stl nodes write currently not implemented in CDGS")
+
+        if any([node_type == 'tank' for node_type in node_types]):
+            print ("WARNING: tank nodes not included in the CDGS")
+
 
         # Write Each pipe CDGS
         nmesh = 0
         for pipe in pipes.values():
             if pipe.node_type == 'tank':
-                print ("WARNING: tank node not included in the CDGS")
+                continue
+
+            if pipe.node_type == 'stl':
                 continue
 
             if pipe.node_type in  ["pipe", "tank-cyl"]:

@@ -876,7 +876,7 @@ def write_pipes_dat(pipe_list, name):
                     int(element["Name"]),
                     element["GroupName"],
                     element["body_type"],
-                    int(0),
+                    int(-1),
                     int(1),
                     element["Temperature"],
                     element["Pressure"],

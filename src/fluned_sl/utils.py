@@ -4,6 +4,10 @@ this file contains some utility functions
 import os
 import re
 import sys
+from distutils.util import strtobool
+import pyvista as pv
+import numpy as np
+import vtk
 
 
 def interp_series(x_vals, y_vals, x_new):
@@ -219,6 +223,7 @@ def get_circuit_files(path):
     links_pattern  = re.compile(r".*links.dat\Z", re.IGNORECASE)
     nodes_pattern  = re.compile(r".*nodes.dat\Z", re.IGNORECASE)
     mcnp_pattern   = re.compile(r".*mcnp.dat\Z", re.IGNORECASE)
+    rr_mesh_pattern = re.compile(r"^.*rrmesh\.(?:vtk|vtr)$", re.IGNORECASE)
 
     file_list = os.listdir(path)
 
@@ -229,6 +234,7 @@ def get_circuit_files(path):
         links_files  = links_pattern.findall(file)
         nodes_files  = nodes_pattern.findall(file)
         mcnp_files   = mcnp_pattern.findall(file)
+        rrmesh_files = rr_mesh_pattern.findall(file)
 
         if len(inlets_files) == 1:
             file_paths["inletsPath"] = os.path.join(
@@ -248,6 +254,10 @@ def get_circuit_files(path):
         if len(mcnp_files) == 1:
             file_paths["mcnpPath"] = os.path.join(
                 os.path.abspath(path), mcnp_files[0]
+            )
+        if len(rrmesh_files) == 1:
+            file_paths["rrmeshPath"] = os.path.join(
+                os.path.abspath(path), rrmesh_files[0]
             )
 
     # print (filePaths)
@@ -276,7 +286,7 @@ def search_circuits(case_directory):
             print("WARNING incomplete circuit description")
             print(item)
             sys.exit()
-        if found_files in [3,4]:
+        if found_files in [3,4,5]:
             folder_list.append(item)
 
     if len(folder_list) == 0:
@@ -296,10 +306,11 @@ def create_input_template():
     input_path = os.path.join(current_folder, input_name)
 
     template_text = """
-STEADY_STATE       TRUE     # false for transient studies
-ISOTOPE             N16     # isotope to be studied
-N_SAMPLING          1e6     # number of histories
-FLUID_CARRIER     WATER     # only water is supported for now
+STEADY_STATE       TRUE        # false for transient studies
+ISOTOPE             N16        # isotope to be studied
+N_SAMPLING          1e6        # number of histories
+FLUID_CARRIER     WATER        # only water is supported for now
+NUMERICAL_METHOD DETERMINISTIC # monte_carlo or deterministic
     """
 
     with open(input_path, "w", encoding="utf8") as file_w:
@@ -322,6 +333,11 @@ def read_input_file(path):
                   "isotope",
                   "n_sampling_min",
                   "n_sampling_max",
+                  "rrmesh_sampling_error_max",
+                  "rrmesh_sampling_cm",
+                  "rrmesh_sampling_field_name",
+                  "rrmesh_sampling_errfield_name",
+                  "rrmesh_scaling_factor",
                   "fluid_carrier",
                   "pipe_time_default",
                   "tank_time_default",
@@ -360,8 +376,152 @@ def read_input_file(path):
             if args[0].lower() in parameters:
                 if is_float(args[1]):
                     parameters_dic[args[0].lower()] = float(args[1])
+                elif args[1].lower() in ["true", "false"]:
+                    parameters_dic[args[0].lower()] = bool(strtobool(args[1].lower()))
                 else:
                     parameters_dic[args[0].lower()] = args[1].lower()
 
 
     return parameters_dic
+
+def extend_pnt(point,axis, distance):
+    """
+    this function returns a point by extending a point, along a vector,
+    by a given distance
+    """
+
+    newpoint = [point[0] + axis[0]*distance,
+                point[1] + axis[1]*distance,
+                point[2] + axis[2]*distance]
+
+    return newpoint
+
+
+
+
+
+def vtk_sampling_0(file_path, coords, parameters):
+    """
+    Samples cell-based values from a VTK file at the given coordinates.
+    For each coordinate, the cell that contains the point is identified using
+    PyVista's find_containing_cell method. If the point is within a cell,
+    the function retrieves the cell's data for a specified field and error.
+    If the error is less than or equal to the maximum allowed error, the field's
+    value is returned; otherwise, np.nan is returned. If no cell contains the
+    coordinate, np.nan is returned.
+
+    Args:
+        file_path (str): Path to the VTK file.
+        coords (list or array-like): List of (x, y, z) coordinates.
+        parameters (dict): Dictionary with keys:
+            - "rrmesh_sampling_error_max": maximum allowable error.
+            - "rrmesh_sampling_field_name": name of the cell data field to sample.
+            - "rrmesh_sampling_errfield_name": name of the error field in cell data.
+
+    Returns:
+        list: A list of sampled field values, or np.nan when sampling fails or
+              the error exceeds the allowed maximum.
+    """
+    max_sample_error = parameters["rrmesh_sampling_error_max"]
+    sampling_field = parameters["rrmesh_sampling_field_name"]
+    error_field = parameters["rrmesh_sampling_errfield_name"]
+
+    mesh = pv.read(file_path)
+    results = []
+
+    for coord in coords:
+        cell_id = mesh.find_containing_cell(coord)
+        if cell_id > 0:
+            # Retrieve the cell's field and error values using the cell_id.
+            field_value = mesh.cell_data[sampling_field][cell_id]
+            error_value = mesh.cell_data[error_field][cell_id]
+
+            print ("debugging field_value",field_value)
+            print ("debugging error_value",error_value)
+
+            if error_value <= max_sample_error:
+                results.append(field_value)
+            else:
+                results.append(np.nan)
+
+    print ("debugging results",results)
+
+    mean = np.nanmean(results)
+
+    return mean
+
+import numpy as np
+import pyvista as pv
+import vtk
+from concurrent.futures import ThreadPoolExecutor
+
+def _find_cell_value(coord, locator, mesh, sampling_field, error_field, max_sample_error, tol, max_cell_size):
+    pcoords = [0.0, 0.0, 0.0]
+    weights = [0.0] * max_cell_size
+    generic_cell = vtk.vtkGenericCell()
+    cell_id = locator.FindCell(coord, tol, generic_cell, pcoords, weights)
+    if cell_id < 0:
+        return np.nan
+    # Retrieve the cell's data values.
+    field_value = mesh.cell_data[sampling_field][cell_id]
+    error_value = mesh.cell_data[error_field][cell_id]
+    return field_value if error_value <= max_sample_error else np.nan
+
+def vtk_sampling(file_path, coords, parameters, use_multithreading=True):
+    """
+    Samples cell-based values from a VTK file at given coordinates using a faster approach.
+    This version builds a vtkStaticCellLocator once and (optionally) uses multithreading to
+    process many coordinate queries in parallel.
+
+    Args:
+        file_path (str): Path to the VTK file.
+        coords (list/array-like): List of (x, y, z) coordinates.
+        parameters (dict): Contains:
+            - "rrmesh_sampling_error_max": maximum allowed error.
+            - "rrmesh_sampling_field_name": name of the field in cell data.
+            - "rrmesh_sampling_errfield_name": name of the error field in cell data.
+        use_multithreading (bool): If True, uses ThreadPoolExecutor to process points in parallel.
+
+    Returns:
+        list: Sampled field values (or np.nan if not found or error exceeds limit).
+    """
+    max_sample_error = parameters["rrmesh_sampling_error_max"]
+    sampling_field   = parameters["rrmesh_sampling_field_name"]
+    error_field      = parameters["rrmesh_sampling_errfield_name"]
+
+    # Read the VTK file.
+    mesh = pv.read(file_path)
+
+    # Build a fast cell locator using vtkStaticCellLocator.
+    locator = vtk.vtkStaticCellLocator()
+    locator.SetDataSet(mesh)
+    locator.BuildLocator()
+
+    tol = 1e-6
+    max_cell_size = int(mesh.GetMaxCellSize()) if hasattr(mesh, "GetMaxCellSize") else 100
+
+    if use_multithreading:
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(_find_cell_value, coord, locator, mesh,
+                                sampling_field, error_field,
+                                max_sample_error, tol, max_cell_size)
+                for coord in coords
+            ]
+            results = [future.result() for future in futures]
+    else:
+        results = [
+            _find_cell_value(coord, locator, mesh,
+                             sampling_field, error_field,
+                             max_sample_error, tol, max_cell_size)
+            for coord in coords
+        ]
+
+
+    if results.size == 0 or np.all(np.isnan(results)):
+        mean = 0.0
+    else:
+        mean = np.nanmean(results)
+    return mean
+
+

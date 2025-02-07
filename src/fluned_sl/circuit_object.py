@@ -13,7 +13,7 @@ class CircuitObject:
     """
     this class contains the circuit object
     """
-    def __init__(self, item):
+    def __init__(self, item, parameters):
         """
         initialize circuit object
         """
@@ -31,10 +31,16 @@ class CircuitObject:
         # update the circuit dictionary with the info in links.dat
         self.parse_links_file()
 
+
+        # update the circuit dictionary with the info in the reaction rate mesh (if present)
+        self.probe_rrmesh(parameters)
+
         # create a dictionary that contains the external sources
         # by parsing the the inlets file. the external sources are defined
         # with a simple dictionary
         self.external_nodes = self.define_external_sources()
+
+
 
 
         # for key,value in self.circuitDictionary.items():
@@ -80,8 +86,15 @@ class CircuitObject:
             node_parameters['node_rtd_data'] = []
             node_parameters['node_cfd_path'] = ''
 
+            node_parameters['node_stl_path'] = ''
+
+            # determination of the node type value
+            # in general it can be a number,
+            # a path to a rtd distribution
+            # or a path to a fluned simulation
             if is_float(line[3]):
-                node_parameters['node_type_value'] = int(line[3])
+                node_parameters['node_type_value'] = float(line[3])
+
             elif node_parameters['node_type'] not in ['cfd']:
                 # node type value parameter (time treatme ) set to -2 when a
                 # residence time distribution is provided
@@ -100,6 +113,23 @@ class CircuitObject:
                 data_path=os.path.join(self.full_path,line[3].strip('\"\''))
                 node_parameters['node_cfd_path'] = data_path
 
+            # if the node is stl type look for the stl file path
+            if node_parameters['node_type'].lower() == 'stl':
+                # find files in the folders that ends with the node.stl extension
+                stl_files = []
+                for root, _, files in os.walk(self.full_path):
+                    for file in files:
+                        if file.lower().endswith(f"{node_parameters['node_id']}.stl"):
+                            stl_files.append(os.path.join(root, file))
+                if len(stl_files) != 1:
+                    print(f"ERROR: found {len(stl_files)} stl files for node {node_parameters['node_id']}")
+                else:
+                    node_parameters['node_stl_path'] = os.path.join(root, stl_files[0])
+
+
+
+
+            # assign physical parameters
             node_parameters['activity_scaling'] = float(line[4])
             node_parameters['temperature_k'] = float(line[5])
             node_parameters['pressure_mpa'] = float(line[6])
@@ -109,7 +139,7 @@ class CircuitObject:
 
 
 
-
+            # assign cylinder geometry parameters
             if node_parameters['node_type'] in ['pipe', 'tank-cyl']:
 
                 node_parameters['axis_x'] = float(line[10])
@@ -140,6 +170,22 @@ class CircuitObject:
             node_dictionary[node_parameters['node_id']] = new_node
 
         return node_dictionary
+
+    def probe_rrmesh(self, parameters):
+        """
+        this function updates the circuit dictionary with the info in the
+        obtained by probing the rr mesh file
+        """
+
+        print ("debug: circuit files", self.circuit_files)
+
+        if "rrmeshPath" not in self.circuit_files:
+            return
+
+        for node in self.circuit_dictionary.values():
+            node.probe_rrmesh(self.circuit_files["rrmeshPath"], parameters)
+
+        return 0
 
 
     def parse_links_file(self):

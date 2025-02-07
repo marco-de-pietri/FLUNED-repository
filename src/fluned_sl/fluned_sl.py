@@ -45,7 +45,7 @@ def main():
 
     case = FlunedSlCase(user_values, case_path)
 
-    case.mc_solve()
+    case.solve()
 
     # case.print_all_nodes()
 

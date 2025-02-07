@@ -38,6 +38,11 @@ class FlunedSlCase:
             "fluid_carrier": "water",
             "n_sampling_min": 1e05,
             "n_sampling_max": 1e08,
+            "rrmesh_sampling_error_max":0.20,
+            "rrmesh_sampling_field_name":"Value - Total",
+            "rrmesh_sampling_errfield_name" : "Error - Total",
+            "rrmesh_sampling_cm":2.0,
+            "rrmesh_scaling_factor":1.0,
             "pipe_time_default": "reynolds",
             "tank_time_default": "uniform",
             "tank_cyl_time_default": "uniform",
@@ -76,7 +81,7 @@ class FlunedSlCase:
         # initialize sub-circuits
         self.circuits = {}
         for item in self.circuit_directories:
-            self.circuits[item[0]] = CircuitObject(item)
+            self.circuits[item[0]] = CircuitObject(item, self.parameters)
 
 
         # update the children and parent dictionaries with the info in inlet.dat
@@ -333,8 +338,9 @@ class FlunedSlCase:
 
                     frac_sum += parent['fraction']
 
-                if frac_sum != 1:
-                    print ("ERROR: parent fractions do not sum to 1")
+                if not math.isclose(frac_sum, 1, rel_tol=1e-5):
+                    print (f"ERROR: parent fractions of node {node.node_id} in group {node.group_name} do not sum to 1")
+                    print (f"frac sum value: ", frac_sum)
                     sys.exit()
 
         return 0
@@ -399,7 +405,7 @@ class FlunedSlCase:
 
     def calculate_atom_flows(self):
         """
-        define and solve a balance matrix and later and calculates the average
+        define and solve a balance matrix and later calculates the average
         and outlet activity
         """
 
@@ -500,7 +506,7 @@ class FlunedSlCase:
         if not all(x < rtol for x in rel_diff ):
             print ("a flow matrix: ", a_flow_matrix.toarray())
             print ("b vector: ", b_vector)
-            print("ERROR! mass flow balance solution not solved")
+            print("ERROR! atom flow balance solution not solved")
             print ("relative difference: ", rel_diff)
             print ("max relative difference: ", max(rel_diff))
             sys.exit()
@@ -597,9 +603,9 @@ class FlunedSlCase:
 
         return 0
 
-    def mc_solve(self):
+    def solve(self):
         """
-        this function solves the monte carlo problem
+        this function calculates the fluid activation
         """
 
         if self.single_isotope:
@@ -1177,7 +1183,7 @@ class FlunedSlCase:
     def write_vtk_single_isotope(self,step=''):
         """
         this function write the vtk for a single isotope for transients
-        the scale of the file is in metters
+        the scale of the file is in meters
         """
 
 
