@@ -770,7 +770,7 @@ def write_stl_nodes(node_list):
 
 def write_pipes_dat(pipe_list, name):
     """
-    this function write the pipes.dat file
+    this function write the nodes.dat file
     """
 
     path = GetRootPart().Document.Path[0:-6] + "-" + name + "-nodes.dat"
@@ -838,7 +838,7 @@ def write_pipes_dat(pipe_list, name):
                     element["Pressure"],
                     int(element["cell_number"]),
                     float(element["Volume"]),
-                    int(0),
+                    int(-1),
                     float(0),
                     float(0),
                     float(0),
@@ -860,7 +860,7 @@ def write_pipes_dat(pipe_list, name):
                     element["Pressure"],
                     int(element["cell_number"]),
                     float(element["Volume"]),
-                    int(0),
+                    int(-1),
                     float(0),
                     float(0),
                     float(0),
@@ -882,7 +882,7 @@ def write_pipes_dat(pipe_list, name):
                     element["Pressure"],
                     int(element["cell_number"]),
                     float(element["Volume"]),
-                    int(0),
+                    int(-1),
                     float(0),
                     float(0),
                     float(0),
@@ -904,7 +904,7 @@ def write_pipes_dat(pipe_list, name):
                     element["Pressure"],
                     int(element["cell_number"]),
                     float(element["Volume"]),
-                    int(0),
+                    int(-1),
                     float(element["Axis"].X),
                     float(element["Axis"].Y),
                     float(element["Axis"].Z),

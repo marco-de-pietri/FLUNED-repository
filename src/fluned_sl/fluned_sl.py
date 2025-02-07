@@ -25,6 +25,13 @@ def main():
         help="create an input template",
         default=False,
     )
+    parser.add_argument(
+        "-s",
+        "--sample_rrmesh",
+        action="store_true",
+        help="sample the rr mesh before running the simulation",
+        default=False,
+    )
     args = parser.parse_args()
 
     if args.input_template:
@@ -37,6 +44,13 @@ def main():
         print("printing template and exiting")
         create_input_template()
         sys.exit()
+
+    if args.sample_rrmesh:
+        print("sampling the rr mesh and exiting")
+        user_values = read_input_file(args.input)
+        case_path = os.getcwd()
+        case = FlunedSlCase(user_values, case_path)
+
 
 
     user_values = read_input_file(args.input)

@@ -619,7 +619,10 @@ class FlunedSlCase:
 
             else:
 
-                self.mc_solve_single_isotope_transient()
+                if self.numerical_method == "monte_carlo":
+                    self.mc_solve_single_isotope_transient()
+                elif self.numerical_method == "deterministic":
+                    self.det_solve_single_isotope_transient()
 
         else:
 
@@ -827,6 +830,46 @@ class FlunedSlCase:
 
 
         return 0
+
+    def det_solve_single_isotope_transient(self):
+        """
+        this function solves the transport of a single isotope with a
+        deterministic  method.
+        """
+
+        print("solving transient single isotope with deterministic method")
+
+
+        # at the moment set the pipe_time_default to 'uniform' to ensure we
+        # dismiss the radius sampling in the future we might be able to
+        # implement it
+        self.pipe_time_default = 'uniform'
+        self.tank_cyl_time_default = 'uniform'
+
+
+
+        # first assign a residence time to each node
+        for node_keys in self.all_nodes:
+            node = self.get_node(node_keys)
+            _ = node.set_residence_time(
+                                    0,
+                                    self.isotope_decay_constant,
+                                    self.tank_time_default,
+                                    self.tank_cyl_time_default,
+                                    self.pipe_time_default,
+                                    numerical_method = "deterministic",
+                                    )
+            node.mc_res_time = node.sample_res_time
+
+        t_start = self.parameters["t_begin_sec"]
+        t_end = self.parameters["t_end_sec"]
+        t_delta = self.parameters["t_delta_sec"]
+
+        time_steps = np.arange(t_start, t_end, t_delta)
+
+        print ("debug time steps: ", time_steps)
+
+        return
 
     def det_solve_single_isotope_steady_state(self):
         """

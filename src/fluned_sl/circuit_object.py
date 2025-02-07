@@ -3,7 +3,9 @@ this file containes the class of the circuit object
 """
 #import math
 import os
+import re
 import sys
+import shutil
 import numpy as np
 from .circuit_node import CircuitNode
 from .utils import get_circuit_files, split_text_file_lines,is_float
@@ -177,13 +179,23 @@ class CircuitObject:
         obtained by probing the rr mesh file
         """
 
-        print ("debug: circuit files", self.circuit_files)
 
+        # if the rrmesh file is not present we assign all the default values to 0
         if "rrmeshPath" not in self.circuit_files:
+            for node in self.circuit_dictionary.values():
+                if float(node.reaction_rate_m3) == -1e06:
+                    node.reaction_rate_m3 = 0.0
             return
 
+        # if it is present we sample the mesh
         for node in self.circuit_dictionary.values():
             node.probe_rrmesh(self.circuit_files["rrmeshPath"], parameters)
+
+        self.update_reac_rate_node_file()
+
+        # apply the scaling factor to the sampled reaction rate
+        for node in self.circuit_dictionary.values():
+            node.reaction_rate_m3 = node.reaction_rate_m3 * parameters["rrmesh_scaling_factor"]
 
         return 0
 
@@ -256,6 +268,61 @@ class CircuitObject:
 
 
         return 0
+
+
+    def update_reac_rate_node_file(self):
+        # Make a backup copy of the original file.
+        backup_path = self.circuit_files["nodesPath"] + ".bak"
+        shutil.copy(self.circuit_files["nodesPath"], backup_path)
+
+        # This regex splits the line into three parts:
+        #   - 'before': the first 9 comma-separated fields (each field and its following comma)
+        #   - 'tenth': the content of the tenth field (without its following comma)
+        #   - 'after': everything that follows (including the separating comma of field 10 and any remaining fields)
+        pattern = re.compile(r'^(?P<before>(?:[^,]*,){9})(?P<tenth>[^,]*)(?P<after>.*)$')
+
+        with open(backup_path, "r") as infile, open(self.circuit_files["nodesPath"], "w") as outfile:
+            for line in infile:
+                # Check if the line is a data line by looking at the first field.
+                first_field = line.split(",", 1)[0].strip()
+                if not first_field or not first_field[0].isdigit():
+                    outfile.write(line)
+                    continue
+
+                # Apply the regex to capture the parts of the line.
+                m = pattern.match(line)
+                if not m:
+                    outfile.write(line)
+                    continue
+
+                before = m.group("before")
+                after = m.group("after")
+
+                try:
+                    node_id = int(first_field)
+                except ValueError:
+                    outfile.write(line)
+                    continue
+
+                # Compute the new reaction rate (convert from m3 to cm3)
+                node = self.circuit_dictionary[node_id]
+                new_value = node.reaction_rate_m3 / 1e6
+
+                # Format only the tenth column using the specified format.
+                # Note: The format string provided is "{:>+20.5e}," but we omit the trailing comma
+                # because the comma is already part of the original line (captured in 'before' or 'after').
+                formatted_tenth = f"{new_value:>+20.5e}"
+
+                # Reassemble the line with the updated tenth column.
+                new_line = before + formatted_tenth + after + "\n"
+                outfile.write(new_line)
+        return 0
+
+
+
+
+
+
 
     def define_external_sources(self):
         """

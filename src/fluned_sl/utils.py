@@ -8,6 +8,7 @@ from distutils.util import strtobool
 import pyvista as pv
 import numpy as np
 import vtk
+from concurrent.futures import ThreadPoolExecutor
 
 
 def interp_series(x_vals, y_vals, x_new):
@@ -398,8 +399,6 @@ def extend_pnt(point,axis, distance):
 
 
 
-
-
 def vtk_sampling_0(file_path, coords, parameters):
     """
     Samples cell-based values from a VTK file at the given coordinates.
@@ -450,10 +449,6 @@ def vtk_sampling_0(file_path, coords, parameters):
 
     return mean
 
-import numpy as np
-import pyvista as pv
-import vtk
-from concurrent.futures import ThreadPoolExecutor
 
 def _find_cell_value(coord, locator, mesh, sampling_field, error_field, max_sample_error, tol, max_cell_size):
     pcoords = [0.0, 0.0, 0.0]
@@ -518,7 +513,7 @@ def vtk_sampling(file_path, coords, parameters, use_multithreading=True):
         ]
 
 
-    if results.size == 0 or np.all(np.isnan(results)):
+    if len(results) == 0 or np.all(np.isnan(results)):
         mean = 0.0
     else:
         mean = np.nanmean(results)

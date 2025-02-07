@@ -5,6 +5,8 @@ import math
 import random
 import sys
 import numpy as np
+import pyvista as pv
+
 
 from iapws.iapws97 import IAPWS97
 
@@ -334,20 +336,28 @@ class CircuitNode:
         """
         print ("probing node", self.node_keys)
 
+        # if the reaction rate has a value assigned the sampling is not allowed
+        if float(self.reaction_rate_m3) != -1e6:
+            return 0
+
+        # NB the scaling factor of the rrmesh is applided later to allow dumping the
+        # sampled values before scaling these
         if self.node_type == "cfd":
+            self.reaction_rate_m3 = 0
             pass
         elif self.node_type == "tank":
             print ("WARNING: rrmesh probing of a tank not possible")
+            self.reaction_rate_m3 = 0
             pass
         elif self.node_type == "stl":
-            print ("WARNING: stl probing of a tank not implemented")
-            pass
+            coords_cm = self.generate_stl_probing_points(parameters["rrmesh_sampling_cm"])
+            sampled_val = vtk_sampling(rr_file, coords_cm, parameters)
+            self.reaction_rate_m3 = sampled_val*1e6
+
         elif self.node_type in ["pipe", "tank-cyl"]:
             coords_cm = self.generate_pipe_probing_points(parameters["rrmesh_sampling_cm"])
-            print ("n coords_cm", len(coords_cm))
             sampled_val = vtk_sampling(rr_file, coords_cm, parameters)
-            print ("sampled value", sampled_val)
-            self.reaction_rate_m3 = sampled_val*1e6*parameters["rrmesh_scaling_factor"]
+            self.reaction_rate_m3 = sampled_val*1e6
 
         return 0
 
@@ -379,6 +389,55 @@ class CircuitNode:
 
 
         return coords
+
+
+    def generate_stl_probing_points(self, spacing):
+        """
+        this function samples points inside the stl file using pyvista
+        """
+        spacing_m = spacing*1e-2
+        mesh = pv.read(self.stl_path)
+        # Get the bounding box of the mesh: (xmin, xmax, ymin, ymax, zmin, zmax)
+        # convert to cm for sampling of the rr mesh
+        xmin, xmax, ymin, ymax, zmin, zmax = mesh.bounds
+
+        # Generate evenly spaced points within the bounding box
+        xs = np.arange(xmin, xmax + spacing_m, spacing_m)
+        ys = np.arange(ymin, ymax + spacing_m, spacing_m)
+        zs = np.arange(zmin, zmax + spacing_m, spacing_m)
+        X, Y, Z = np.meshgrid(xs, ys, zs, indexing='ij')
+        grid_points = np.column_stack((X.ravel(), Y.ravel(), Z.ravel()))
+
+        # Create a PyVista PolyData object from the grid points
+        points_polydata = pv.PolyData(grid_points)
+
+        # Use PyVista's select_enclosed_points filter.
+        enclosed = points_polydata.select_enclosed_points(mesh, tolerance=0.0)
+        mask = enclosed['SelectedPoints'].astype(bool)
+        # Use the original grid_points array for proper indexing
+        inside_points = grid_points[mask]
+
+
+        # If no points are generated, sample randomly until at least one point is found.
+        if inside_points.size == 0:
+            while True:
+                random_point = np.array([[np.random.uniform(xmin, xmax),
+                                           np.random.uniform(ymin, ymax),
+                                           np.random.uniform(zmin, zmax)]])
+                random_polydata = pv.PolyData(random_point)
+                enclosed_rand = random_polydata.select_enclosed_points(mesh, tolerance=0.0)
+                if enclosed_rand['SelectedPoints'][0] == 1:
+                    inside_points = random_point
+                    break
+
+        inside_points_cm = inside_points * 100
+
+        return inside_points_cm
+
+
+
+
+
 
 
     def assign_node_water_properties(self):
