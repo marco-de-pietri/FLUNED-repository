@@ -741,11 +741,20 @@ def write_stl_nodes(node_list):
     """
 
     doc_path = GetRootPart().Document.Path
-    path_base = os.path.dirname(doc_path) + '\\'
+    
+    
+    
+    
+    path_stl = os.path.dirname(doc_path) + '\\STL\\'
+    
+    if not os.path.exists(path_stl):
+    
+        os.mkdir(path_stl, 777)
+
 
     for node in node_list:
         if node["body_type"] == 'stl':
-            file_name = path_base + node["GroupName"] + "_" + str(node["Name"]) + ".stl"
+            file_name = path_stl + node["GroupName"] + "_" + str(node["Name"]) + ".stl"
             comp_bodies = BodySelection.Create([node["body_object"]])
 
 
@@ -755,7 +764,7 @@ def write_stl_nodes(node_list):
 
             # Save File
             options = ExportOptions.Create()
-            DocumentSave.Execute(file_name, options)
+
             options = STLExportOptions()
 
             options.ExportStlUnits = LengthUnits.M
@@ -764,6 +773,8 @@ def write_stl_nodes(node_list):
 
             # close new design
             DocumentHelper.CloseDocument()
+            
+         
 
 
 
@@ -986,14 +997,16 @@ def write_circuit_stl(CompList, name):
     paste_result = Copy.Execute(comp_bodies)
 
 
-    # Scale
-    bodies_scale = GetRootPart().GetAllBodies()
-    new_sel = Selection.Create(bodies_scale)
-    result = Scale.Execute(new_sel, Point.Create(0, 0, 0), 0.001, True)
-
     # Save File
     options = ExportOptions.Create()
-    DocumentSave.Execute(path, options)
+
+    options = STLExportOptions()
+
+    options.ExportStlUnits = LengthUnits.M
+
+    STLFile.Export(file_name, options)
+    
+    
 
     # close new design
     DocumentHelper.CloseDocument()

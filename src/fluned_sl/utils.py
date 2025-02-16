@@ -309,7 +309,6 @@ def create_input_template():
     template_text = """
 STEADY_STATE       TRUE        # false for transient studies
 ISOTOPE             N16        # isotope to be studied
-N_SAMPLING          1e6        # number of histories
 FLUID_CARRIER     WATER        # only water is supported for now
 NUMERICAL_METHOD DETERMINISTIC # monte_carlo or deterministic
     """
@@ -339,11 +338,13 @@ def read_input_file(path):
                   "rrmesh_sampling_field_name",
                   "rrmesh_sampling_errfield_name",
                   "rrmesh_scaling_factor",
+                  "rrmesh_time_scaling_series",
                   "fluid_carrier",
                   "pipe_time_default",
                   "tank_time_default",
                   "mc_error_max",
                   "t_delta_sec",
+                  "t_delta_sec_plot",
                   "t_begin_sec",
                   "t_end_sec",
                   "t_bins",

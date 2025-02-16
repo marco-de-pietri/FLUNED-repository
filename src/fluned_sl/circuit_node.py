@@ -111,7 +111,7 @@ class CircuitNode:
 
 
 
-        self.mc_average_activity_bq_m3 = 0
+        self.average_activity_bq_m3 = 0
         self.mc_average_activity_bq_m3_sum = 0
         self.mc_average_activity_bq_m3_vec = []
 
@@ -121,7 +121,7 @@ class CircuitNode:
 
         self.inlet_activity_bq_m3 = 0
 
-        self.mc_out_activity_bq_m3 = 0
+        self.out_activity_bq_m3 = 0
         self.mc_out_activity_bq_m3_sum = 0
         self.mc_out_activity_bq_m3_vec = []
 
@@ -134,6 +134,10 @@ class CircuitNode:
         self.mc_out_time_cumulated_vec = []
 
         self.linear_velocity_m_s = 0
+
+        self.delay_int = 0
+        self.sample_res_time_round = 0
+        self.delay_int_error = 0
 
     def print_node(self):
         """
@@ -628,7 +632,7 @@ class CircuitNode:
 
             return None, None
 
-    def node_calculation(
+    def mc_node_calculation(
         self,
         act_in,
         t_in,
@@ -695,6 +699,7 @@ class CircuitNode:
             res_t_complete_fraction = res_t_complete_fraction,
             steady_state = steady_state,
             activation_flag = activ_flag,
+            numerical_method = "monte_carlo"
         )
 
 
@@ -764,6 +769,7 @@ class CircuitNode:
         res_t_complete_fraction = 1,
         steady_state = True,
         activation_flag = False,
+        numerical_method = "deterministic"
     ):
         """
         this function calculates the average and outlet activity when a fluid
@@ -789,6 +795,12 @@ class CircuitNode:
             reac_rate = self.reaction_rate_m3
         else:
             reac_rate = 0
+
+        # I reassign the residence time to the rounded value
+        #if numerical_method == "deterministic" and not steady_state:
+        #    self.sample_res_time = self.sample_res_time_round
+
+
 
         # default methods
         if self.node_type_value == -1:
@@ -907,55 +919,8 @@ class CircuitNode:
                 print ("ERROR: not steady state not implemented yet")
                 sys.exit()
 
-                # contribution from decay
-                #res_time_decay = self.sample_res_time*res_t_fraction
 
-                #if res_t_fraction < 1:
-                #    dec_out = 0
-                #else:
-                #    dec_out = outlet_activity(
-                #        a_in_vol=act_in,
-                #        rr_vol=0,
-                #        lambda_decay=lambda_decay,
-                #        res_time=res_time_decay,
-                #        )
-
-                #dec_average = average_activity(
-                #    a_in_vol=act_in,
-                #    rr_vol=0,
-                #    lambda_decay=lambda_decay,
-                #    res_time = res_time_decay,
-                #)
-
-                #if reac_rate != 0:
-                #    res_time_activ = self.sample_res_time*res_a_fraction
-
-                #    if res_time_activ > res_time_decay:
-                #        res_time_activ = np.random.uniform(0,res_time_decay)
-                #        res_a_fraction = res_time_activ/self.sample_res_time
-
-                #    rr_out = outlet_activity(
-                #        a_in_vol=0,
-                #        rr_vol=reac_rate,
-                #        lambda_decay=lambda_decay,
-                #        res_time=res_time_activ,
-                #        )
-
-                #    rr_average = average_activity(
-                #         a_in_vol=0,
-                #         rr_vol=reac_rate,
-                #         lambda_decay=lambda_decay,
-                #         res_time=res_time_activ,
-                #         )
-
-                #else:
-                #    rr_out = 0
-                #    rr_average = 0
-
-                #act_out = rr_out + dec_out
-                #act_average = ((dec_average*res_t_fraction) +
-                #              (rr_average*res_a_fraction))
-
+        # node_type_value = -2 corresponds to the use of a rtd function
         elif self.node_type_value == -2:
             if self.node_type in ["tank", "tank-cyl","pipe"]:
                 if steady_state:
@@ -1594,8 +1559,8 @@ class CircuitNode:
         the mean values
         """
 
-        self.mc_average_activity_bq_m3 = 0
-        self.mc_out_activity_bq_m3 = 0
+        self.average_activity_bq_m3 = 0
+        self.out_activity_bq_m3 = 0
         self.mc_res_time = 0
         self.mc_out_time_cumulated  = 0
         self.tot_activity_bq = 0
@@ -1620,35 +1585,35 @@ class CircuitNode:
 
             if count != 0:
                 print ("average activity", self.mc_average_activity_bq_m3_vec[i]/count)
-                self.mc_average_activity_bq_m3 += self.mc_average_activity_bq_m3_vec[i]/count
+                self.average_activity_bq_m3 += self.mc_average_activity_bq_m3_vec[i]/count
                 self.mc_res_time += self.mc_res_time_vec[i]/count
                 self.mc_out_time_cumulated += self.mc_out_time_cumulated_vec[i]/count
                 print ("out activity", self.mc_out_activity_bq_m3_vec[i]/count)
-                self.mc_out_activity_bq_m3 += self.mc_out_activity_bq_m3_vec[i]/count
+                self.out_activity_bq_m3 += self.mc_out_activity_bq_m3_vec[i]/count
 
         #for i,count in enumerate(self.mc_counter_vec):
 
         #    if count != 0:
-        #        self.mc_average_activity_bq_m3 += self.mc_average_activity_bq_m3_vec[i]*indip_counters
+        #        self.average_activity_bq_m3 += self.mc_average_activity_bq_m3_vec[i]*indip_counters
         #        self.mc_res_time += self.mc_res_time_vec[i]*indip_counters
         #        self.mc_out_time_cumulated += self.mc_out_time_cumulated_vec[i]*indip_counters
-        #        self.mc_out_activity_bq_m3 += self.mc_out_activity_bq_m3_vec[i]*indip_counters
+        #        self.out_activity_bq_m3 += self.mc_out_activity_bq_m3_vec[i]*indip_counters
 
-        #self.mc_average_activity_bq_m3 /= tot_counts
+        #self.average_activity_bq_m3 /= tot_counts
         #self.mc_res_time /= tot_counts
         #self.mc_out_time_cumulated /= tot_counts
-        #self.mc_out_activity_bq_m3 /= tot_counts
+        #self.out_activity_bq_m3 /= tot_counts
 
 
         #if self.mc_counter != 0:
 
-        #    self.mc_average_activity_bq_m3 += self.mc_average_activity_bq_m3_sum / self.mc_counter
+        #    self.average_activity_bq_m3 += self.mc_average_activity_bq_m3_sum / self.mc_counter
         #    self.mc_res_time = self.mc_res_time_sum / self.mc_counter
         #    self.mc_out_time_cumulated = self.mc_out_time_cumulated_sum / self.mc_counter
-        #    self.mc_out_activity_bq_m3 += self.mc_out_activity_bq_m3_sum / self.mc_counter
+        #    self.out_activity_bq_m3 += self.mc_out_activity_bq_m3_sum / self.mc_counter
 
         vol_m3 = self.volume_cm3 * 1e-6
-        self.tot_activity_bq = self.mc_average_activity_bq_m3 * vol_m3
+        self.tot_activity_bq = self.average_activity_bq_m3 * vol_m3
 
         if self.mc_res_time != 0:
             self.linear_velocity_m_s = self.length_cm / (self.mc_res_time*100)
@@ -1674,7 +1639,7 @@ class CircuitNode:
         self.mc_error = 0
 
 
-        self.mc_average_activity_bq_m3 = 0
+        self.average_activity_bq_m3 = 0
         self.mc_average_activity_bq_m3_sum = 0
         self.mc_average_activity_bq_m3_vec = np.zeros(n)
 
@@ -1693,9 +1658,24 @@ class CircuitNode:
         self.mc_out_time_cumulated_sum = 0
         self.mc_out_time_cumulated_vec = np.zeros(n)
 
-        self.mc_out_activity_bq_m3 = 0
+        self.out_activity_bq_m3 = 0
         self.mc_out_activity_bq_m3_sum = 0
         self.mc_out_activity_bq_m3_vec = np.zeros(n)
 
+
+        return 0
+
+    def calculate_delay_int(self, t_step):
+        """
+        this function calculates the delay in the node for the delay-difference
+        implementation
+        """
+
+        self.delay_int = int(round(self.sample_res_time/t_step))
+        if self.delay_int == 0:
+            self.delay_int = int(1)
+        self.delay_int_error = abs(self.sample_res_time - self.delay_int*t_step)
+
+        self.sample_res_time_round = self.delay_int*t_step
 
         return 0

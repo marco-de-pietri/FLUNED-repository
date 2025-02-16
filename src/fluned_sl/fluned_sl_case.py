@@ -11,15 +11,19 @@ from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
 from .circuit_object import CircuitObject
-from .utils import unpack_mcnp, search_circuits
+from .utils import unpack_mcnp, search_circuits, interp_series
 
 from .pipes_cdgs import make_pipes_cdgs
 
 from .pipes_vtk import write_vtk_files
 
-#from .single_isotope_activation import outlet_activity
-
 from water_isotopes.water_isotopes import get_isotope_data
+
+from .tdd_functions import (build_augmented_matrix,
+                            build_forcing_vector,
+                            build_rr_augmented_matrix,
+                            build_decay_average_augmented_matrix,
+                            build_rr_average_augmented_matrix)
 
 class FlunedSlCase:
     """
@@ -43,10 +47,12 @@ class FlunedSlCase:
             "rrmesh_sampling_errfield_name" : "Error - Total",
             "rrmesh_sampling_cm":2.0,
             "rrmesh_scaling_factor":1.0,
+            "rrmesh_time_scaling_series": '',
             "pipe_time_default": "reynolds",
             "tank_time_default": "uniform",
             "tank_cyl_time_default": "uniform",
             "t_delta_sec": 1.0,
+            "t_delta_sec_plot": 1.0,
             "t_begin_sec": 0.0,
             "t_end_sec":  10.0,
             "mc_error_max": 1e-2,
@@ -127,8 +133,44 @@ class FlunedSlCase:
         self.n_sources = len(self.mc_list)
         self.reset_node_counters()
 
-        # check for loops in the circuit
-        #self.loops = self.loop_check()
+        # load the reaction rate scaling series
+        self.rr_scaling_series = self.load_rr_scaling_series()
+
+    def load_rr_scaling_series(self):
+        """
+        this function loads the reaction rate scaling series
+        """
+
+        if self.rrmesh_time_scaling_series == '':
+            return []
+
+        rr_scaling_series = {}
+        time = []
+        values = []
+
+
+        # try to open the file
+        try:
+            with open(self.rrmesh_time_scaling_series, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line == '' or not line[0].isdigit():
+                        continue
+                    line = line.split(',')
+                    time.append(float(line[0]))
+                    values.append(float(line[1]))
+        except:
+            print ("ERROR: could not open the rr scaling series file")
+            sys.exit()
+
+        rr_scaling_series['time'] = time
+        rr_scaling_series['values'] = values
+
+
+
+
+        return rr_scaling_series
+
 
     def define_single_isotope_properties(self):
         """
@@ -447,6 +489,7 @@ class FlunedSlCase:
                                             self.isotope_decay_constant,
                                             steady_state = True,
                                             activation_flag = False,
+                                            numerical_method = "deterministic",
                 )
 
                 act_flow_dstream = -(parent_mflow*
@@ -471,6 +514,7 @@ class FlunedSlCase:
                                             self.isotope_decay_constant,
                                             steady_state = True,
                                             activation_flag = True,
+                                            numerical_method = "deterministic",
                 )
                 rr_flow = (parent_mflow*
                           parent_mflow_fraction*
@@ -533,12 +577,13 @@ class FlunedSlCase:
                                             self.isotope_decay_constant,
                                             steady_state = True,
                                             activation_flag = True,
+                                            numerical_method = "deterministic",
                                         )
             #print ("act out: ", act_out)
             #print()
             node.inlet_activity_bq_m3 = act_in
-            node.mc_out_activity_bq_m3 = act_out
-            node.mc_average_activity_bq_m3 = act_average
+            node.out_activity_bq_m3 = act_out
+            node.average_activity_bq_m3 = act_average
             vol_m3 = node.volume_cm3 * 1e-6
             node.tot_activity_bq = act_average*vol_m3
 
@@ -745,7 +790,7 @@ class FlunedSlCase:
                                 res_t_tot_fraction = 1
                             else:
                                 res_t_tot_fraction = t_inside_h/t_res_complete_vec[h]
-                        act_in, _ = node_inner.node_calculation(
+                        act_in, _ = node_inner.mc_node_calculation(
                                             act_in,
                                             t_in,
                                             self.tank_time_default,
@@ -791,7 +836,7 @@ class FlunedSlCase:
                         else:
                             res_t_fraction = t_inside/t_res_vec[k]
 
-                    _,_ = node.node_calculation(
+                    _,_ = node.mc_node_calculation(
                                         act_in,
                                         t_in,
                                         self.tank_time_default,
@@ -846,6 +891,9 @@ class FlunedSlCase:
         self.pipe_time_default = 'uniform'
         self.tank_cyl_time_default = 'uniform'
 
+        test_list_di = []
+        test_list_di_err = []
+
 
 
         # first assign a residence time to each node
@@ -860,14 +908,201 @@ class FlunedSlCase:
                                     numerical_method = "deterministic",
                                     )
             node.mc_res_time = node.sample_res_time
+            node.calculate_delay_int(self.t_delta_sec)
 
-        t_start = self.parameters["t_begin_sec"]
-        t_end = self.parameters["t_end_sec"]
-        t_delta = self.parameters["t_delta_sec"]
+            test_list_di.append(node.delay_int)
+            test_list_di_err.append(node.delay_int_error)
 
-        time_steps = np.arange(t_start, t_end, t_delta)
+
+        print ("delay int: ", test_list_di)
+        #print ("delay int err: ", test_list_di_err)
+        print ("debub max error: ", max(test_list_di_err))
+        print ("debug numbers of int delay, ", len(set(test_list_di)))
+        print ("debug of int delay set, ", set(test_list_di))
+
+        t_start = self.t_begin_sec
+        t_end = self.t_end_sec
+        t_delta = self.t_delta_sec
+
+        time_steps = np.linspace(t_start, t_end, num=int((t_end - t_start) / t_delta) + 1)
+        n_time_steps = len(time_steps)
+
+
 
         print ("debug time steps: ", time_steps)
+
+        # gather all nodes
+        matrix_list = self.all_nodes
+        m_size = len(matrix_list)
+
+        node_weights_matrix = np.zeros((m_size,m_size))
+        res_time_matrix = np.zeros((m_size,m_size))
+        system_decay_matrix = np.zeros((m_size,m_size))
+        delay_matrix = np.zeros((m_size, m_size), dtype=int)
+        b_vector = np.zeros(m_size)
+
+
+
+        # define the system delay matrix
+        for i, elem in enumerate(matrix_list):
+
+            row_node = self.get_node(elem)
+            #density_kg_m3 = row_node.density_g_cm3*1000
+            #b_mass = row_node.get_external_inflow()
+            b_act = row_node.get_external_inflow_activity()
+            b_vector[i] += b_act
+
+
+
+            for child in self.get_node(elem).children.values():
+                child_keys = child["child_keys"]
+                child_mflow = self.get_node(child_keys).mass_flow
+                j = matrix_list.index(child_keys)
+                parent_mflow = row_node.mass_flow
+                parent_mflow_fraction = child["fraction"]
+
+                out_activity_factor, _ = row_node.get_outlet_average_activity(
+                                            1,
+                                            self.tank_time_default,
+                                            self.tank_cyl_time_default,
+                                            self.pipe_time_default,
+                                            self.isotope_decay_constant,
+                                            steady_state = False,
+                                            activation_flag = False,
+                                            numerical_method = "deterministic",
+                )
+
+                act_flow_dstream = (parent_mflow*
+                                    parent_mflow_fraction/
+                                    child_mflow)
+
+                node_weights_matrix[j,i] = act_flow_dstream
+                system_decay_matrix[j,i] = out_activity_factor
+                delay_matrix[j,i] = row_node.delay_int
+                res_time_matrix[j,i] = row_node.sample_res_time
+
+        n_max = np.max(delay_matrix)
+
+        # matrix to store the time-vaying solution
+        X = np.zeros((n_time_steps, m_size*n_max))
+
+        # matrix to store the time-vaying node average activity
+        Av = np.zeros((n_time_steps, m_size*n_max))
+
+        # matrix to store the time varying reaction rates - Initialization
+        S = np.zeros((n_time_steps, m_size*n_max))
+
+        # interpolate the rr time series over the n_time_steps
+        rr_rates = np.zeros(m_size)
+        for i, elem in enumerate(matrix_list):
+            row_node = self.get_node(elem)
+            rr_rates[i] = row_node.reaction_rate_m3
+
+        rr_mesh_time_series = np.zeros(n_time_steps)
+        for i, time in enumerate(time_steps):
+            rr_mesh_time_series[i] = interp_series(self.rr_scaling_series['time'],
+                                                   self.rr_scaling_series['values'],
+                                                   time)
+
+        for k in range(n_time_steps):
+            s_row = np.zeros((0))
+            k_list = np.arange(k, k-n_max, -1)
+            for k_val in k_list:
+                if k_val < 0:
+                    s_row = np.concatenate((s_row, np.zeros(m_size)))
+                else:
+                    s_row = np.concatenate((s_row, rr_rates*rr_mesh_time_series[k_val]))
+            S[k,:] = s_row
+
+
+
+
+
+
+        print ("debug max delay: ", n_max)
+
+        # augmentation matrix for outlet activity from entering activity
+        aug_matrix = build_augmented_matrix(node_weights_matrix,
+                                                  delay_matrix,
+                                                  res_time_matrix,
+                                                  self.isotope_decay_constant)
+
+
+        # augmentation matrix for outlet activity from rr activity
+        rr_aug_matrix = build_rr_augmented_matrix(node_weights_matrix,
+                                                  delay_matrix,
+                                                  res_time_matrix,
+                                                  self.isotope_decay_constant)
+
+        # augmentation matrix for average activity from entering activity
+        avg_aug_matrix = build_decay_average_augmented_matrix(
+                                                delay_matrix,
+                                                res_time_matrix,
+                                                self.isotope_decay_constant
+        )
+
+        # augmentation matrix for average activity from rr activity
+        rr_avg_aug_matrix = build_rr_average_augmented_matrix(
+                                                delay_matrix,
+                                                res_time_matrix,
+                                                self.isotope_decay_constant
+        )
+
+        u_vector = build_forcing_vector(b_vector, n_max)
+
+        # define the k=0 solution
+        X0 = build_forcing_vector(b_vector, n_max)
+        X[0,:] = X0.reshape(-1)
+
+
+
+        vtk_id = -1
+
+        for k in range(n_time_steps ):
+            print ("time step: ", k, "/", (n_time_steps-1))
+            if k!= n_time_steps-1:
+                X[k+1, :] = (aug_matrix @ X[k, :].reshape(-1) +
+                             rr_aug_matrix @ S[k, :].reshape(-1) +
+                            u_vector.reshape(-1))
+                Av[k+1, :] = (avg_aug_matrix @ (X[k, :].reshape(-1)) +
+                             rr_avg_aug_matrix @ S[k, :].reshape(-1) +
+                              u_vector.reshape(-1))
+
+            # assign activity flow to nodes
+            for i, keys in enumerate(matrix_list):
+                node = self.get_node(keys)
+
+                act_in = X[k,i]
+                act_average = Av[k,i]
+
+                # act out is calculated in the old method and will be removed
+                act_out, _ = node.get_outlet_average_activity(
+                                                act_in,
+                                                self.tank_time_default,
+                                                self.tank_cyl_time_default,
+                                                self.pipe_time_default,
+                                                self.isotope_decay_constant,
+                                                steady_state = True,
+                                                activation_flag = False,
+                                                numerical_method = "deterministic",
+                                            )
+                #print ("act out: ", act_out)
+                node.inlet_activity_bq_m3 = act_in
+                node.out_activity_bq_m3 = act_out
+                node.average_activity_bq_m3 = act_average
+                vol_m3 = node.volume_cm3 * 1e-6
+                node.tot_activity_bq = act_average*vol_m3
+
+            # output data
+            t_step = t_delta*k
+            self.print_solution_single_isotope_transient(t_step)
+
+            if t_step // self.t_delta_sec_plot == (vtk_id+1):
+                vtk_id += 1
+                id_string = f"{vtk_id:d}".zfill(int(math.floor(math.log10(n_time_steps))+1))
+                self.write_vtk_single_isotope(id_string)
+
+
 
         return
 
@@ -964,7 +1199,7 @@ class FlunedSlCase:
             res_time_in = 0.0
             for node_keys  in traverse_nodes:
                 node = self.get_node(node_keys)
-                act_in,res_time_in, = node.node_calculation(
+                act_in,res_time_in, = node.mc_node_calculation(
                                                act_in,
                                                res_time_in,
                                                self.tank_time_default,
@@ -1090,6 +1325,7 @@ class FlunedSlCase:
                         "group_name",
                         "node_id",
                         "length [m]",
+                        "inlet_activity [Bq/m3]",
                         "average_activity [Bq/m3]",
                         "total_activity [Bq]",
                         "mc_relative_error",
@@ -1097,13 +1333,13 @@ class FlunedSlCase:
 
         header_string = "{: >30},"*len(header_cols) + "\n"
 
-        data_string = ("{: >30},{: >30},{: >30},{: >30.6e},{: >30.6e},"
+        data_string = ("{: >30},{: >30},{: >30},{: >30.6e},{: >30.6e},{: >30.6e},"
                        "{: >30.6e},{: >30.6e}\n")
 
 
         for circuit in self.circuits.values():
 
-            out_name = f"_output_transient_{time:.2f}_sec.csv"
+            out_name = f"_output_transient_{time:.3f}_sec.csv"
             file_name = circuit.name + out_name
             file_path = os.path.join(circuit.full_path,file_name)
 
@@ -1119,7 +1355,8 @@ class FlunedSlCase:
                                                 node.group_name,
                                                 node.node_id,
                                                 node.length_cm/100,
-                                                node.mc_average_activity_bq_m3,
+                                                node.inlet_activity_bq_m3,
+                                                node.average_activity_bq_m3,
                                                 node.tot_activity_bq,
                                                 node.mc_error,
                                                 ))
@@ -1177,7 +1414,7 @@ class FlunedSlCase:
                                                 node.node_type,
                                                 node.length_cm/100,
                                                 node.volume_cm3/1e6,
-                                                node.mc_average_activity_bq_m3,
+                                                node.average_activity_bq_m3,
                                                 node.mc_out_activity_bq_m3,
                                                 node.tot_activity_bq,
                                                 node.mc_res_time,
@@ -1233,7 +1470,7 @@ class FlunedSlCase:
         for circuit in self.circuits.values():
 
             if step != '':
-                file_name = circuit.name + "_meters_" + str(int(step)) + "sec"
+                file_name = circuit.name + "_meters_tstep_" + step
             else:
                 file_name = circuit.name + "_meters"
 
@@ -1527,76 +1764,6 @@ class FlunedSlCase:
 
         return start_node, start_idx, irr_flag
 
-    #def pick_start_node(self):
-    #    """
-    #    this function returns a weighted random choice of the starting node
-    #    """
-
-
-    #    #start_idx = np.random.choice(len(self.source_idx))
-
-    #    #start_node = self.irr_list[start_idx]
-
-    #    start_idx = np.random.choice(
-    #                    self.source_idx,
-    #                    1,
-    #                    p=self.ext_source_prob,
-    #                    )[0]
-    #    start_node = self.ext_source_list[start_idx]['node']
-
-
-    #    return start_node,start_idx
-
-
-    #def pick_start_node(self):
-    #    """
-    #    this function returns a weighted random choice of the starting node
-    #    INDEPENDENT COUNTERS version
-    #    """
-
-
-    #    print ("self.source_idx", self.source_idx)
-    #    print ("self.irr source list", self.irr_source_list)
-
-    #    start_idx = np.random.choice(self.source_idx)
-
-    #    #start_node = self.irr_list[start_idx]
-
-    #    if start_idx == 0:
-    #        start_dict = np.random.choice(
-    #                        self.ext_source_list,
-    #                        1,
-    #                        p=self.ext_source_prob,
-    #                        )[0]
-    #        start_node = start_dict['node']
-    #        irr_flag = False
-
-    #    else:
-    #        start_node = self.irr_source_list[start_idx]['node']
-    #        irr_flag = True
-
-
-    #    return start_node, start_idx, irr_flag
-
-    #def pick_start_node(self):
-    #    """
-    #    this function returns a weighted random choice of the starting node
-    #    """
-
-
-    #    #start_idx = np.random.choice(len(self.source_idx))
-
-    #    #start_node = self.irr_list[start_idx]
-
-    #    start_idx = np.random.choice(
-    #                    self.source_idx,
-    #                    1,
-    #                    p=self.ext_source_prob,
-    #                    )[0]
-    #    start_node = self.ext_source_list[start_idx]['node']
-
-
-    #    return start_node,start_idx
 
 
 

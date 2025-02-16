@@ -68,16 +68,15 @@ def write_vtk_files(nodes,full_path, decay_const, steady_state_flag):
     this function writes the vtk file of the pipe circuit for visualization
     """
 
-    pipes = {key:value for key,value in nodes.items() if value.node_type in ["pipe","tank-cyl"]}
+    #pipes = {key:value for key,value in nodes.items() if value.node_type in ["pipe","tank-cyl"]}
 
     polyhedron_nodes = {key:value for key,value in nodes.items() if value.node_type in ["pipe","tank-cyl","stl"]}
 
     cfd_nodes = {key:value for key,value in nodes.items() if value.node_type in ["cfd"]}
 
-    write_vtk_pipes(pipes,full_path, steady_state_flag)
+    #write_vtk_pipes(pipes,full_path, steady_state_flag)
 
     write_vtk_pipes_polyhedron(polyhedron_nodes, full_path, steady_state_flag )
-
 
     write_vtk_cfd_nodes(cfd_nodes,full_path, steady_state_flag, decay_const)
 
@@ -88,7 +87,7 @@ def write_vtk_cfd_nodes(cfd_nodes,full_path, steady_state_flag, decay_const):
     this function writes the vtk file of the cfd nodes for visualization
     """
 
-    if not steady_state_flag :
+    if not steady_state_flag and len(cfd_nodes) > 0:
         print ("vtk of the cfd is not produced in transient mode")
         return
 
@@ -230,10 +229,16 @@ DATASET UNSTRUCTURED_GRID\r\n"""
             val = pipe.node_id
             out.write(f"{val:d}\r\n")
 
+        out.write("SCALARS inlet_activity_bq_m3 double 1 \r\n")
+        out.write("LOOKUP_TABLE default\r\n")
+        for pipe in pipes.values():
+            activity = pipe.inlet_activity_bq_m3
+            out.write(f"{activity:.5e}\r\n")
+
         out.write("SCALARS average_vol_activity_bq_m3 double 1 \r\n")
         out.write("LOOKUP_TABLE default\r\n")
         for pipe in pipes.values():
-            activity = pipe.mc_average_activity_bq_m3
+            activity = pipe.average_activity_bq_m3
             out.write(f"{activity:.5e}\r\n")
 
         out.write("SCALARS total_activity_bq double 1 \r\n")
@@ -362,46 +367,6 @@ def load_stl_polyhedron(stl_path):
     return mesh
 
 
-def write_vtk_pipes_polyhedron(pipes, full_path, steady_state_flag, resolution=24):
-    """
-    Load an STL file and convert its closed, triangulated surface into a single
-    vtkPolyhedron cell.
-
-    This is done by extracting the triangle connectivity from the STL polydata,
-    and then constructing a connectivity list in the polyhedron format.
-    """
-    # Read the STL file (assumed to represent a closed manifold).
-    poly = pv.read(stl_path)
-    # Clean the mesh (merge duplicate points, etc.)
-    poly = poly.clean()
-    # The STL surface is triangulated.
-    # Get the flat faces array and reshape it so that each row is [3, id0, id1, id2].
-    faces_flat = poly.faces.reshape((-1, 4))
-    nfaces = faces_flat.shape[0]
-    # Build connectivity: first the number of faces, then for each face:
-    # number_of_points followed by the point indices.
-    connectivity = [nfaces]
-    for row in faces_flat:
-        connectivity.append(int(row[0]))  # should be 3
-        connectivity.extend(row[1:].astype(int).tolist())
-
-    # Build vtkPoints from the polydata.
-    vtk_pts = vtk.vtkPoints()
-    for p in poly.points:
-        vtk_pts.InsertNextPoint(p.tolist())
-
-    # Build the vtkIdList.
-    id_list = vtk.vtkIdList()
-    id_list.InsertNextId(len(connectivity))
-    for num in connectivity:
-        id_list.InsertNextId(num)
-
-    # Create an unstructured grid and insert one polyhedron cell.
-    ug = vtk.vtkUnstructuredGrid()
-    ug.SetPoints(vtk_pts)
-    ug.InsertNextCell(vtk.VTK_POLYHEDRON, id_list)
-
-    return pv.wrap(ug)
 
 
 
@@ -413,7 +378,7 @@ def write_vtk_pipes_polyhedron(pipes, full_path, steady_state_flag, resolution=2
     Then assign the pipe properties as cell data and merge all into one grid,
     which is saved to file.
     """
-    full_path = full_path + "_polyhedron.vtk"
+    full_path = full_path + ".vtk"
     merged = None
 
     for pipe in pipes.values():
@@ -430,7 +395,8 @@ def write_vtk_pipes_polyhedron(pipes, full_path, steady_state_flag, resolution=2
         # For consistency, assign the same property value to every cell in this mesh.
         n_cells = cell_mesh.n_cells
         cell_mesh.cell_data["node_id"] = np.full(n_cells, pipe.node_id, dtype=int)
-        cell_mesh.cell_data["average_vol_activity_bq_m3"] = np.full(n_cells, pipe.mc_average_activity_bq_m3, dtype=float)
+        cell_mesh.cell_data["inlet_vol_activity_bq_m3"] = np.full(n_cells, pipe.inlet_activity_bq_m3, dtype=float)
+        cell_mesh.cell_data["average_vol_activity_bq_m3"] = np.full(n_cells, pipe.average_activity_bq_m3, dtype=float)
         cell_mesh.cell_data["total_activity_bq"] = np.full(n_cells, pipe.tot_activity_bq, dtype=float)
         cell_mesh.cell_data["reaction_rate_m3"] = np.full(n_cells, pipe.reaction_rate_m3, dtype=float)
         if steady_state_flag:

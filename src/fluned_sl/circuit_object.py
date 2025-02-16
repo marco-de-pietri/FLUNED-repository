@@ -271,8 +271,21 @@ class CircuitObject:
 
 
     def update_reac_rate_node_file(self):
-        # Make a backup copy of the original file.
+        """
+        this function updates the nodes.dat file with the reaction rate
+        """
+
+        temp_data = False
+
+        # Make a backup copy of the original file with no reaction rate data
         backup_path = self.circuit_files["nodesPath"] + ".bak"
+
+        # check if it exists
+        if  os.path.exists(backup_path):
+            backup_path = self.circuit_files["nodesPath"] + ".tmp"
+            temp_data = True
+
+
         shutil.copy(self.circuit_files["nodesPath"], backup_path)
 
         # This regex splits the line into three parts:
@@ -316,6 +329,11 @@ class CircuitObject:
                 # Reassemble the line with the updated tenth column.
                 new_line = before + formatted_tenth + after + "\n"
                 outfile.write(new_line)
+
+
+        if temp_data:
+            os.remove(backup_path)
+
         return 0
 
 
