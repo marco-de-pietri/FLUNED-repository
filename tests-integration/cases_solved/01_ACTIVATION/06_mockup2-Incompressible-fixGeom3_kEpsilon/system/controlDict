@@ -1,0 +1,56 @@
+FoamFile {
+    version 2.0;
+    format ascii;
+    class dictionary;
+    object controlDict;
+}
+functions {
+    sigHandler {
+        type writeOldTimesOnSignal;
+        sleepSecondsBeforeReraising 60;
+        numberOfTimestepsToStore 1;
+        writeCurrent false;
+        sigFPE true;
+        sigSEGV false;
+        sigINT false;
+        sigQUIT true;
+    }
+    flexibleWriter {
+        type flexibleWriter;
+        clockTimeLimit 60;
+        fracTime 0.1;
+    }
+    divergenceHandler {
+        type divergenceHandler;
+        nItersToSkip 50;
+        U 10000000.0;
+        p -1000000000000000.0 1000000000000000.0;
+        scalarFields (p);
+        vectorFields (U);
+        active yes;
+    }
+    ConvergenceIndicator {
+        type convergenceIndicator;
+        scalarFields (p);
+        vectorFields (U);
+    }
+}
+libs ("libsimpleFunctionObjects.so" "libgroovyBC.so" "libsimScaleFunctionObjects.so");
+application simpleFoam;
+startFrom startTime;
+stopAt endTime;
+purgeWrite 0;
+writeFormat ascii;
+writePrecision 12;
+writeCompression on;
+timeFormat general;
+timePrecision 12;
+runTimeModifiable yes;
+deltaT 1.0;
+startTime 0;
+endTime 1000.0;
+adjustTimeStep no;
+writeControl timeStep;
+writeInterval 1000;
+secondaryWriteControl adjustableRunTime;
+secondaryWriteInterval 1000.0;

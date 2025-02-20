@@ -1,0 +1,23 @@
+FoamFile {
+    version 2.0;
+    format ascii;
+    class dictionary;
+    object changeDictionaryDict;
+}
+boundary {
+    face3 {
+        type wall;
+    }
+    face4 {
+        type wall;
+    }
+    face5 {
+        type wall;
+    }
+    face6 {
+        type wall;
+    }
+    face7 {
+        type wall;
+    }
+}

@@ -1,0 +1,75 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-0347120b3b9d
+Exec   : postProcess -func writeCellVolumes
+Date   : Jan 31 2023
+Time   : 12:25:53
+Host   : "LAPTOP-9VOHN090"
+PID    : 3256
+I/O    : uncollated
+Case   : /mnt/d/01_OPENFOAM/10_TEST_DEV/01_TEST_SUITE/00_EMPTY/04_LAMINAR_FLOW/01_LAMINAR_005/FLUNED_01_DEFAULT_N16
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Time = 0s
+
+Reading fields:
+
+Executing functionObjects
+    Writing cell-volumes field V to 0
+
+End
+
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 10-0347120b3b9d
+Exec   : postProcess -func writeCellVolumes
+Date   : Jan 31 2023
+Time   : 15:15:35
+Host   : "LAPTOP-9VOHN090"
+PID    : 6267
+I/O    : uncollated
+Case   : /mnt/d/01_OPENFOAM/10_TEST_DEV/01_TEST_SUITE/00_EMPTY/04_LAMINAR_FLOW/01_LAMINAR_005/FLUNED_01_DEFAULT_N16
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Time = 0s
+
+Reading fields:
+
+Executing functionObjects
+    Writing cell-volumes field V to 0
+
+Time = 43s
+
+Reading fields:
+
+Executing functionObjects
+    Writing cell-volumes field V to 43
+
+End
+

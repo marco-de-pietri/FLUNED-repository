@@ -1,0 +1,198 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.3.1                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    face1
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face2
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face3
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face4
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face5
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face6
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face7
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face8
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face9
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face10
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face11
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face12
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face13
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face14
+    {
+        type            fixedValue;
+        value           uniform (-1.13682 0 0);
+    }
+    face15
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face16
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face17
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face18
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face19
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face20
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face21
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face22
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face23
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face24
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face25
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face26
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face27
+    {
+        type            inletOutlet;
+        inletValue      uniform (0 0 0);
+        value           uniform (0 0 0);
+    }
+    face28
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face29
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face30
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face31
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face32
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face33
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+    face34
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+}
+
+
+// ************************************************************************* //

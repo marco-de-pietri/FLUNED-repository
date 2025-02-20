@@ -1,0 +1,67 @@
+FoamFile {
+    version 2.0;
+    format ascii;
+    class dictionary;
+    object fieldOperationsDict.decode;
+}
+operations (
+    {
+        field p;
+        type volScalarField;
+        operation scaleWithScalar;
+        scaleParam 997.33;
+        scaleBCs on;
+    }
+    
+    {
+        field p;
+        type volScalarField;
+        operation changeDimensions;
+        newDimensions [1 -1 -2 0 0 0 0];
+    }
+    
+    {
+        field p_rgh;
+        type volScalarField;
+        operation scaleWithScalar;
+        scaleParam 997.33;
+        scaleBCs on;
+    }
+    
+    {
+        field p_rgh;
+        type volScalarField;
+        operation changeDimensions;
+        newDimensions [1 -1 -2 0 0 0 0];
+    }
+    
+    {
+        field wallShearStress;
+        type volVectorField;
+        operation scaleWithScalar;
+        scaleParam 997.33;
+        scaleBCs on;
+    }
+    
+    {
+        field wallShearStress;
+        type volVectorField;
+        operation changeDimensions;
+        newDimensions [1 -1 -2 0 0 0 0];
+    }
+    
+    {
+        field UPrime2Mean;
+        type volSymmTensorField;
+        operation scaleWithScalar;
+        scaleParam 997.33;
+        scaleBCs on;
+    }
+    
+    {
+        field UPrime2Mean;
+        type volSymmTensorField;
+        operation changeDimensions;
+        newDimensions [1 -1 -2 0 0 0 0];
+    }
+);
