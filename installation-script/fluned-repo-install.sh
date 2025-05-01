@@ -6,6 +6,13 @@ INSTALL_DIR="$HOME"
 # Navigate to the home directory
 cd "$INSTALL_DIR"
 
+#check for zsh usage
+if [ -n "$ZSH_VERSION" ]; then
+  rc_file="$HOME/.zshrc"
+else
+  rc_file="$HOME/.bashrc"
+fi
+
 # 1) Install required dependencies
 echo "Installing required dependencies..."
 sudo apt-get update
@@ -43,7 +50,8 @@ sudo apt-get -y install libhdf5-dev pkg-config
 
 # 8) Append the OpenFOAM source command to .bashrc
 echo "Configuring OpenFOAM environment..."
-grep -qxF 'source /opt/openfoam12/etc/bashrc' ~/.bashrc || echo 'source /opt/openfoam12/etc/bashrc' >> ~/.bashrc
+grep -qxF 'source /opt/openfoam12/etc/bashrc' "$rc_file" \
+  || printf '\nsource /opt/openfoam12/etc/bashrc\n' >> "$rc_file"
 source /opt/openfoam12/etc/bashrc  # Source OpenFOAM environment for this subshell
 
 
@@ -57,7 +65,8 @@ cd ~/FLUNED-repository/
 # 10) Install FLUNED with pipx using Python 3.11
 echo "Installing FLUNED using pipx..."
 pipx install --python python3.11 .
-grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' ~/.bashrc || echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$rc_file" \
+  || printf '\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$rc_file"
 
 
 # 11) Compile the FLUNED-solver (wmake requires the OpenFOAM environment to be sourced)
