@@ -8,8 +8,6 @@ For additional information contact: mdepietri@ind.uned.es
 
 ## FLUNED-Repository Installation
 
-For user simplicity and because the two tools can be coupled, the tools are to be installed together.
-
 The recommeded way is to use the installation script present in the _FLUNED-Repository/installation-script/_ folder.
 
 The tools needs to run in a linux environment, the software requirements are OpenFOAM v12 and the packages listed either in the toml file or in the installation script.
