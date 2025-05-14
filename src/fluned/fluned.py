@@ -145,65 +145,6 @@ def sample_coordinates_vtk(vtk_file, dataset_name, coordinates):
     return  reac_rates
 
 
-#def sampleCoordinatesVTK1(vtkFile, datasetName, coordinates):
-#    """this function reads the vtk and sample the reaction rates"""
-#
-#    checkFile = os.path.isfile(vtkFile)
-#    if not checkFile:
-#        print ("ERROR activation file not found")
-#        sys.exit()
-#    print ("Sampling Reaction Rate file... points ")
-#
-#    #read the vtk file with an unstructured grid
-#    reader = vtk.vtkStructuredGridReader()
-#    reader.SetFileName(vtkFile)
-#    reader.ReadAllVectorsOn()
-#    reader.ReadAllScalarsOn()
-#    reader.Update()
-#    data = reader.GetOutput()
-#
-#
-#    bounds =list(data.GetBounds())
-#    dims =list(data.GetDimensions())
-#    print (data)
-#    print (bounds)
-#    print (bounds)
-#
-#
-#
-#    #define probe
-#
-#    points = vtk.vtkPoints()
-#    points.SetNumberOfPoints(len(coordinates))
-#
-#    for i,val in enumerate(coordinates):
-#        points.SetPoint(i,val[0],val[1],val[2])
-#
-#
-#
-#    polydata = vtk.vtkPolyData()
-#    polydata.SetPoints(points)
-#
-#
-#    #Perform the interpolation
-#    interpolator = vtk.vtkPointInterpolator()
-#    #interpolator.SetInputData(polydata)
-#    interpolator.SetInputConnection(polydata.GetPointData().GetOutputPort())
-#    #probeFilter.SetSourceData(data)
-#    #probeFilter.SetInputData(polydata)
-#    #probeFilter.Update()
-#    #vtkArray = probeFilter.GetOutput().GetPointData().GetArray(datasetName)
-#
-#    #reacRates = VN.vtk_to_numpy(vtkArray)
-#
-#    interpolator.Update()
-#    sys.exit()
-#
-#
-#    sys.exit()
-#
-#
-#    return  reacRates
 
 def heron_formula(points):
     """
@@ -303,7 +244,7 @@ def read_input_file(path):
     cases_vec = []
     parameters = [ 'case','time_treatment',  'activation_const',
                    'activation_dataset','activation_dataset_error',
-                   'fv_scheme',
+                   'fv_scheme', 'isotope',
                     'activation_file', 'activation_normalization',
                    'inlet_conc','decay_constant', 'cfd_path',
                    'molecular_diffusion','schmidt_number','div_scheme',
@@ -354,6 +295,15 @@ class FlunedCase:
             self.decay_constant = float(arg_dict['decay_constant'])
         else:
             self.decay_constant = 0
+
+        if 'isotope' in arg_dict:
+            isotope = arg_dict['isotope'].lower().replace('-','')
+            if isotope not in ['n16','o19','n17', 'f20','custom']:
+                raise ValueError("isotope not recognized")
+            self.isotope = isotope
+        else:
+            self.isotope = 'custom'
+
         if 'activation_const' in arg_dict:
             self.activation_const = float(arg_dict['activation_const'])
         else:
@@ -694,12 +644,14 @@ FoamFile
 
 transportModel  Newtonian;
 
+isotope          {};
 
 DT             DT [0 2 -1 0 0 0 0] {};
 
 lambda         lambda [0 0 -1 0 0 0 0] {};
 
 Sct            Sct [ 0 0 0 0 0 0 0 ] {};
+
 
 // ************************************************************************ //
 """
@@ -710,6 +662,7 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
 
         with open(transport_prop_path,'w',encoding='utf-8') as fw:
             fw.write(transport_prop_text.format(
+                self.isotope,
                 self.molecular_diffusion,
                 self.decay_constant,
                 self.schmidt_number))

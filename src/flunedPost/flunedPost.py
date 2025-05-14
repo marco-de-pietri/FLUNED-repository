@@ -10,6 +10,7 @@ import argparse
 import linecache
 import tracemalloc
 import vtk
+import meshio
 import pyvista as pv
 from vtk.util import numpy_support as VN
 import gzip
@@ -221,10 +222,11 @@ def getVTKsize(vtkFile):
     bounds =list(data.GetBounds())
     return bounds
 
-def getTotalAtomsVtk(vtkFile, datasetName):
+def get_decays(vtkFile, datasetName, decay_constant, branching_ratio, scaling):
     """
     this function reads the vtk and calulates the total conc
     """
+
 
     checkFile = os.path.isfile(vtkFile)
     if not checkFile:
@@ -250,10 +252,16 @@ def getTotalAtomsVtk(vtkFile, datasetName):
     mesh = mesh.compute_cell_sizes()
     volume_data =  mesh.cell_data['Volume']
 
-    totAtom=sum([conc*vol for conc,vol in zip(elementConcArray,volume_data)])
+    decay_rate_elements =([conc*
+                          vol*
+                          decay_constant*
+                          branching_ratio*
+                          scaling
+                          for conc,vol in zip(elementConcArray,volume_data)])
 
 
-    return totAtom
+    return decay_rate_elements
+
 
 def sampleCoordinatesVTK(vtkFile, datasetName, coordinates):
     """this function reads the vtk and sample the reaction rates"""
@@ -446,7 +454,7 @@ def check_float(str):
     except ValueError:
         return False
 
-class flunedCase:
+class flunedPostCase:
     """
     fluned case class
     """
@@ -510,6 +518,20 @@ class flunedCase:
 
         self.facesPost = postFlowVec
 
+
+
+        return
+
+    def get_total_decays(self):
+        """
+        this function reads the vtk and calulates the total conc
+        """
+
+        print ("Calculating total decay rate ... ")
+
+        decay_rate_elements = get_decays(self.vtk_path, self.dataset, self.decay_constant, self.branching_ratio, self.scaling)
+
+        self.originalEmissionRate = sum(decay_rate_elements)
 
 
         return
@@ -780,6 +802,21 @@ class flunedCase:
 
         return returnDic
 
+    def create_results_folder(self):
+        """
+        this function creates the results folder
+        """
+
+        resFolder = os.path.join(self.fluned_path,'RESULTS')
+
+        dir_check = os.path.isdir(resFolder)
+        if not dir_check:
+            os.mkdir(resFolder)
+
+        self.results_folder = resFolder
+
+        return
+
     def readPointCoordinate(self,pointID):
         """ this function looks for the studied point - and output the
         coordinates - no storing"""
@@ -994,6 +1031,7 @@ class flunedCase:
 
         # common patterns
         dtPat = re.compile("DT\s*DT.*")
+        isotope_pat = re.compile("isotope.*")
         lambdaPat = re.compile("lambda\s*lambda.*")
         schPat = re.compile("Sct\s*Sct.*")
 
@@ -1009,6 +1047,14 @@ class flunedCase:
             dtLines = dtPat.findall(text)
             lambdaLines = lambdaPat.findall(text)
             schLines = schPat.findall(text)
+            isotopeLines = isotope_pat.findall(text)
+            if len(isotopeLines) != 0:
+                vals = isotopeLines[0].strip(' ;').split()
+                val = vals[-1]
+                self.isotope = val
+            else:
+                self.isotope = 'custom'
+
             if len(dtLines) != 0:
                 vals = dtLines[0].strip(' ;').split()
                 val = vals[-1]
@@ -1050,13 +1096,8 @@ class flunedCase:
 
     def write_summary_transient(self,arguments):
 
-        resFolder = os.path.join(self.fluned_path,'RESULTS')
 
-        dirCheck = os.path.isdir(resFolder)
-        if not dirCheck:
-            os.mkdir(resFolder)
-
-        sumFile = os.path.join(resFolder,'SUMMARY.csv')
+        sumFile = os.path.join(self.results_folder,'SUMMARY.csv')
 
         inletAtoms = 0
         inletFlow = 0
@@ -1104,7 +1145,7 @@ class flunedCase:
             fw.write("CASE,{},\n".format(self.case))
             fw.write("TRANSIENT SIMULATION\n")
             fw.write("N ELEMENTS,{},\n".format(len(self.TScalar)))
-            fw.write("ISOTOPE,{},\n".format(self.isotope))
+            fw.write("ISOTOPE,{},\n".format(self.isotope.upper()))
             fw.write("DECAY CONSTANT,{:e},\n".format(self.decay_constant))
             fw.write("MOL DIFFUSION,{:e},\n".format(self.molecular_dif))
             fw.write("TURB SCHMIDT N,{:f},\n".format(self.schmidt_number))
@@ -1116,7 +1157,7 @@ class flunedCase:
             if negCheck:
                 fw.write("WARNING some elements are negative")
 
-            if arguments.source_CDGS:
+            if arguments.cdgs:
                 fw.write("\n")
                 fw.write("\n")
                 fw.write("SOURCE SAMPLING\n")
@@ -1193,7 +1234,7 @@ class flunedCase:
             # write the flowing atoms at inlet-outlet
             faceSummary=('face-atom-flow-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
-            sumFile1 = os.path.join(resFolder,faceSummary)
+            sumFile1 = os.path.join(self.results_folder,faceSummary)
             with open(sumFile1,'w') as fw:
                 for t,c in zip(face['timeFile'],face['TFlowFile']):
                     fw.write('{:.3f},{:.5e},\n'.format(t,c))
@@ -1201,7 +1242,7 @@ class flunedCase:
             # write the concentration at inlet-outlet
             faceSummary=('face-conc-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
-            sumFile1 = os.path.join(resFolder,faceSummary)
+            sumFile1 = os.path.join(self.results_folder,faceSummary)
             with open(sumFile1,'w') as fw:
                 for t,c in zip(face['timeFile'],face['avTFile']):
                     fw.write('{:.3f},{:.5e},\n'.format(t,c))
@@ -1209,7 +1250,7 @@ class flunedCase:
             # write the specific activity at inlet-outlet
             faceSummary=('face-specific-activity-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
-            sumFile1 = os.path.join(resFolder,faceSummary)
+            sumFile1 = os.path.join(self.results_folder,faceSummary)
             with open(sumFile1,'w') as fw:
                 for t,c in zip(face['timeFile'],face['avTFile']):
                     fw.write('{:.3f},{:.5e},\n'.format(
@@ -1218,7 +1259,7 @@ class flunedCase:
             # write the specific time-conc at inlet-outlet
             faceSummary=('face-fictitious-time-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
-            sumFile1 = os.path.join(resFolder,faceSummary)
+            sumFile1 = os.path.join(self.results_folder,faceSummary)
             with open(sumFile1,'w') as fw:
                 for t,c in zip(face['timeFile'],face['avTrFile']):
                     fw.write('{:.3f},{:.5e},\n'.format(t,c))
@@ -1227,7 +1268,7 @@ class flunedCase:
             # write the RTD at inlet-outlet
             faceSummary=('face-RTD-raw-' + face['faceID'] +
                          '-' + face['typeFile'] + '.csv')
-            sumFile1 = os.path.join(resFolder,faceSummary)
+            sumFile1 = os.path.join(self.results_folder,faceSummary)
             with open(sumFile1,'w') as fw:
                 for t,g in zip(face['timeFile'],face['avTrGrad']):
                     fw.write('{:.3f},{:.5e},\n'.format(t,g))
@@ -1241,13 +1282,8 @@ class flunedCase:
         This function writes the summary file in the RESULTS/ folder
         """
 
-        result_dir = os.path.join(self.fluned_path,'RESULTS')
 
-        dir_check = os.path.isdir(result_dir)
-        if not dir_check:
-            os.mkdir(result_dir)
-
-        summary_file = os.path.join(result_dir,'SUMMARY.csv')
+        summary_file = os.path.join(self.results_folder,'SUMMARY.csv')
 
         inletAtoms = 0
         inletFlow = 0
@@ -1342,7 +1378,7 @@ class flunedCase:
             fw.write("CASE,{},\n".format(self.case))
             fw.write("STEADY STATE SIMULATION\n")
             fw.write("N ELEMENTS,{},\n".format(len(self.TScalar)))
-            fw.write("ISOTOPE,{},\n".format(self.isotope))
+            fw.write("ISOTOPE,{},\n".format(self.isotope.upper()))
             fw.write("DECAY CONSTANT,{:e},\n".format(self.decay_constant))
             fw.write("MOL DIFFUSION,{:e},\n".format(self.molecular_dif))
             fw.write("TURB SCHMIDT N,{:f},\n".format(self.schmidt_number))
@@ -1360,7 +1396,7 @@ class flunedCase:
                 fw.write("AVG CELL Q3,{:e},\n".format(avgMeshQualParameter3))
             if negCheck:
                 fw.write("WARNING some elements are negative")
-            if arguments.source_CDGS:
+            if arguments.cdgs:
                 fw.write("\n")
                 fw.write("\n")
                 fw.write("SOURCE SAMPLING\n")
@@ -1458,19 +1494,29 @@ class flunedCase:
 
         return
 
-    def getVTKPath(self):
+    def getVTKPath(self,user_vtk = False):
         """
         this function looks for the vtk file in the VTK folder and
         store the complete path
         """
 
-        vtkFilePat = re.compile("\.vtk\Z", re.IGNORECASE)
 
         vtkFiles = []
 
         folder = os.path.join(self.fluned_path, 'VTK')
 
         self.vtk_path = ''
+
+
+        if user_vtk!= False:
+            filename = os.path.splitext(user_vtk)[0]
+        else:
+            filename = ''
+
+        pat_string = "{}\.vtk\Z".format(filename)
+
+        vtkFilePat = re.compile(pat_string, re.IGNORECASE)
+
 
         for filename in os.listdir(folder):
             matchVTKfiles = vtkFilePat.findall(filename)
@@ -1481,7 +1527,13 @@ class flunedCase:
             self.vtk_path = os.path.join(self.fluned_path,'VTK',vtkFiles[0])
         else:
             print ("ERROR zero or more than one vtk files")
+            print ("found in the VTK folder")
+            print ("found vtk files: ", vtkFiles)
             sys.exit()
+
+
+
+
 
 
 
@@ -1505,14 +1557,15 @@ class flunedCase:
         ]
 
         dummy_branching_ratio = 1
+
         if math.isclose(self.decay_constant,N16_decay_constant,rel_tol=1e-3):
-            self.isotope = 'N16'
+            self.isotope = 'n16'
         elif math.isclose(self.decay_constant,N17_decay_constant,
                 rel_tol=1e-3):
-            self.isotope = 'N17'
+            self.isotope = 'n17'
         elif math.isclose(self.decay_constant,O19_decay_constant,
                 rel_tol=1e-3):
-            self.isotope = 'O19'
+            self.isotope = 'o19'
         else:
             self.isotope = 'dummy'
             print ("WARNING decay constant isotope not recognized, simulation decay constant: ", self.decay_constant)
@@ -1527,7 +1580,10 @@ class flunedCase:
             self.spectrum = isotope_data['energy_spectrum_normalized']
             self.e_bins = isotope_data['e_bins']
             self.p_bins = isotope_data['p_bins']
+            self.e_lines = isotope_data['e_lines']
+            self.p_lines = isotope_data['p_lines']
             self.branching_ratio = isotope_data['branching_ratio']
+            self.particle_type = isotope_data['emitting_particle']
         else:
             self.spectrum =  dummySpectrum
             self.branching_ratio = dummy_branching_ratio
@@ -1537,22 +1593,22 @@ class flunedCase:
 
         return
 
-    def getOriginalEmission(self):
-        """
-        this function reads the initial vtk and calculates the total
-        emission
-        """
+    # def getOriginalEmission(self):
+    #     """
+    #     this function reads the initial vtk and calculates the total
+    #     emission
+    #     """
 
-        totalAtoms = getTotalAtomsVtk(self.vtk_path, self.dataset)
+    #     totalAtoms = getTotalAtomsVtk(self.vtk_path, self.dataset)
 
-        totalEmissionVtk = (totalAtoms*
-                            self.decay_constant*
-                            self.branching_ratio*
-                            self.scaling)
+    #     totalEmissionVtk = (totalAtoms*
+    #                         self.decay_constant*
+    #                         self.branching_ratio*
+    #                         self.scaling)
 
-        self.originalEmissionRate = totalEmissionVtk
+    #     self.originalEmissionRate = totalEmissionVtk
 
-        return
+    #     return
 
     def calculateSamplingCoordinates(self):
         """
@@ -1604,6 +1660,7 @@ class flunedCase:
                     zVoxelCenter = (zNodes[k+1] + zNodes[k])/2
                     newDic = {}
                     newDic['ID'] = id
+                    newDic['index'] = [i,j,k]
                     newDic['centCoords'] = ([xVoxelCenter,
                                              yVoxelCenter,
                                              zVoxelCenter])
@@ -1636,7 +1693,6 @@ class flunedCase:
         voxelVolume = self.voxelVolume
 
         for voxel,concentration in zip(self.voxelVector,sampledRates):
-            #voxel['emittingDensity'] = concentration*1e-06 #from m3 to cm3
             voxel['emission'] = (concentration*
                                  voxelVolume*
                                  self.decay_constant*
@@ -1668,7 +1724,6 @@ class flunedCase:
 
         cdgsFile = self.vtk_path[:-3] + 'CDGS'
 
-        #spectrumVector = self.spectrum
 
         with open(cdgsFile,'w') as fw:
             fw.write("num_meshes 1\n")
@@ -1720,6 +1775,139 @@ class flunedCase:
 
         return
 
+    def writeOpenMCSource(self):
+        """
+        this function write the mesh-based radiation source file
+        """
+
+        from lxml import etree as et
+
+        openmc_source_file = os.path.join(self.results_folder, 'structgrid_fluned_source.xml')
+        openmc_source_file_name = os.path.basename(openmc_source_file)
+        openmc_source_import_commands = os.path.join(self.results_folder, "openmc_commands.txt")
+
+        # now it is hardcoded, later I will find a better way to handle this
+        mesh_id = 100
+
+
+        dimensions =[self.xInts, self.yInts, self.zInts]
+
+
+        mesh_lower_left = [min(self.xNodes),min(self.yNodes),min(self.zNodes),]
+        mesh_upper_right = [max(self.xNodes),max(self.yNodes),max(self.zNodes)]
+
+
+        # create root element
+        root = et.Element("source")
+
+        # create sublement with the mesh source
+        source_mesh = et.SubElement(root, "source", type="mesh",
+                strength=str(self.scaledEmissionRate),
+                mesh=str(mesh_id))
+
+        arr = np.asarray(self.voxelVector, dtype=object)          # keep objects untouched
+        reordered =  arr.reshape((self.xInts, self.yInts, self.zInts), order="C").ravel(order="F")
+
+        ebins_temp = [e*1e6 for e in self.e_lines] # convert from MeV to eV
+        energy_parameters = [*ebins_temp , *self.p_lines]
+        particle_type = self.particle_type
+
+
+        for i,voxel in enumerate(reordered):
+
+            sub_source = et.SubElement(source_mesh, "source",
+                                        type="independent",
+                                        strength=str(voxel['emission']),
+                                        particle=particle_type)
+
+            et.SubElement(sub_source, "angle", type="isotropic")
+            energy = et.SubElement(sub_source, "energy", type="discrete")
+            params = et.SubElement(energy, "parameters")
+            params.text = " ".join(map(str, energy_parameters))
+
+        # create mesh element with id attribute
+        mesh = et.SubElement(root, "mesh", id=str(mesh_id))
+
+        # add child elements with text content
+        dimension = et.SubElement(mesh, "dimension")
+        dimension.text = "{} {} {}".format(self.xInts, self.yInts, self.zInts)
+
+        lower_left = et.SubElement(mesh, "lower_left")
+        lower_left.text = "{} {} {}".format(
+            mesh_lower_left[0], mesh_lower_left[1], mesh_lower_left[2])
+
+        upper_right = et.SubElement(mesh, "upper_right")
+        upper_right.text = "{} {} {}".format(
+            mesh_upper_right[0], mesh_upper_right[1], mesh_upper_right[2])
+
+        # write to file with xml declaration
+        tree = et.ElementTree(root)
+        tree.write(openmc_source_file,
+                    encoding="utf-8",
+                    pretty_print=True,
+                    xml_declaration=True)
+
+
+
+        with open(openmc_source_import_commands, 'w') as f:
+            f.write("from lxml import etree\n")
+            f.write("source_root = etree.parse(\"{}\").getroot()\n".format(openmc_source_file_name))
+            f.write("mesh_element = source_root.find('mesh')\n")
+            f.write("source_element = source_root.find('source')\n")
+            f.write("mesh_geo = openmc.RegularMesh().from_xml_element(mesh_element)\n")
+            f.write("mesh_source = openmc.MeshSource.from_xml_element(source_element, {100:mesh_geo})\n")
+
+
+
+        return
+
+    def write_sampled_source_vtk(self):
+        """
+        this function write the sampled source in a vtk file
+        """
+
+        vtkFile = os.path.join(self.results_folder, 'sampled_source.vtk')
+
+        dims = (self.xInts + 1, self.yInts + 1, self.zInts + 1)
+
+        spacing = (
+            (self.xNodes[-1] - self.xNodes[0]) / self.xInts,
+            (self.yNodes[-1] - self.yNodes[0]) / self.yInts,
+            (self.zNodes[-1] - self.zNodes[0]) / self.zInts,
+        )
+
+        origin = (self.xNodes[0], self.yNodes[0], self.zNodes[0])
+
+        raw = np.asarray([vox["emission"] for vox in self.voxelVector], dtype=float)
+        reordered = raw.reshape((self.xInts, self.yInts, self.zInts), order="C").ravel(order="F")
+
+
+        grid = pv.ImageData(dimensions = dims, spacing = spacing, origin = origin)
+        grid.cell_data["emission_rate"] = reordered
+        grid.save(vtkFile)
+
+
+        return
+
+    def write_external_stl(self):
+        """
+        this function extracts the external surface of the final vtk file and
+        write it in a stl file
+        """
+
+        stl_path = os.path.join(self.results_folder, "external_surface.stl")
+
+        # read the VTK mesh (handles .vtk, .vtu, .vti, etc.)
+        mesh = pv.read(self.vtk_path)
+
+        # extract the exterior faces (drops internal cells)
+        surface = mesh.extract_surface().triangulate()
+
+        # write STL (binary by default)
+        surface.save(stl_path)
+
+        return
+
     def get_last_time_step(self):
         """
         this function save as a class attribute the path of the last time step
@@ -1735,6 +1923,148 @@ class flunedCase:
 
         return
 
+    def write_openmc_um_source(self):
+        """
+        This function write the unstructured mesh-based radiation source file
+        based on the vtk file
+        """
+
+        print("writing openmc unstructured mesh source file ..")
+
+        from lxml import etree as et
+        import meshio
+
+        openmc_source_file = os.path.join(self.results_folder, 'um_fluned_source.xml')
+        h5m_basename = 'um_geometry.h5m'
+        openmc_source_mesh_file = os.path.join(self.results_folder, h5m_basename)
+        vtk_intermediate_source_file = os.path.join(self.results_folder, 'um_temp.vtk')
+        vtk_intermediate_source_file_2 = os.path.join(self.results_folder, 'um_temp2.vtk')
+        openmc_source_file_name = os.path.basename(openmc_source_file)
+        openmc_source_import_commands = os.path.join(self.results_folder, "openmc_um_commands.txt")
+
+        # now it is hardcoded, later I will find a better way to handle this
+        mesh_id = 100
+
+
+
+        if self.vtk_path.lower().endswith(".vtu"):
+            reader = vtk.vtkXMLUnstructuredGridReader()
+        else:  # legacy ASCII/Binary *.vtk
+            reader = vtk.vtkUnstructuredGridReader()
+            reader.ReadAllVectorsOn()
+            reader.ReadAllScalarsOn()
+        reader.SetFileName(self.vtk_path)
+        reader.Update()
+        mesh = reader.GetOutput()
+        mesh.GetPointData().Initialize() # remove all point data
+        cell_data = mesh.GetCellData()
+        for i in reversed(range(cell_data.GetNumberOfArrays())):   # iterate safely
+            if cell_data.GetArrayName(i) != "T":
+                cell_data.RemoveArray(i)
+        sx, sy, sz = 100, 100, 100
+
+        tfm = vtk.vtkTransform()
+        tfm.Scale(sx, sy, sz)
+
+        tfilter = vtk.vtkTransformFilter()
+        tfilter.SetTransform(tfm)
+        tfilter.SetInputData(mesh)
+        tfilter.Update()
+        mesh_scaled = tfilter.GetOutput()
+
+        tri = vtk.vtkDataSetTriangleFilter()
+        tri.SetInputData(mesh_scaled)
+        tri.SetTetrahedraOnly(True)
+        tri.Update()
+        mesh_tet = tri.GetOutput()
+
+        writer = vtk.vtkUnstructuredGridWriter()
+        writer.SetFileTypeToBinary()
+        writer.SetFileName(vtk_intermediate_source_file)
+        if vtk.VTK_MAJOR_VERSION < 6:
+            writer.SetInput(mesh_tet)
+        else:
+            writer.SetInputData(mesh_tet)
+        writer.Write()
+
+        # make a vtk file with no cell data to convert to h5m
+        mesh_tet.GetCellData().Initialize() # remove all cell data
+        writer = vtk.vtkUnstructuredGridWriter()
+        writer.SetFileTypeToBinary()
+        writer.SetFileName(vtk_intermediate_source_file_2)
+        if vtk.VTK_MAJOR_VERSION < 6:
+            writer.SetInput(mesh_tet)
+        else:
+            writer.SetInputData(mesh_tet)
+        writer.Write()
+
+
+        meshio_object = meshio.read(vtk_intermediate_source_file_2)
+        meshio.write(openmc_source_mesh_file, meshio_object)
+
+        decay_rate_elements = get_decays(vtk_intermediate_source_file, self.dataset, self.decay_constant, self.branching_ratio, self.scaling)
+
+        print ("length of the decay rate elements: ", len(decay_rate_elements))
+
+
+        print ("consistency check, total emission rate from tetras in the vtk file: ", sum(decay_rate_elements))
+        print ("consistency check, total emission rate from the vtk file: ", self.originalEmissionRate)
+
+        with open(openmc_source_import_commands, 'w') as f:
+            f.write("from lxml import etree\n")
+            f.write("parser = etree.XMLParser(huge_tree=True)\n")
+            f.write("source_root = etree.parse(\"{}\", parser=parser).getroot()\n".format(openmc_source_file_name))
+            f.write("mesh_element = source_root.find('mesh')\n")
+            f.write("mesh_geo = openmc.UnstructuredMesh.from_xml_element(mesh_element)\n")
+            f.write("source_element = source_root.find('source')\n")
+            f.write("source = openmc.IndependentSource.from_xml_element(source_element, {100:mesh_geo})\n")
+
+
+
+        # create root element
+        root = et.Element("source")
+
+        # create sublement with the mesh source
+        source_mesh = et.SubElement(root, "source", type="independent",
+                particle=self.particle_type,
+                strength=str(self.originalEmissionRate),
+                )
+
+        space = et.SubElement(source_mesh, "space", type="mesh", mesh_id=str(mesh_id), volume_normalized="False")
+        strengths = et.SubElement(space, "strengths")
+        strengths.text = " ".join(map(str, [ decay/1e6 for decay in decay_rate_elements ])) # adjust that the decay rate has been calculated after scaling the vtk file
+
+        angle = et.SubElement(source_mesh, "angle", type="isotropic")
+
+        ebins_temp = [e*1e6 for e in self.e_lines] # convert from MeV to eV
+        energy_parameters = [*ebins_temp , *self.p_lines]
+        energy = et.SubElement(source_mesh, "energy", type="discrete")
+        params = et.SubElement(energy, "parameters")
+        params.text = " ".join(map(str, energy_parameters))
+
+
+
+
+
+        # create mesh element with id attribute
+        mesh = et.SubElement(root, "mesh", id=str(mesh_id), name="source_mesh", type="unstructured", library="moab")
+
+        # add child elements with text content
+        filename = et.SubElement(mesh, "filename")
+        filename.text = h5m_basename
+
+
+        # write to file with xml declaration
+        tree = et.ElementTree(root)
+        tree.write(openmc_source_file,
+                    encoding="utf-8",
+                    pretty_print=True,
+                    xml_declaration=True)
+
+
+        return
+
+
 
 
 def main():
@@ -1745,8 +2075,12 @@ def main():
             help="debug mode", default = False)
     parser.add_argument('-c',"--check", action ='store_true' ,
             help="check mode", default = False)
-    parser.add_argument('-s',"--source_CDGS", action ='store_true' ,
+    parser.add_argument('-s',"--cdgs", action ='store_true' ,
             help="print cdgs", default = False)
+    parser.add_argument("--openmc", action ='store_true' ,
+            help="generate a openmc regular mesh source format", default = False)
+    parser.add_argument("--openmc-um", action ='store_true' ,
+            help="generate a openmc unstructured mesh source format", default = False)
     parser.add_argument("--precision", type=float, default=0.01,
             help="sampling precision in m")
     parser.add_argument("--dataset", type=str, default='T',
@@ -1761,7 +2095,7 @@ def main():
 
 
     simulationFolder = os.getcwd()
-    simCase = flunedCase(simulationFolder)
+    simCase = flunedPostCase(simulationFolder)
     simCase.parseConstants()
     simCase.getIsotope()
     simCase.getTimeTreatment()
@@ -1780,20 +2114,34 @@ def main():
     simCase.readPostProcess_Tflows()
     simCase.readPostProcess_Trflows()
     simCase.generate_vtk()
+    simCase.create_results_folder()
 
 
 
 
+    # write source files
+    if args.cdgs or args.openmc or args.openmc_um:
 
-    if args.source_CDGS:
         simCase.precision = args.precision
         simCase.dataset = args.dataset
         simCase.scaling = args.scaling
         simCase.getVTKPath()
-        simCase.getOriginalEmission()
-        simCase.calculateSamplingCoordinates()
-        simCase.sampleCoordinatesValues()
-        simCase.writeCDGS()
+        simCase.get_total_decays()
+        simCase.write_external_stl()
+
+        if args.cdgs or args.openmc:
+            simCase.calculateSamplingCoordinates()
+            simCase.sampleCoordinatesValues()
+            simCase.write_sampled_source_vtk()
+
+        if args.cdgs:
+            simCase.writeCDGS()
+
+        elif  args.openmc:
+            simCase.writeOpenMCSource()
+
+        elif args.openmc_um:
+            simCase.write_openmc_um_source()
 
     simCase.write_summary(args)
 

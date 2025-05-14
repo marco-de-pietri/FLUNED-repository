@@ -18,7 +18,9 @@ dependencies = [
   "numpy>=1.21,<2",
   "vtk",
   "pyvista",
+  "meshio[all]",
   "iapws",
+  "lxml",
   "tqdm",
 ]
 
