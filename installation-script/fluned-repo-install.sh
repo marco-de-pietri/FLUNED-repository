@@ -7,11 +7,11 @@ INSTALL_DIR="$HOME/repos"
 mkdir -p "$INSTALL_DIR" && cd "$INSTALL_DIR" 
 
 #check for zsh usage
-if [ -n "$ZSH_VERSION" ]; then
-  rc_file="$HOME/.zshrc"
-else
-  rc_file="$HOME/.bashrc"
-fi
+case "$(basename "$SHELL")" in
+  zsh)  rc_file="$HOME/.zshrc" ;;
+  bash) rc_file="$HOME/.bashrc" ;;
+  *)    rc_file="$HOME/.profile" ;;
+esac
 
 # 1) Install required dependencies
 echo "Installing required dependencies..."
