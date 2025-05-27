@@ -4,7 +4,7 @@
 INSTALL_DIR="$HOME/repos"
 
 # Navigate to the home directory
-cd "$INSTALL_DIR"
+mkdir -p "$INSTALL_DIR" && cd "$INSTALL_DIR" 
 
 #check for zsh usage
 if [ -n "$ZSH_VERSION" ]; then
