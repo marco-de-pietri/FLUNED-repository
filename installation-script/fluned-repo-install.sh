@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define variables
-INSTALL_DIR="$HOME"
+INSTALL_DIR="$HOME/repos"
 
 # Navigate to the home directory
 cd "$INSTALL_DIR"
@@ -57,10 +57,15 @@ source /opt/openfoam12/etc/bashrc  # Source OpenFOAM environment for this subshe
 
 # 9) Clone the FLUNED-repository from GitHub using HTTPS
 echo "Cloning FLUNED repository..."
-git clone -v --branch master --single-branch "https://github.com/marco-de-pietri/FLUNED-repository.git"
+DIR="FLUNED-repository"
+if [ -d "$DIR" ]; then
+  rm -rf "$DIR"
+fi
+git clone -v --branch master --single-branch "https://github.com/marco-de-pietri/FLUNED-repository.git" "$DIR"
 
 # Navigate to the cloned repository
-cd ~/FLUNED-repository/
+cd "$INSTALL_DIR/FLUNED-repository"
+
 
 # 10) Install FLUNED with pipx using Python 3.11
 echo "Installing FLUNED using pipx..."
@@ -73,7 +78,7 @@ grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$rc_file" \
 
 # 11) Compile the FLUNED-solver (wmake requires the OpenFOAM environment to be sourced)
 echo "Compiling FLUNED-solver..."
-cd ~/FLUNED-repository/FLUNED-solver/
+cd "$INSTALL_DIR/FLUNED-repository/FLUNED-solver"
 wmake
 
 echo "Installation and compilation completed successfully."
