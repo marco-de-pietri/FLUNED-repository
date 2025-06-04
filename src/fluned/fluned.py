@@ -18,7 +18,7 @@ from .fluned_h5_utils import extract_multiblock
 from .fluned_bin_utils import get_fluent_binarray_double
 from .fluned_bin_utils import get_fluent_parse_headers
 from .fluned_bin_utils import get_fluent_parse_regions
-from  ofClass.ofClass import SimulationOF
+from ofClass.ofClass import SimulationOF
 import gzip
 
 __version__ = "0.1.0"
@@ -31,26 +31,25 @@ def open_utf8_or_gzip(file_path):
     """
 
     try:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             magic = f.read(2)
     except OSError:
         print("Couldn't open Volume V file")
         sys.exit(1)
 
-    if magic == b'\x1f\x8b':
-
+    if magic == b"\x1f\x8b":
         # The file is gzip-compressed
         try:
-            with gzip.open(file_path, 'rt', encoding='utf-8') as inpFile:
+            with gzip.open(file_path, "rt", encoding="utf-8") as inpFile:
                 data = inpFile.read()
         except Exception as e:
             print(f"Error reading gzip file: {e}")
             sys.exit(1)
 
     else:
-    # The file is a regular text file
+        # The file is a regular text file
         try:
-            with open(file_path, 'r', encoding='utf-8') as inpFile:
+            with open(file_path, "r", encoding="utf-8") as inpFile:
                 data = inpFile.read()
         except Exception as e:
             print(f"Error reading text file: {e}")
@@ -67,7 +66,7 @@ def create_input_template():
     input_name = "inputTemplate"
     current_folder = os.getcwd()
 
-    input_path = os.path.join(current_folder,input_name)
+    input_path = os.path.join(current_folder, input_name)
 
     template_text = """CASE  FLUNED_01_DEFAULT_N16
 TIME_TREATMENT  steadyState #steadyState or transient supported
@@ -86,8 +85,8 @@ CFD_TYPE    OpenFoam       # OpenFoam, fluent-h5-multi types supported
 #FLUENT_FLUID_REGION_NAME     region_name
 """
 
-    with open(input_path,'w',encoding='utf-8') as fw:
-        fw.write(template_text.format(current_folder,current_folder))
+    with open(input_path, "w", encoding="utf-8") as fw:
+        fw.write(template_text.format(current_folder, current_folder))
 
     return 0
 
@@ -99,11 +98,10 @@ def sample_coordinates_vtk(vtk_file, dataset_name, coordinates):
 
     check_file = os.path.isfile(vtk_file)
     if not check_file:
-        print ("ERROR activation file not found")
+        print("ERROR activation file not found")
         sys.exit()
 
-
-    #read the vtk file with an unstructured grid
+    # read the vtk file with an unstructured grid
     reader = vtk.vtkStructuredGridReader()
     reader.SetFileName(vtk_file)
     reader.ReadAllVectorsOn()
@@ -111,29 +109,24 @@ def sample_coordinates_vtk(vtk_file, dataset_name, coordinates):
     reader.Update()
     data = reader.GetOutput()
 
-
-
-    #define probe
+    # define probe
 
     points = vtk.vtkPoints()
     points.SetNumberOfPoints(len(coordinates))
 
-    #print ("parsed  0/{:d}".format(len(coordinates)))
-    #step = pow(10,int(math.log10(len(coordinates)))-1)
+    # print ("parsed  0/{:d}".format(len(coordinates)))
+    # step = pow(10,int(math.log10(len(coordinates)))-1)
 
-    for i,val in enumerate(coordinates):
-        points.SetPoint(i,val[0],val[1],val[2])
-   #     if (i+1) % step == 0:
-   #         print ("parsed  {:d}/{:d}".format(i+1,len(coordinates)))
-
-
+    for i, val in enumerate(coordinates):
+        points.SetPoint(i, val[0], val[1], val[2])
+    #     if (i+1) % step == 0:
+    #         print ("parsed  {:d}/{:d}".format(i+1,len(coordinates)))
 
     polydata = vtk.vtkPolyData()
     polydata.SetPoints(points)
 
-
-    #Perform the interpolation
-    probe_filter =vtk.vtkProbeFilter()
+    # Perform the interpolation
+    probe_filter = vtk.vtkProbeFilter()
     probe_filter.SetSourceData(data)
     probe_filter.SetInputData(polydata)
     probe_filter.Update()
@@ -142,8 +135,7 @@ def sample_coordinates_vtk(vtk_file, dataset_name, coordinates):
 
     reac_rates = VN.vtk_to_numpy(vtk_array)
 
-    return  reac_rates
-
+    return reac_rates
 
 
 def heron_formula(points):
@@ -151,17 +143,17 @@ def heron_formula(points):
     calculate the area of a triangle using the heron formula
     """
 
-    dist1 = point_distance(points[0],points[1])
-    dist2 = point_distance(points[1],points[2])
-    dist3 = point_distance(points[2],points[0])
+    dist1 = point_distance(points[0], points[1])
+    dist2 = point_distance(points[1], points[2])
+    dist3 = point_distance(points[2], points[0])
 
-    semip = (dist1+dist2+dist3)/2
+    semip = (dist1 + dist2 + dist3) / 2
 
-    area = pow((semip*(semip-dist1)*(semip-dist2)*(semip-dist3)),0.5)
+    area = pow((semip * (semip - dist1) * (semip - dist2) * (semip - dist3)), 0.5)
     return area
 
-def calculateEdgeCentroid(vector):
 
+def calculateEdgeCentroid(vector):
     sumX = 0
     sumY = 0
     sumZ = 0
@@ -173,11 +165,12 @@ def calculateEdgeCentroid(vector):
 
     nPoints = len(vector)
 
-    centroid = [sumX/nPoints, sumY/nPoints, sumZ/nPoints]
+    centroid = [sumX / nPoints, sumY / nPoints, sumZ / nPoints]
 
     return centroid
 
-def point_distance(point1,point2):
+
+def point_distance(point1, point2):
     """
     this function calculates the distance between two points in 3D and 2D
 
@@ -187,41 +180,41 @@ def point_distance(point1,point2):
 
     """
 
-    dist = pow((sum([pow((point1[i] - point2[i]),2) for i in [0,1,2]])),0.5)
+    dist = pow((sum([pow((point1[i] - point2[i]), 2) for i in [0, 1, 2]])), 0.5)
 
     return dist
 
-def calculateArea(points):
-    """
-    this function calculate the area of the element surface - these can
-    be tetra with a triangular face or wedge with a quadrilateral face
-    """
 
-    if len(points) == 3:
-        area = heron_formula(points)
-    elif len(points) == 4:
-        centroid =  calculateEdgeCentroid(points)
-        #print (points)
-        area = 0
-        area1 = heron_formula([points[0],points[1],centroid])
-        #print("area1", area1)
-        area2 = heron_formula([points[1],points[2],centroid])
-        #print("area2", area2)
-        area3 = heron_formula([points[2],points[3],centroid])
-        #print("area3", area3)
-        area4 = heron_formula([points[3],points[0],centroid])
-        #print("area4", area4)
-        area = area1 + area2 + area3 + area4
-    else:
-        centroid =  calculateEdgeCentroid(points)
-        area = 0
-        for i in range(len(points)-1):
-            area += heron_formula([points[i],points[i+1], centroid])
-
-        area += heron_formula([points[-1],points[0], centroid])
-
-    return area
-
+# def calculateArea(points):
+#     """
+#     this function calculate the area of the element surface - these can
+#     be tetra with a triangular face or wedge with a quadrilateral face
+#     """
+#
+#     if len(points) == 3:
+#         area = heron_formula(points)
+#     elif len(points) == 4:
+#         centroid =  calculateEdgeCentroid(points)
+#         #print (points)
+#         area = 0
+#         area1 = heron_formula([points[0],points[1],centroid])
+#         #print("area1", area1)
+#         area2 = heron_formula([points[1],points[2],centroid])
+#         #print("area2", area2)
+#         area3 = heron_formula([points[2],points[3],centroid])
+#         #print("area3", area3)
+#         area4 = heron_formula([points[3],points[0],centroid])
+#         #print("area4", area4)
+#         area = area1 + area2 + area3 + area4
+#     else:
+#         centroid =  calculateEdgeCentroid(points)
+#         area = 0
+#         for i in range(len(points)-1):
+#             area += heron_formula([points[i],points[i+1], centroid])
+#
+#         area += heron_formula([points[-1],points[0], centroid])
+#
+#     return area
 
 
 def check_int(check_str):
@@ -234,23 +227,37 @@ def check_int(check_str):
     except ValueError:
         return False
 
-def read_input_file(path):
+
+def read_fluned_input_file(path):
     """
     this function reads the user input file
     """
 
-    case_path = re.compile ("^\s*case .{1,}?(?=^\s*case|\Z)",
-                           re.MULTILINE | re.DOTALL | re.IGNORECASE)
+    case_path = re.compile(
+        "^\s*case .{1,}?(?=^\s*case|\Z)", re.MULTILINE | re.DOTALL | re.IGNORECASE
+    )
     cases_vec = []
-    parameters = [ 'case','time_treatment',  'activation_const',
-                   'activation_dataset','activation_dataset_error',
-                   'fv_scheme', 'isotope',
-                    'activation_file', 'activation_normalization',
-                   'inlet_conc','decay_constant', 'cfd_path',
-                   'molecular_diffusion','schmidt_number','div_scheme',
-                    'cfd_type', 'fluent_fluid_region_name']
+    parameters = [
+        "case",
+        "time_treatment",
+        "activation_const",
+        "activation_dataset",
+        "activation_dataset_error",
+        "fv_scheme",
+        "isotope",
+        "activation_file",
+        "activation_normalization",
+        "inlet_conc",
+        "decay_constant",
+        "cfd_path",
+        "molecular_diffusion",
+        "schmidt_number",
+        "div_scheme",
+        "cfd_type",
+        "fluent_fluid_region_name",
+    ]
     try:
-        fin = open(path,'r',encoding="utf8", errors='ignore')
+        fin = open(path, "r", encoding="utf8", errors="ignore")
     except IOError:
         print("couldn't open file")
     with fin:
@@ -276,108 +283,102 @@ def read_input_file(path):
 
         cases_vec.append(parameters_dict)
 
-
     return cases_vec
+
 
 class FlunedCase:
     """
     FLUNED simulation class
     """
+
     def __init__(self, arg_dict):
         """
         initialize case and create FLUNED case folder
         """
 
-        self.case = arg_dict['case']
+        self.case = arg_dict["case"]
 
         # set decay constant
-        if 'decay_constant' in arg_dict:
-            self.decay_constant = float(arg_dict['decay_constant'])
+        if "decay_constant" in arg_dict:
+            self.decay_constant = float(arg_dict["decay_constant"])
         else:
             self.decay_constant = 0
 
-        if 'isotope' in arg_dict:
-            isotope = arg_dict['isotope'].lower().replace('-','')
-            if isotope not in ['n16','o19','n17', 'f20','custom']:
+        if "isotope" in arg_dict:
+            isotope = arg_dict["isotope"].lower().replace("-", "")
+            if isotope not in ["n16", "o19", "n17", "f20", "custom"]:
                 raise ValueError("isotope not recognized")
             self.isotope = isotope
         else:
-            self.isotope = 'custom'
+            self.isotope = "custom"
 
-        if 'activation_const' in arg_dict:
-            self.activation_const = float(arg_dict['activation_const'])
+        if "activation_const" in arg_dict:
+            self.activation_const = float(arg_dict["activation_const"])
         else:
             self.activation_const = 0
-        if 'activation_normalization' in arg_dict:
-            self.activation_normalization = float(
-                arg_dict['activation_normalization'])
+        if "activation_normalization" in arg_dict:
+            self.activation_normalization = float(arg_dict["activation_normalization"])
         else:
             self.activation_normalization = 0
-        if 'activation_dataset' in arg_dict:
-            self.activation_dataset = arg_dict['activation_dataset']
+        if "activation_dataset" in arg_dict:
+            self.activation_dataset = arg_dict["activation_dataset"]
         else:
-            self.activation_dataset = ''
+            self.activation_dataset = ""
 
-        if 'activation_dataset_error' in arg_dict:
-            self.activation_dataset_error = arg_dict['activation_dataset_error']
+        if "activation_dataset_error" in arg_dict:
+            self.activation_dataset_error = arg_dict["activation_dataset_error"]
         else:
-            self.activation_dataset_error = ''
+            self.activation_dataset_error = ""
 
-        if 'activation_file' in arg_dict:
-            self.activation_file = os.path.normcase(
-                    arg_dict['activation_file'])
+        if "activation_file" in arg_dict:
+            self.activation_file = os.path.normcase(arg_dict["activation_file"])
         else:
-            self.activation_file = ''
+            self.activation_file = ""
 
-        if 'fv_scheme' in arg_dict:
-            if arg_dict['fv_scheme'].lower() in ['stable','accurate']:
-                self.fv_scheme = arg_dict['fv_scheme']
+        if "fv_scheme" in arg_dict:
+            if arg_dict["fv_scheme"].lower() in ["stable", "accurate"]:
+                self.fv_scheme = arg_dict["fv_scheme"]
             else:
                 raise ValueError("fv_scheme must be 'stable' or 'accurate'")
         else:
-            self.fv_scheme = 'stable'
+            self.fv_scheme = "stable"
 
-        if 'cfd_type' not in arg_dict:
-            print ("ERROR: cfd type not specified")
+        if "cfd_type" not in arg_dict:
+            print("ERROR: cfd type not specified")
             sys.exit()
         else:
-            self.cfd_type = arg_dict['cfd_type'].lower()
+            self.cfd_type = arg_dict["cfd_type"].lower()
 
-        if 'time_treatment' not in arg_dict:
+        if "time_treatment" not in arg_dict:
             raise ValueError("ERROR: type of time treatment not specified")
-        elif (arg_dict['time_treatment'].lower() not in
-                ['steadystate','transient']):
-            err_string = ("ERROR: time treatment must be 'steadyState' or "
-                            "'transient'")
+        elif arg_dict["time_treatment"].lower() not in ["steadystate", "transient"]:
+            err_string = "ERROR: time treatment must be 'steadyState' or 'transient'"
             raise ValueError(err_string)
         else:
-            self.time_treatment = arg_dict['time_treatment'].lower()
+            self.time_treatment = arg_dict["time_treatment"].lower()
 
-        if self.cfd_type in ['fluent-h5-multi','fluent-multi']:
-            if 'fluent_fluid_region_name' not in arg_dict:
-                print ("ERROR: name of the fluid region to extract not")
-                print ("specified! use parameter FLUENT_FLUID_REGION_NAME")
+        if self.cfd_type in ["fluent-h5-multi", "fluent-multi"]:
+            if "fluent_fluid_region_name" not in arg_dict:
+                print("ERROR: name of the fluid region to extract not")
+                print("specified! use parameter FLUENT_FLUID_REGION_NAME")
                 sys.exit()
             else:
-                self.fluent_fluid_region_name = (
-                    arg_dict['fluent_fluid_region_name'])
+                self.fluent_fluid_region_name = arg_dict["fluent_fluid_region_name"]
 
-        self.molecular_diffusion = float(arg_dict['molecular_diffusion'])
-        self.schmidt_number = float(arg_dict['schmidt_number'])
-        self.inlet_conc = float(arg_dict['inlet_conc'])
-        self.cfd_path = os.path.normcase(arg_dict['cfd_path'])
-
+        self.molecular_diffusion = float(arg_dict["molecular_diffusion"])
+        self.schmidt_number = float(arg_dict["schmidt_number"])
+        self.inlet_conc = float(arg_dict["inlet_conc"])
+        self.cfd_path = os.path.normcase(arg_dict["cfd_path"])
 
         if not os.path.isdir(self.cfd_path):
             raise OSError(f"Folder not found: {self.cfd_path}")
 
-        self.fluned_path = os.path.join(self.cfd_path,self.case)
+        self.fluned_path = os.path.join(self.cfd_path, self.case)
 
         if not os.path.exists(self.fluned_path):
             os.mkdir(self.fluned_path)
 
         self.num_internal_cells = 0
-
 
         return
 
@@ -396,12 +397,10 @@ class FlunedCase:
         this function generate the Ta file at t=0
         """
 
+        zero_folder = os.path.join(self.fluned_path, "0")
+        zero_ta_path = os.path.join(zero_folder, "Ta")
 
-        zero_folder = os.path.join(self.fluned_path,'0')
-        zero_ta_path = os.path.join(zero_folder,'Ta')
-
-
-        ta_header_text="""
+        ta_header_text = """
 FoamFile
 {
     version     2.0;
@@ -425,25 +424,25 @@ boundaryField
 }
 """
 
-        with open(zero_ta_path,'w',encoding='utf-8') as fw:
+        with open(zero_ta_path, "w", encoding="utf-8") as fw:
             fw.write(ta_header_text)
 
             for face in self.faces:
-                fw.write("    " + face['faceID'] + '\n    {\n')
-                if face['type'] == 'wall':
+                fw.write("    " + face["faceID"] + "\n    {\n")
+                if face["type"] == "wall":
                     fw.write("        type            zeroGradient;\n")
-                elif face['type'] == 'outlet':
+                elif face["type"] == "outlet":
                     fw.write("        type            zeroGradient;\n")
-                elif face['type'] == 'inlet':
+                elif face["type"] == "inlet":
                     fw.write("        type            fixedValue;\n")
-                    vals_string="        value          uniform 0;\n"
+                    vals_string = "        value          uniform 0;\n"
                     fw.write(vals_string)
                 else:
-                    print ("ERROR face type not recognized")
-                    print (face['type'])
+                    print("ERROR face type not recognized")
+                    print(face["type"])
                     sys.exit()
 
-                fw.write("    }\n" )
+                fw.write("    }\n")
 
             fw.write(end_text)
 
@@ -454,12 +453,10 @@ boundaryField
         this function generate the Tr file at t=0
         """
 
+        zero_folder = os.path.join(self.fluned_path, "0")
+        zero_tr_path = os.path.join(zero_folder, "Tr")
 
-        zero_folder = os.path.join(self.fluned_path,'0')
-        zero_tr_path = os.path.join(zero_folder,'Tr')
-
-
-        tr_header_text="""
+        tr_header_text = """
 FoamFile
 {
     version     2.0;
@@ -482,28 +479,28 @@ boundaryField
 }
 """
 
-        with open(zero_tr_path,'w',encoding='utf-8') as fw:
+        with open(zero_tr_path, "w", encoding="utf-8") as fw:
             fw.write(tr_header_text)
 
             for face in self.faces:
-                fw.write("    " + face['faceID'] + '\n    {\n')
-                if face['type'] == 'wall':
+                fw.write("    " + face["faceID"] + "\n    {\n")
+                if face["type"] == "wall":
                     fw.write("        type            zeroGradient;\n")
-                elif face['type'] == 'outlet':
+                elif face["type"] == "outlet":
                     fw.write("        type            zeroGradient;\n")
-                elif face['type'] == 'inlet':
+                elif face["type"] == "inlet":
                     fw.write("        type            fixedValue;\n")
-                    if self.time_treatment == 'steadystate':
-                        vals_string="        value          uniform 0;\n"
-                    elif self.time_treatment == 'transient':
-                        vals_string="        value          uniform 1;\n"
+                    if self.time_treatment == "steadystate":
+                        vals_string = "        value          uniform 0;\n"
+                    elif self.time_treatment == "transient":
+                        vals_string = "        value          uniform 1;\n"
                     fw.write(vals_string)
                 else:
-                    print ("ERROR face type not recognized")
-                    print (face['type'])
+                    print("ERROR face type not recognized")
+                    print(face["type"])
                     sys.exit()
 
-                fw.write("    }\n" )
+                fw.write("    }\n")
 
             fw.write(end_text)
 
@@ -514,12 +511,10 @@ boundaryField
         this function generate the Td file at t=0
         """
 
+        zero_folder = os.path.join(self.fluned_path, "0")
+        zero_td_path = os.path.join(zero_folder, "Td")
 
-        zero_folder = os.path.join(self.fluned_path,'0')
-        zero_td_path = os.path.join(zero_folder,'Td')
-
-
-        td_header_text="""
+        td_header_text = """
 FoamFile
 {
     version     2.0;
@@ -543,25 +538,25 @@ boundaryField
 
 """
 
-        with open(zero_td_path,'w',encoding='utf-8') as fw:
+        with open(zero_td_path, "w", encoding="utf-8") as fw:
             fw.write(td_header_text)
 
             for face in self.faces:
-                fw.write("    " + face['faceID'] + '\n    {\n')
-                if face['type'] == 'wall':
+                fw.write("    " + face["faceID"] + "\n    {\n")
+                if face["type"] == "wall":
                     fw.write("        type            zeroGradient;\n")
-                elif face['type'] == 'outlet':
+                elif face["type"] == "outlet":
                     fw.write("        type            zeroGradient;\n")
-                elif face['type'] == 'inlet':
+                elif face["type"] == "inlet":
                     fw.write("        type            fixedValue;\n")
-                    vals_string="        value         uniform {};\n"
+                    vals_string = "        value         uniform {};\n"
                     fw.write(vals_string.format(self.inlet_conc))
                 else:
-                    print ("ERROR face type not recognized")
-                    print (face['type'])
+                    print("ERROR face type not recognized")
+                    print(face["type"])
                     sys.exit()
 
-                fw.write("    }\n" )
+                fw.write("    }\n")
 
             fw.write(end_text)
 
@@ -572,12 +567,10 @@ boundaryField
         this function generate the T file at t=0
         """
 
+        zero_folder = os.path.join(self.fluned_path, "0")
+        zero_t_path = os.path.join(zero_folder, "T")
 
-        zero_folder = os.path.join(self.fluned_path,'0')
-        zero_t_path = os.path.join(zero_folder,'T')
-
-
-        t_header_text="""
+        t_header_text = """
 FoamFile
 {
     version     2.0;
@@ -601,25 +594,25 @@ boundaryField
 
 """
 
-        with open(zero_t_path,'w',encoding='utf-8') as fw:
+        with open(zero_t_path, "w", encoding="utf-8") as fw:
             fw.write(t_header_text)
 
             for face in self.faces:
-                fw.write("    " + face['faceID'] + '\n    {\n')
-                if face['type'] == 'wall':
+                fw.write("    " + face["faceID"] + "\n    {\n")
+                if face["type"] == "wall":
                     fw.write("        type            zeroGradient;\n")
-                elif face['type'] == 'outlet':
+                elif face["type"] == "outlet":
                     fw.write("        type            zeroGradient;\n")
-                elif face['type'] == 'inlet':
+                elif face["type"] == "inlet":
                     fw.write("        type            fixedValue;\n")
-                    vals_string="        value         uniform {};\n"
+                    vals_string = "        value         uniform {};\n"
                     fw.write(vals_string.format(self.inlet_conc))
                 else:
-                    print ("ERROR face type not recognized")
-                    print (face['type'])
+                    print("ERROR face type not recognized")
+                    print(face["type"])
                     sys.exit()
 
-                fw.write("    }\n" )
+                fw.write("    }\n")
 
             fw.write(end_text)
 
@@ -656,19 +649,20 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
 // ************************************************************************ //
 """
 
-        constant_folder = os.path.join(self.fluned_path,'constant')
-        transport_prop_path = os.path.join(constant_folder,'transportProperties')
+        constant_folder = os.path.join(self.fluned_path, "constant")
+        transport_prop_path = os.path.join(constant_folder, "transportProperties")
 
-
-        with open(transport_prop_path,'w',encoding='utf-8') as fw:
-            fw.write(transport_prop_text.format(
-                self.isotope,
-                self.molecular_diffusion,
-                self.decay_constant,
-                self.schmidt_number))
+        with open(transport_prop_path, "w", encoding="utf-8") as fw:
+            fw.write(
+                transport_prop_text.format(
+                    self.isotope,
+                    self.molecular_diffusion,
+                    self.decay_constant,
+                    self.schmidt_number,
+                )
+            )
 
         return
-
 
     def create_case_folders_fluent(self):
         """
@@ -676,36 +670,35 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
         into the OpenFOAM format
         """
 
-
         case_folder = self.cfd_path
 
         # T=0 folder
-        zero_folder = os.path.join(case_folder,'0')
+        zero_folder = os.path.join(case_folder, "0")
         if not os.path.exists(zero_folder):
             os.mkdir(zero_folder)
 
         # T=1 folder
-        one_folder = os.path.join(case_folder,'1')
+        one_folder = os.path.join(case_folder, "1")
         if not os.path.exists(one_folder):
             os.mkdir(one_folder)
 
         # constant folder
-        const_folder = os.path.join(case_folder,'constant')
+        const_folder = os.path.join(case_folder, "constant")
         if not os.path.exists(const_folder):
             os.mkdir(const_folder)
 
         # polyMesh folder
-        poly_folder = os.path.join(case_folder,'constant','polyMesh')
+        poly_folder = os.path.join(case_folder, "constant", "polyMesh")
         if not os.path.exists(poly_folder):
             os.mkdir(poly_folder)
 
         # system folder
-        sys_folder = os.path.join(case_folder,'system')
+        sys_folder = os.path.join(case_folder, "system")
         if not os.path.exists(sys_folder):
             os.mkdir(sys_folder)
 
         # case foam file
-        case_file = os.path.join(case_folder,'case.foam')
+        case_file = os.path.join(case_folder, "case.foam")
         pathlib.Path(case_file).touch()
 
         return
@@ -722,29 +715,28 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
             os.mkdir(case_folder)
 
         # T=0 folder
-        zero_folder = os.path.join(case_folder,'0')
+        zero_folder = os.path.join(case_folder, "0")
         if not os.path.exists(zero_folder):
             os.mkdir(zero_folder)
 
         # constant folder
-        const_folder = os.path.join(case_folder,'constant')
+        const_folder = os.path.join(case_folder, "constant")
         if not os.path.exists(const_folder):
             os.mkdir(const_folder)
 
         # polyMesh folder
-        poly_folder = os.path.join(case_folder,'constant','polyMesh')
+        poly_folder = os.path.join(case_folder, "constant", "polyMesh")
         if not os.path.exists(poly_folder):
             os.mkdir(poly_folder)
 
         # system folder
-        sys_folder = os.path.join(case_folder,'system')
+        sys_folder = os.path.join(case_folder, "system")
         if not os.path.exists(sys_folder):
             os.mkdir(sys_folder)
 
         # case foam file
-        case_file = os.path.join(case_folder,'case.foam')
+        case_file = os.path.join(case_folder, "case.foam")
         pathlib.Path(case_file).touch()
-
 
         return
 
@@ -756,15 +748,14 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
         """
 
         last_time = self.cfd_simulation.last_time
-        target_file = os.path.join(self.fluned_path,'0','phi')
-        origin_file = os.path.join(self.cfd_path,str(last_time),'phi')
+        target_file = os.path.join(self.fluned_path, "0", "phi")
+        origin_file = os.path.join(self.cfd_path, str(last_time), "phi")
 
         if self.cfd_simulation.volumetric_flag:
-            shutil.copyfile( origin_file,target_file)
+            shutil.copyfile(origin_file, target_file)
         else:
-            print ("converting phi values to volumetric flow ...")
+            print("converting phi values to volumetric flow ...")
             self.cfd_simulation.convert_phi_to_volumetric(target_file)
-
 
         return
 
@@ -773,37 +764,36 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
         this function look for the last U file in the cfd folder
         """
 
-
         last_time = self.cfd_simulation.last_time
-        target_file = os.path.join(self.fluned_path,'0','U')
-        origin_file = os.path.join(self.cfd_path,str(last_time),'U')
-        shutil.copyfile( origin_file,target_file)
+        target_file = os.path.join(self.fluned_path, "0", "U")
+        origin_file = os.path.join(self.cfd_path, str(last_time), "U")
+        shutil.copyfile(origin_file, target_file)
 
         return None
 
     def copyLastNut(self):
-        """ this function look for the last nut file in the cfd folder,
+        """this function look for the last nut file in the cfd folder,
         if it does not exists it means the simulation is laminar"""
 
         folderItems = os.listdir(self.cfd_path)
 
-        folderTimes=[int(itm) for itm in folderItems if check_int(itm) == True]
+        folderTimes = [int(itm) for itm in folderItems if check_int(itm) == True]
 
         lastTime = max(folderTimes)
 
-        targetFile = os.path.join(self.fluned_path,'0','nut')
-        originFile = os.path.join(self.cfd_path,str(lastTime),'nut')
+        targetFile = os.path.join(self.fluned_path, "0", "nut")
+        originFile = os.path.join(self.cfd_path, str(lastTime), "nut")
         checkFile = os.path.isfile(originFile)
         if checkFile:
-            shutil.copyfile( originFile,targetFile)
+            shutil.copyfile(originFile, targetFile)
 
         return
 
     def copyPolyMesh(self):
         """this function copy the poly Mesh files in the FLUNED folder"""
 
-        sourceFolder = os.path.join(self.cfd_path,'constant','polyMesh')
-        targetFolder = os.path.join(self.fluned_path,'constant','polyMesh')
+        sourceFolder = os.path.join(self.cfd_path, "constant", "polyMesh")
+        targetFolder = os.path.join(self.fluned_path, "constant", "polyMesh")
 
         # shutil do not allow to copy into an existing folder
         dirCheck = os.path.isdir(targetFolder)
@@ -815,100 +805,100 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
         return
 
     def reconstructFaces(self):
-        """ this function examines the polyMesh data and reconstruct which
-         faces are input/output/wall"""
+        """this function examines the polyMesh data and reconstruct which
+        faces are input/output/wall"""
 
         faces = {}
 
-        polyMeshFolder = os.path.join(self.fluned_path,'constant','polyMesh')
-        boundaryFile = os.path.join(polyMeshFolder,'boundary')
+        polyMeshFolder = os.path.join(self.fluned_path, "constant", "polyMesh")
+        boundaryFile = os.path.join(polyMeshFolder, "boundary")
 
         try:
-            inpFile = open(boundaryFile,'r',encoding="utf8", errors='ignore')
+            inpFile = open(boundaryFile, "r", encoding="utf8", errors="ignore")
         except IOError:
             print("couldn't open boundary file")
             sys.exit()
         with inpFile:
-
             blockVector = []
             text = inpFile.read()
-            faceDefPat = re.compile("\d+[\n\r\s]+?\(.*?[\n\r\s]+?\)",
-                                    re.MULTILINE | re.DOTALL )
-            faceNumberPat = re.compile("(\d+)[\n\r\s]+?\(.*?\)",
-                                       re.MULTILINE | re.DOTALL )
-            boundaryPat = re.compile("[^\s]+[\n\r\s]+?\{.*?\}",
-                                     re.MULTILINE | re.DOTALL )
-            boundaryNamePat = re.compile("([^\s]+)[\n\r\s]+?\{.*?\}",
-                                         re.MULTILINE | re.DOTALL )
+            faceDefPat = re.compile(
+                "\d+[\n\r\s]+?\(.*?[\n\r\s]+?\)", re.MULTILINE | re.DOTALL
+            )
+            faceNumberPat = re.compile(
+                "(\d+)[\n\r\s]+?\(.*?\)", re.MULTILINE | re.DOTALL
+            )
+            boundaryPat = re.compile(
+                "[^\s]+[\n\r\s]+?\{.*?\}", re.MULTILINE | re.DOTALL
+            )
+            boundaryNamePat = re.compile(
+                "([^\s]+)[\n\r\s]+?\{.*?\}", re.MULTILINE | re.DOTALL
+            )
             faceNPat = re.compile("nFaces.*?(\d+)")
             firstFacePat = re.compile("startFace.*?(\d+)")
             defBlock = faceDefPat.findall(text)[0]
             faceNumber = int(faceNumberPat.findall(text)[0])
-            #print (defBlock)
-            #print (faceNumber)
+            # print (defBlock)
+            # print (faceNumber)
             boundaryBlocks = boundaryPat.findall(defBlock)
-            #print (boundaryBlocks)
+            # print (boundaryBlocks)
 
-            #here it get the description of the boundary surfaces
+            # here it get the description of the boundary surfaces
             boundaryVec = []
             for block in boundaryBlocks:
                 boundaryDic = {}
-                boundaryDic['faceID'] = boundaryNamePat.findall(block)[0]
-                #print (boundaryDic['faceID'])
-                boundaryDic['nFaces'] = int(faceNPat.findall(block)[0])
-                boundaryDic['firstFace'] = int(firstFacePat.findall(block)[0])
-                boundaryDic['faces']=list(range(boundaryDic['firstFace'],
-                        boundaryDic['firstFace'] + boundaryDic['nFaces']))
+                boundaryDic["faceID"] = boundaryNamePat.findall(block)[0]
+                # print (boundaryDic['faceID'])
+                boundaryDic["nFaces"] = int(faceNPat.findall(block)[0])
+                boundaryDic["firstFace"] = int(firstFacePat.findall(block)[0])
+                boundaryDic["faces"] = list(
+                    range(
+                        boundaryDic["firstFace"],
+                        boundaryDic["firstFace"] + boundaryDic["nFaces"],
+                    )
+                )
                 boundaryVec.append(boundaryDic)
-            #print (boundaryVec)
+            # print (boundaryVec)
 
-
-        phifilename = os.path.join(self.fluned_path,'0','phi')
+        phifilename = os.path.join(self.fluned_path, "0", "phi")
         try:
-            inpFile = open(phifilename,'r',encoding="utf8", errors='ignore')
+            inpFile = open(phifilename, "r", encoding="utf8", errors="ignore")
         except IOError:
             print("couldn't open phi file")
             sys.exit()
         with inpFile:
-
-            facePhiPat = re.compile("\((.{1,}?)\)",
-                    re.MULTILINE | re.DOTALL )
+            facePhiPat = re.compile("\((.{1,}?)\)", re.MULTILINE | re.DOTALL)
             text = inpFile.read()
             wallFacePat = re.compile("value\s+uniform\s+0")
 
-            #print ("face phi")
+            # print ("face phi")
             for face in boundaryVec:
-                faceBlockPat2=re.compile(face['faceID'] + "[\n\r\s]+?\{.*?\}",
-                                         re.MULTILINE | re.DOTALL )
+                faceBlockPat2 = re.compile(
+                    face["faceID"] + "[\n\r\s]+?\{.*?\}", re.MULTILINE | re.DOTALL
+                )
                 faceBloc = faceBlockPat2.findall(text)[0]
-                #print (faceBloc)
+                # print (faceBloc)
                 facePhis = facePhiPat.findall(faceBloc)
-                #print (facePhis)
+                # print (facePhis)
                 wallConfirm = wallFacePat.findall(faceBloc)
-                #print (wallConfirm)
-                if len(facePhis) == 0 and len(wallConfirm)!=0 :
-                    face['type'] = "wall"
-                    face['phis'] = np.zeros(face['nFaces'])
+                # print (wallConfirm)
+                if len(facePhis) == 0 and len(wallConfirm) != 0:
+                    face["type"] = "wall"
+                    face["phis"] = np.zeros(face["nFaces"])
                 else:
-                    phiList=facePhiPat.findall(faceBloc)[0].strip().split('\n')
+                    phiList = facePhiPat.findall(faceBloc)[0].strip().split("\n")
                     phiList = np.array([float(val) for val in phiList])
 
-
                     if all(i >= 0 for i in phiList):
-                        face['type'] = 'outlet'
+                        face["type"] = "outlet"
                     elif all(i <= 0 for i in phiList):
-                        face['type'] = 'inlet'
+                        face["type"] = "inlet"
                     else:
                         print("Error, phis with mixed sign in boundary")
                         sys.exit()
 
-
-
         self.faces = boundaryVec
 
-
         return
-
 
     def generate_system_file(self):
         """
@@ -1092,62 +1082,63 @@ functions
     }}
 
  """
-        system_folder = os.path.join(self.fluned_path,'system')
-        control_dict_path = os.path.join(system_folder,'controlDict')
+        system_folder = os.path.join(self.fluned_path, "system")
+        control_dict_path = os.path.join(system_folder, "controlDict")
 
-
-
-        with open(control_dict_path,'w',encoding='utf-8') as fw:
-            if self.time_treatment =='steadystate':
+        with open(control_dict_path, "w", encoding="utf-8") as fw:
+            if self.time_treatment == "steadystate":
                 fw.write(control_dict_text)
-                write_control = 'outputTime'
-            elif self.time_treatment =='transient':
+                write_control = "outputTime"
+            elif self.time_treatment == "transient":
                 fw.write(control_dict_text_transient)
-                write_control = 'timeStep'
+                write_control = "timeStep"
 
             fw.write(vol_calc_text.format(write_control))
 
-            fw.write(vol_tx_sum_text.format(
-                                    'volTSum',
-                                    'T',
-                                    write_control))
-            fw.write(vol_tx_sum_text.format(
-                                    'volTaSum',
-                                    'Ta',
-                                    write_control))
-            fw.write(vol_tx_sum_text.format(
-                                    'volTdSum',
-                                    'Td',
-                                    write_control))
+            fw.write(vol_tx_sum_text.format("volTSum", "T", write_control))
+            fw.write(vol_tx_sum_text.format("volTaSum", "Ta", write_control))
+            fw.write(vol_tx_sum_text.format("volTdSum", "Td", write_control))
 
             for face in self.faces:
-                if face['type'] in ['inlet','outlet']:
-                    fw.write(vol_flow_text.format(
-                                 "volFlow-"+face['faceID'],
-                                 face['faceID'],
-                                 write_control))
+                if face["type"] in ["inlet", "outlet"]:
+                    fw.write(
+                        vol_flow_text.format(
+                            "volFlow-" + face["faceID"], face["faceID"], write_control
+                        )
+                    )
 
-                    fw.write(vol_tx_flow_text.format(
-                                 "volTFlow-"+face['faceID'],
-                                 face['faceID'],
-                                 'T',
-                                 write_control))
-                    fw.write(vol_tx_flow_text.format(
-                                 "volTrFlow-"+face['faceID'],
-                                 face['faceID'],
-                                 'Tr',
-                                 write_control))
-                    fw.write(vol_tx_flow_text.format(
-                                 "volTdFlow-"+face['faceID'],
-                                 face['faceID'],
-                                 'Td',
-                                 write_control))
-                    fw.write(vol_tx_flow_text.format(
-                                 "volTaFlow-"+face['faceID'],
-                                 face['faceID'],
-                                 'Ta',
-                                 write_control))
-
+                    fw.write(
+                        vol_tx_flow_text.format(
+                            "volTFlow-" + face["faceID"],
+                            face["faceID"],
+                            "T",
+                            write_control,
+                        )
+                    )
+                    fw.write(
+                        vol_tx_flow_text.format(
+                            "volTrFlow-" + face["faceID"],
+                            face["faceID"],
+                            "Tr",
+                            write_control,
+                        )
+                    )
+                    fw.write(
+                        vol_tx_flow_text.format(
+                            "volTdFlow-" + face["faceID"],
+                            face["faceID"],
+                            "Td",
+                            write_control,
+                        )
+                    )
+                    fw.write(
+                        vol_tx_flow_text.format(
+                            "volTaFlow-" + face["faceID"],
+                            face["faceID"],
+                            "Ta",
+                            write_control,
+                        )
+                    )
 
             fw.write("}")
 
@@ -1259,24 +1250,22 @@ snGradSchemes
 
 """
 
-        schemes_path = os.path.join(system_folder,'fvSchemes')
+        schemes_path = os.path.join(system_folder, "fvSchemes")
 
-
-        with open(schemes_path,'w',encoding='utf-8') as fw:
-
+        with open(schemes_path, "w", encoding="utf-8") as fw:
             # select the fv scheme
-            if self.fv_scheme == 'accurate':
+            if self.fv_scheme == "accurate":
                 fv_scheme_text = fv_scheme_accurate
-            elif self.fv_scheme == 'stable':
+            elif self.fv_scheme == "stable":
                 fv_scheme_text = fv_scheme_stable
 
-            #select the time treatment
-            elif self.time_treatment == 'transient':
-                fw.write(fv_scheme_text.format('Euler'))
-            if self.time_treatment == 'steadystate':
-                fw.write(fv_scheme_text.format('steadyState'))
-            elif self.time_treatment == 'transient':
-                fw.write(fv_scheme_text.format('Euler'))
+            # select the time treatment
+            elif self.time_treatment == "transient":
+                fw.write(fv_scheme_text.format("Euler"))
+            if self.time_treatment == "steadystate":
+                fw.write(fv_scheme_text.format("steadyState"))
+            elif self.time_treatment == "transient":
+                fw.write(fv_scheme_text.format("Euler"))
 
         fv_solution_text = """
 FoamFile
@@ -1341,14 +1330,13 @@ SIMPLE
 }}
 
 """
-        solution_path = os.path.join(system_folder,'fvSolution')
+        solution_path = os.path.join(system_folder, "fvSolution")
 
-
-        with open(solution_path,'w',encoding='utf-8') as fw:
-            if self.time_treatment == 'steadystate':
-                fw.write(fv_solution_text.format(0.01,0.01,0.01,0.01))
-            elif self.time_treatment == 'transient':
-                fw.write(fv_solution_text.format(0,0,0,0))
+        with open(solution_path, "w", encoding="utf-8") as fw:
+            if self.time_treatment == "steadystate":
+                fw.write(fv_solution_text.format(0.01, 0.01, 0.01, 0.01))
+            elif self.time_treatment == "transient":
+                fw.write(fv_solution_text.format(0, 0, 0, 0))
 
         parallel_dict_text = """
 FoamFile
@@ -1366,12 +1354,11 @@ method          scotch;
 
 // *********************************************************************** //
 """
-        parallel_dict_path = os.path.join(system_folder,'decomposeParDict')
-        with open(parallel_dict_path,'w',encoding='utf-8') as fw:
-                fw.write(parallel_dict_text)
+        parallel_dict_path = os.path.join(system_folder, "decomposeParDict")
+        with open(parallel_dict_path, "w", encoding="utf-8") as fw:
+            fw.write(parallel_dict_text)
 
         return
-
 
     def launch_vol_func_object(self):
         """
@@ -1380,11 +1367,11 @@ method          scotch;
         interpolation
         """
 
-        print ("calculating volumes  ...")
+        print("calculating volumes  ...")
         orig_folder = os.getcwd()
         os.chdir(self.fluned_path)
         launch_volumes = "postProcess -func writeCellVolumes".split()
-        with open('log', "a", encoding='utf-8') as outfile:
+        with open("log", "a", encoding="utf-8") as outfile:
             subprocess.Popen(launch_volumes, stdout=outfile).wait()
         os.chdir(orig_folder)
 
@@ -1395,11 +1382,11 @@ method          scotch;
         the centroids - this fields are needed only for the activation rate
         interpolation"""
 
-        print ("calculating centroids ...")
+        print("calculating centroids ...")
         origFolder = os.getcwd()
         os.chdir(self.fluned_path)
         launchCentroids = "postProcess -func writeCellCentres".split()
-        with open('log', "a") as outfile:
+        with open("log", "a") as outfile:
             proc = subprocess.Popen(launchCentroids, stdout=outfile).wait()
         os.chdir(origFolder)
 
@@ -1410,16 +1397,15 @@ method          scotch;
         this function launches the scalar calculation
         """
 
-        print ("launching FLUNED solver ...")
+        print("launching FLUNED solver ...")
         current_folder = os.getcwd()
         os.chdir(self.fluned_path)
         launch_calc_string = "FLUNED-solver".split()
-        with open('simulation_log', "a", encoding='utf-8') as outfile:
+        with open("simulation_log", "a", encoding="utf-8") as outfile:
             subprocess.Popen(launch_calc_string, stdout=outfile).wait()
         os.chdir(current_folder)
 
         return
-
 
     def read_volumes(self):
         """
@@ -1428,11 +1414,12 @@ method          scotch;
         """
 
         # common patterns
-        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\)",
-                                          re.MULTILINE | re.DOTALL )
+        internalBlockPat = re.compile(
+            "internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
+        )
 
-        v_file_path = os.path.join(self.fluned_path,'0')
-        v_files = [f for f in os.listdir(v_file_path) if re.match(r'V(c)?(\..*)?$', f)]
+        v_file_path = os.path.join(self.fluned_path, "0")
+        v_files = [f for f in os.listdir(v_file_path) if re.match(r"V(c)?(\..*)?$", f)]
         if not v_files:
             print("No V or Vc files found")
             sys.exit()
@@ -1441,42 +1428,43 @@ method          scotch;
 
         text = open_utf8_or_gzip(v_file)
         numInternalBlocks = internalBlockPat.findall(text)
-        internalVolumes = numInternalBlocks[0].split('\n')[1:-1]
+        internalVolumes = numInternalBlocks[0].split("\n")[1:-1]
         self.Volumes = np.array([float(val) for val in internalVolumes])
 
         return
 
     def readCentroids(self):
-        """ this function reads the centroids from the 0 folder"""
+        """this function reads the centroids from the 0 folder"""
 
         # common patterns
-        internalBlockPat = re.compile("internalField.*?\((.{1,}?)\n\\s*\)",
-                                          re.MULTILINE | re.DOTALL )
+        internalBlockPat = re.compile(
+            "internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
+        )
 
-        cFile = os.path.join(self.fluned_path,'0','C')
+        cFile = os.path.join(self.fluned_path, "0", "C")
         try:
-            inpFile = open(cFile,'r',encoding="utf8", errors='ignore')
+            inpFile = open(cFile, "r", encoding="utf8", errors="ignore")
         except IOError:
             print("couldn't open  C file")
             sys.exit()
         with inpFile:
             text = inpFile.read()
             numInternalBlocks = internalBlockPat.findall(text)
-            internalCentroids = numInternalBlocks[0].split('\n')[1:]
-            internalCentroids=[val.strip('()') for val in internalCentroids]
-            self.Centroids = np.array([[float(val) for val in v.split()]
-                                for v in internalCentroids])
-
+            internalCentroids = numInternalBlocks[0].split("\n")[1:]
+            internalCentroids = [val.strip("()") for val in internalCentroids]
+            self.Centroids = np.array(
+                [[float(val) for val in v.split()] for v in internalCentroids]
+            )
 
         return
-
 
     def write_cell_zones(self):
         """
         function to write the cell zones file in the polyMesh folder
         """
-        cell_zones_file_path = os.path.join(self.cfd_path,'constant',
-                                           'polyMesh', 'cellZones')
+        cell_zones_file_path = os.path.join(
+            self.cfd_path, "constant", "polyMesh", "cellZones"
+        )
 
         cell_zones_string = """
 FoamFile
@@ -1493,12 +1481,10 @@ FoamFile
 0()
 
 """
-        with open(cell_zones_file_path,'w',encoding='utf-8') as fo2:
+        with open(cell_zones_file_path, "w", encoding="utf-8") as fo2:
             fo2.write(cell_zones_string)
 
         return
-
-
 
     def writeNeighbour_multi_h5(self):
         """
@@ -1506,23 +1492,17 @@ FoamFile
         it selects those that belongs to the fluid partition
         """
 
-        print ("writing multiblock openFOAM neighbour ... ")
+        print("writing multiblock openFOAM neighbour ... ")
 
-        filename = os.path.join(self.cfd_path,self.casH5file)
+        filename = os.path.join(self.cfd_path, self.casH5file)
 
         neighPat = re.compile(".*/faces/c1/\d+\Z", re.IGNORECASE)
 
-        neighbourFilePath = os.path.join(self.cfd_path,'constant','polyMesh',
-                                      'neighbour')
+        neighbourFilePath = os.path.join(
+            self.cfd_path, "constant", "polyMesh", "neighbour"
+        )
 
         neighHeader = """
-/*--------------------------------*- C++ -*-------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -1535,26 +1515,22 @@ FoamFile
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 """
-        neighData = get_h5_dataset_multi(filename,neighPat)
-
+        neighData = get_h5_dataset_multi(filename, neighPat)
 
         for face in self.faceList:
-            if (face['fluid']) and face['faceType'] == 'internal':
-                nWaterNeigh = face['nFaces']
-                neighTable = extract_multiblock(face['minID'],face['maxID'],
-                            neighData)
+            if (face["fluid"]) and face["faceType"] == "internal":
+                nWaterNeigh = face["nFaces"]
+                neighTable = extract_multiblock(face["minID"], face["maxID"], neighData)
                 break
 
-        with  open(neighbourFilePath,'w') as fo:
-
+        with open(neighbourFilePath, "w") as fo:
             fo.write(neighHeader)
-            fo.write(str(nWaterNeigh) + '\n')
+            fo.write(str(nWaterNeigh) + "\n")
             fo.write("(\n")
             neStr = "{:d}\n"
             for val in neighTable:
-                fo.write(neStr.format(int(val -self.fluid_cellID_min)))
+                fo.write(neStr.format(int(val - self.fluid_cellID_min)))
             fo.write(")")
-
 
         return
 
@@ -1564,24 +1540,16 @@ FoamFile
         multiblock fluent simulation
         """
 
-        print ("writing multiblock openFOAM faces ... ")
+        print("writing multiblock openFOAM faces ... ")
 
-        filename = os.path.join(self.cfd_path,self.casH5file)
+        filename = os.path.join(self.cfd_path, self.casH5file)
 
         facePat = re.compile(".*/faces/nodes/\d+/nnodes\Z", re.IGNORECASE)
         face2Pat = re.compile(".*/faces/nodes/\d+/nodes\Z", re.IGNORECASE)
 
-        facesFilePath = os.path.join(self.cfd_path,'constant','polyMesh',
-                                      'faces')
+        facesFilePath = os.path.join(self.cfd_path, "constant", "polyMesh", "faces")
 
         facesHeader = """
-/*-------------------------------*- C++ -*--------------------------------*\\
-| =========                |                                                |
-| \\      /  F ield        | OpenFOAM: The Open Source CFD Toolbox          |
-|  \\    /   O peration    | Version:  2112                                 |
-|   \\  /    A nd          | Website:  www.openfoam.com                     |
-|    \\/     M anipulation |                                                |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -1595,61 +1563,53 @@ FoamFile
 
 """
 
-        self.faces1H5Path,nFacesVec = get_h5_path_dataset(filename,facePat)
-        self.faces2H5Path,facesDef = get_h5_path_dataset(filename,face2Pat)
-
-
-
+        self.faces1H5Path, nFacesVec = get_h5_path_dataset(filename, facePat)
+        self.faces2H5Path, facesDef = get_h5_path_dataset(filename, face2Pat)
 
         pointIDTemp = 1
-        uniquePoints = np.zeros((0,), dtype =np.uint64)
+        uniquePoints = np.zeros((0,), dtype=np.uint64)
         for face in self.faceList:
             # store the number of nodes per face
-            nPointsTemp = nFacesVec[(face['minID']-1):face['maxID']]
+            nPointsTemp = nFacesVec[(face["minID"] - 1) : face["maxID"]]
             # number of nodes needed to define one face
-            face['nPoints'] = sum(nPointsTemp)
-            face['minPointID'] = pointIDTemp
-            face['maxPointID'] = face['minPointID'] + face['nPoints'] - 1
-            pointIDTemp += face['nPoints']
-            #print (face['faceName'], face['minPointID'],face['maxPointID'])
-            if face['fluid'] == True:
-                pointsTemp = facesDef[(face['minPointID']-1):
-                        face['maxPointID']]
-                #print ("fluid face", min(pointsTemp),max(pointsTemp))
-                uniquePoints = np.append(uniquePoints,pointsTemp)
-
+            face["nPoints"] = sum(nPointsTemp)
+            face["minPointID"] = pointIDTemp
+            face["maxPointID"] = face["minPointID"] + face["nPoints"] - 1
+            pointIDTemp += face["nPoints"]
+            # print (face['faceName'], face['minPointID'],face['maxPointID'])
+            if face["fluid"] == True:
+                pointsTemp = facesDef[(face["minPointID"] - 1) : face["maxPointID"]]
+                # print ("fluid face", min(pointsTemp),max(pointsTemp))
+                uniquePoints = np.append(uniquePoints, pointsTemp)
 
         self.uniquePoints = np.unique(uniquePoints)
 
-        #print ("CHECK")
-        #print (len(facesDef))
-        #print (pointIDTemp)
+        # print ("CHECK")
+        # print (len(facesDef))
+        # print (pointIDTemp)
 
-        faceList = sorted(self.faceList, reverse=False,
-                                      key=lambda x:x['newOrderID'])
+        faceList = sorted(self.faceList, reverse=False, key=lambda x: x["newOrderID"])
 
-
-        with  open(facesFilePath,'w') as fo:
+        with open(facesFilePath, "w") as fo:
             fo.write(facesHeader)
-            fo.write(str(self.nWaterFaces) + '\n')
+            fo.write(str(self.nWaterFaces) + "\n")
             fo.write("(\n")
-            j=0
+            j = 0
             for face in faceList:
-                if face['fluid'] == False:
+                if face["fluid"] == False:
                     continue
-                nPointsTemp=nFacesVec[(face['minID']-1):face['maxID']]
-                pointsTemp = facesDef[(face['minPointID']-1):
-                        face['maxPointID']]
+                nPointsTemp = nFacesVec[(face["minID"] - 1) : face["maxID"]]
+                pointsTemp = facesDef[(face["minPointID"] - 1) : face["maxPointID"]]
                 i = 0
-                #print (len(nPointsTemp))
-                #print (sum(nPointsTemp))
-                #print (len(pointsTemp))
+                # print (len(nPointsTemp))
+                # print (sum(nPointsTemp))
+                # print (len(pointsTemp))
                 for val in nPointsTemp:
                     faceStr1 = "{:d}("
                     newString = faceStr1.format(val)
-                    pointList = reversed(pointsTemp[i:(i+val)])
+                    pointList = reversed(pointsTemp[i : (i + val)])
                     for pt in pointList:
-                        ptNew = np.searchsorted(self.uniquePoints,pt)
+                        ptNew = np.searchsorted(self.uniquePoints, pt)
                         newString += " {:d} ".format(int(ptNew))
                     newString += " )\n"
                     fo.write(newString)
@@ -1658,12 +1618,9 @@ FoamFile
 
             fo.write(")")
 
-
-
-
-
-        faceZonesFilePath = os.path.join(self.cfd_path,'constant',
-                                           'polyMesh', 'faceZones')
+        faceZonesFilePath = os.path.join(
+            self.cfd_path, "constant", "polyMesh", "faceZones"
+        )
 
         faceZones = """
 FoamFile
@@ -1682,10 +1639,8 @@ FoamFile
 
 // ********************************************************************** //
 """
-        with open(faceZonesFilePath,'w') as fo2:
+        with open(faceZonesFilePath, "w") as fo2:
             fo2.write(faceZones)
-
-
 
         return
 
@@ -1696,8 +1651,9 @@ FoamFile
         the self.faceList should be already arranged for the work
         """
 
-        boundaryFilePath = os.path.join(self.cfd_path,'constant','polyMesh',
-                                      'boundary')
+        boundaryFilePath = os.path.join(
+            self.cfd_path, "constant", "polyMesh", "boundary"
+        )
         boundaryHeader = """
 FoamFile
 {
@@ -1713,58 +1669,51 @@ FoamFile
 """
         nWaterFaces = 0
         for face in self.faceList:
-            if (face['fluid'] == True) and face['faceType'] != 'internal':
+            if (face["fluid"] == True) and face["faceType"] != "internal":
                 nWaterFaces += 1
 
-        faceList = sorted(self.faceList, reverse=False,
-                                      key=lambda x:x['newOrderID'])
+        faceList = sorted(self.faceList, reverse=False, key=lambda x: x["newOrderID"])
 
-
-        with open(boundaryFilePath,'w') as fi:
+        with open(boundaryFilePath, "w") as fi:
             fi.write(boundaryHeader)
-            fi.write("{:d}\n".format(nWaterFaces ))
+            fi.write("{:d}\n".format(nWaterFaces))
             fi.write("(\n")
             for face in faceList:
-                if face['fluid'] == False:
+                if face["fluid"] == False:
                     continue
-                if face['faceType'] == 'internal':
+                if face["faceType"] == "internal":
                     continue
 
-                fi.write("   {}\n".format(face['faceName']))
+                fi.write("   {}\n".format(face["faceName"]))
                 fi.write("    {\n")
 
-                if face["faceType"] == 'wall':
+                if face["faceType"] == "wall":
                     fi.write("        type            wall;\n")
                 else:
                     fi.write("        type            patch;\n")
 
-                fi.write("        nFaces          {:d};\n".format(
-                          face['nFaces']))
-                fi.write("        startFace       {:d};\n".format(
-                         int(face['newMinID'])-1))
+                fi.write("        nFaces          {:d};\n".format(face["nFaces"]))
+                fi.write(
+                    "        startFace       {:d};\n".format(int(face["newMinID"]) - 1)
+                )
                 fi.write("    }\n")
             fi.write(")\n")
 
-
-
         return
-
 
         return
 
     def writeOwner_multi_h5(self):
-        """ This function writes all the cell owners,
+        """This function writes all the cell owners,
         it selects those that belong to the fluid partition"""
 
-        print ("writing multiblock openFOAM owner ... ")
+        print("writing multiblock openFOAM owner ... ")
 
-        filename = os.path.join(self.cfd_path,self.casH5file)
+        filename = os.path.join(self.cfd_path, self.casH5file)
 
         ownerPat = re.compile(".*/faces/c0/\d+\Z", re.IGNORECASE)
 
-        ownerFilePath = os.path.join(self.cfd_path,'constant','polyMesh',
-                                      'owner')
-
+        ownerFilePath = os.path.join(self.cfd_path, "constant", "polyMesh", "owner")
 
         ownerHeader = """
 FoamFile
@@ -1780,32 +1729,27 @@ FoamFile
 
 """
 
-        self.ownerH5Path,ownerList = get_h5_path_dataset(filename,ownerPat)
-
+        self.ownerH5Path, ownerList = get_h5_path_dataset(filename, ownerPat)
 
         ownerTable = np.zeros((self.nWaterFaces,), dtype=np.uint64)
 
-
-
         for face in self.faceList:
-            if face['fluid'] == True:
+            if face["fluid"] == True:
+                ownerTable[(face["newMinID"] - 1) : face["newMaxID"]] = ownerList[
+                    (face["minID"] - 1) : face["maxID"]
+                ]
 
-                ownerTable[(face['newMinID']-1):face['newMaxID']] = (
-                    ownerList[(face['minID']-1):face['maxID']])
+        # check = np.count_nonzero(ownerTable == 0)
+        # print (check)
 
-
-        #check = np.count_nonzero(ownerTable == 0)
-        #print (check)
-
-        with  open(ownerFilePath,'w') as fo:
+        with open(ownerFilePath, "w") as fo:
             fo.write(ownerHeader)
-            fo.write(str(self.nWaterFaces) + '\n')
+            fo.write(str(self.nWaterFaces) + "\n")
             fo.write("(\n")
             owStr = "{:d}\n"
             for val in ownerTable:
                 fo.write(owStr.format(int(val - self.fluid_cellID_min)))
             fo.write(")")
-
 
         return
 
@@ -1816,25 +1760,15 @@ FoamFile
         in the fluid region written in the self.uniquePoints attribute
         """
 
-        print ("writing multiblock openFOAM points ... ")
+        print("writing multiblock openFOAM points ... ")
 
-        filename = os.path.join(self.cfd_path,self.casfile)
+        filename = os.path.join(self.cfd_path, self.casfile)
 
-        pointsPat = re.compile("^\(3010\s+\(.*?\).*\)",
-                                          re.MULTILINE | re.DOTALL )
+        pointsPat = re.compile("^\(3010\s+\(.*?\).*\)", re.MULTILINE | re.DOTALL)
 
-        pointsFilePath = os.path.join(self.cfd_path,'constant','polyMesh',
-                                      'points')
-
+        pointsFilePath = os.path.join(self.cfd_path, "constant", "polyMesh", "points")
 
         pointsHeader = """
-/*-------------------------------*- C++ -*--------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -1847,41 +1781,14 @@ FoamFile
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 """
-        #self.nodesH5Path,points = get_h5_path_dataset(filename,nodesPat)
 
-        get_fluent_binarray_double(filename,'3010',3)
+        get_fluent_binarray_double(filename, "3010", 3)
 
-
-
-        #with open(pointsFilePath,'w') as fo:
-
-        #    fo.write(pointsHeader)
-        #    fo.write(str(len(self.uniquePoints)) + '\n')
-        #    fo.write("(\n")
-        #    ptStr = "({:24.18e} {:24.18e} {:24.18e})\n"
-        #    for index in self.uniquePoints:
-        #
-        #        cord = points[int(index-1)]
-
-        #        fo.write(ptStr.format(*cord))
-
-        #    fo.write(")")
-        #
-
-
-
-
-        pointsZonesFilePath = os.path.join(self.cfd_path,'constant',
-                                           'polyMesh', 'pointZones')
+        pointsZonesFilePath = os.path.join(
+            self.cfd_path, "constant", "polyMesh", "pointZones"
+        )
 
         pointZones = """
-/*--------------------------------*- C++ -*-------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -1897,7 +1804,7 @@ FoamFile
 
 // *********************************************************************** //
 """
-        with open(pointsZonesFilePath,'w') as fo2:
+        with open(pointsZonesFilePath, "w") as fo2:
             fo2.write(pointZones)
 
         return
@@ -1909,24 +1816,15 @@ FoamFile
         in the fluid region written in the self.uniquePoints attribute
         """
 
-        print ("writing multiblock openFOAM points ... ")
+        print("writing multiblock openFOAM points ... ")
 
-        filename = os.path.join(self.cfd_path,self.casH5file)
+        filename = os.path.join(self.cfd_path, self.casH5file)
 
         nodesPat = re.compile(".*/nodes/coords/\d+\Z", re.IGNORECASE)
 
-        pointsFilePath = os.path.join(self.cfd_path,'constant','polyMesh',
-                                      'points')
-
+        pointsFilePath = os.path.join(self.cfd_path, "constant", "polyMesh", "points")
 
         pointsHeader = """
-/*-------------------------------*- C++ -*--------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -1939,38 +1837,25 @@ FoamFile
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 """
-        self.nodesH5Path,points = get_h5_path_dataset(filename,nodesPat)
+        self.nodesH5Path, points = get_h5_path_dataset(filename, nodesPat)
 
-
-        with open(pointsFilePath,'w') as fo:
-
+        with open(pointsFilePath, "w") as fo:
             fo.write(pointsHeader)
-            fo.write(str(len(self.uniquePoints)) + '\n')
+            fo.write(str(len(self.uniquePoints)) + "\n")
             fo.write("(\n")
             ptStr = "({:24.18e} {:24.18e} {:24.18e})\n"
             for index in self.uniquePoints:
-
-                cord = points[int(index-1)]
+                cord = points[int(index - 1)]
 
                 fo.write(ptStr.format(*cord))
 
             fo.write(")")
 
-
-
-
-
-        pointsZonesFilePath = os.path.join(self.cfd_path,'constant',
-                                           'polyMesh', 'pointZones')
+        pointsZonesFilePath = os.path.join(
+            self.cfd_path, "constant", "polyMesh", "pointZones"
+        )
 
         pointZones = """
-/*--------------------------------*- C++ -*-------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -1986,21 +1871,18 @@ FoamFile
 
 // *********************************************************************** //
 """
-        with open(pointsZonesFilePath,'w') as fo2:
+        with open(pointsZonesFilePath, "w") as fo2:
             fo2.write(pointZones)
 
         return
 
-
     def getH5files(self):
-
-
         casH5files = []
         datH5files = []
         casH5FilePat = re.compile("\.cas.h5\Z", re.IGNORECASE)
         datH5FilePat = re.compile("\.dat.h5\Z", re.IGNORECASE)
 
-        folder =self.cfd_path
+        folder = self.cfd_path
 
         for filename in os.listdir(folder):
             casH5file = casH5FilePat.findall(filename)
@@ -2013,26 +1895,24 @@ FoamFile
         if len(casH5files) == 1:
             self.casH5file = casH5files[0]
         else:
-            print ("ERROR zero or more than one cas.h5 files")
+            print("ERROR zero or more than one cas.h5 files")
             sys.exit()
 
         if len(datH5files) == 1:
             self.datH5file = datH5files[0]
         else:
-            print ("ERROR zero or more than one dat.h5 files")
+            print("ERROR zero or more than one dat.h5 files")
             sys.exit()
 
         return
 
     def getCASDATfiles(self):
-
-
         casfiles = []
         datfiles = []
         casFilePat = re.compile("\.cas\Z", re.IGNORECASE)
         datFilePat = re.compile("\.dat\Z", re.IGNORECASE)
 
-        folder =self.cfd_path
+        folder = self.cfd_path
 
         for filename in os.listdir(folder):
             casfile = casFilePat.findall(filename)
@@ -2045,13 +1925,13 @@ FoamFile
         if len(casfiles) == 1:
             self.casfile = casfiles[0]
         else:
-            print ("ERROR zero or more than one cas file")
+            print("ERROR zero or more than one cas file")
             sys.exit()
 
         if len(datfiles) == 1:
             self.datfile = datfiles[0]
         else:
-            print ("ERROR zero or more than one dat file")
+            print("ERROR zero or more than one dat file")
             sys.exit()
 
         return
@@ -2063,22 +1943,12 @@ FoamFile
         There are two modes:
         1) steady state: the source is 1 in every cell
         2) transient the source is 0 in every cell
-         """
+        """
 
+        zeroFolder = os.path.join(self.fluned_path, "0")
+        zeroSourcePath = os.path.join(zeroFolder, "TrSource")
 
-
-        zeroFolder = os.path.join(self.fluned_path,'0')
-        zeroSourcePath = os.path.join(zeroFolder,'TrSource')
-
-
-        sHeaderText="""
-/*------------------------------*- C++ -*----------------------------------*\
-| =========               |                                                 |
-| \\      /  F ield       | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration   | Version:  2.3.1                                 |
-|   \\  /    A nd         | Web:      www.OpenFOAM.org                      |
-|    \\/     M anipulatio |                                                 |
-\*-------------------------------------------------------------------------*/
+        sHeaderText = """
 FoamFile
 {
     version     2.0;
@@ -2110,29 +1980,26 @@ boundaryField
 // *********************************************************************** //
 """
 
-        with open(zeroSourcePath,'w') as fw:
+        with open(zeroSourcePath, "w") as fw:
             fw.write(sHeaderText)
 
-            if self.time_treatment == 'steadystate':
+            if self.time_treatment == "steadystate":
                 fw.write(intFieldText.format(1))
-            elif self.time_treatment == 'transient':
+            elif self.time_treatment == "transient":
                 fw.write(intFieldText.format(0))
 
             fw.write(boundaryText)
 
             for face in self.faces:
-                fw.write("    " + face['faceID'] + '\n    {\n')
+                fw.write("    " + face["faceID"] + "\n    {\n")
                 fw.write("        type            fixedValue;\n")
-                valString="        value          uniform 0;\n"
+                valString = "        value          uniform 0;\n"
                 fw.write(valString)
-                fw.write("    }\n" )
+                fw.write("    }\n")
 
             fw.write(closerText)
 
-
-
         return
-
 
     def generateSourceFile(self):
         """this file create the source file in the zero folder.
@@ -2140,78 +2007,65 @@ boundaryField
         1) no activation, then the file contains only zeros.
         2) constant activation (with input value)
         3) with a source file
-         """
+        """
 
-
-        if (self.activation_file == ''):
+        if self.activation_file == "":
             if self.activation_const == 0:
                 # case with no rad source
                 activ_sources = [0 for i in range(self.num_internal_cells)]
             else:
                 # case with constant value source
                 self.read_volumes()
-                activ_sources = ([self.activation_const*vol for vol
-                    in self.Volumes])
+                activ_sources = [self.activation_const * vol for vol in self.Volumes]
 
         else:
-            #case with source file
+            # case with source file
             self.launchCentroidFuncObjects()
             self.read_volumes()
             self.readCentroids()
 
             # 1.sample the activation file
-            print ("Sampling Reaction Rate file ... ")
-            sampledRates = sample_coordinates_vtk(self.activation_file,
-                                                self.activation_dataset,
-                                                self.Centroids)
+            print("Sampling Reaction Rate file ... ")
+            sampledRates = sample_coordinates_vtk(
+                self.activation_file, self.activation_dataset, self.Centroids
+            )
 
             # 1.1 if present sample the vtk file to get the error array
-            if self.activation_dataset_error != '':
-                print ("Sampling Reaction Rate MCNP errors  ... ")
-                sampledStatErr = sample_coordinates_vtk(self.activation_file,
-                                            self.activation_dataset_error,
-                                            self.Centroids)
+            if self.activation_dataset_error != "":
+                print("Sampling Reaction Rate MCNP errors  ... ")
+                sampledStatErr = sample_coordinates_vtk(
+                    self.activation_file, self.activation_dataset_error, self.Centroids
+                )
 
             # 2.use the activation const as a factor
             if self.activation_const == 0:
                 factor = 1
             else:
                 factor = self.activation_const
-            activ_sources = [factor*rate for rate in sampledRates ]
+            activ_sources = [factor * rate for rate in sampledRates]
 
             # 3.apply a normalization factor if provided
             if self.activation_normalization != 0:
-                vec = ([rate*vol for rate,vol in
-                    zip(activ_sources,self.Volumes)])
+                vec = [rate * vol for rate, vol in zip(activ_sources, self.Volumes)]
 
                 totalSampled = sum(vec)
-                print ("total sampled atoms/s")
-                print (totalSampled)
-                normFactor = self.activation_normalization/totalSampled
+                print("total sampled atoms/s")
+                print(totalSampled)
+                normFactor = self.activation_normalization / totalSampled
 
-                activ_sources = [rate*normFactor for rate in activ_sources ]
+                activ_sources = [rate * normFactor for rate in activ_sources]
 
+                nVec = [rate * vol for rate, vol in zip(activ_sources, self.Volumes)]
 
-                nVec = ([rate*vol for rate,vol in
-                    zip(activ_sources,self.Volumes)])
+                print("new total sampled atoms/s")
+                print(sum(nVec))
 
-                print ("new total sampled atoms/s")
-                print (sum(nVec))
+        self.activation_sources = activ_sources
 
-        self.activation_sources  = activ_sources
+        zeroFolder = os.path.join(self.fluned_path, "0")
+        zeroSourcePath = os.path.join(zeroFolder, "Source")
 
-        zeroFolder = os.path.join(self.fluned_path,'0')
-        zeroSourcePath = os.path.join(zeroFolder,'Source')
-
-
-        sHeaderText="""
-/*------------------------------*- C++ -*----------------------------------*\
-| =========               |                                                 |
-| \\      /  F ield       | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration   | Version:  2.3.1                                 |
-|   \\  /    A nd         | Web:      www.OpenFOAM.org                      |
-|    \\/     M anipulatio |                                                 |
-\*-------------------------------------------------------------------------*/
+        sHeaderText = """
 FoamFile
 {
     version     2.0;
@@ -2239,7 +2093,7 @@ boundaryField
 // *********************************************************************** //
 """
 
-        with open(zeroSourcePath,'w') as fw:
+        with open(zeroSourcePath, "w") as fw:
             fw.write(sHeaderText)
             fw.write("{:d}\n".format(self.num_internal_cells))
             fw.write("(\n")
@@ -2250,27 +2104,18 @@ boundaryField
             fw.write(boundaryText)
 
             for face in self.faces:
-                fw.write("    " + face['faceID'] + '\n    {\n')
+                fw.write("    " + face["faceID"] + "\n    {\n")
                 fw.write("        type            fixedValue;\n")
-                valString="        value          uniform 0;\n"
+                valString = "        value          uniform 0;\n"
                 fw.write(valString)
-                fw.write("    }\n" )
+                fw.write("    }\n")
 
             fw.write(closerText)
 
+        if self.activation_dataset_error != "":
+            zeroSourceErrorPath = os.path.join(zeroFolder, "SourceError")
 
-        if self.activation_dataset_error != '':
-            zeroSourceErrorPath = os.path.join(zeroFolder,'SourceError')
-
-
-            eHeaderText="""
-/*------------------------------*- C++ -*----------------------------------*\
-| =========               |                                                 |
-| \\      /  F ield       | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration   | Version:  2.3.1                                 |
-|   \\  /    A nd         | Web:      www.OpenFOAM.org                      |
-|    \\/     M anipulatio |                                                 |
-\*-------------------------------------------------------------------------*/
+            eHeaderText = """
 FoamFile
 {
     version     2.0;
@@ -2285,7 +2130,7 @@ dimensions      [0 0 -1 0 0 0 0];
 
 internalField   nonuniform List<scalar>
 """
-            with open(zeroSourceErrorPath,'w') as fw:
+            with open(zeroSourceErrorPath, "w") as fw:
                 fw.write(eHeaderText)
                 fw.write("{:d}\n".format(self.num_internal_cells))
                 fw.write("(\n")
@@ -2296,62 +2141,45 @@ internalField   nonuniform List<scalar>
                 fw.write(boundaryText)
 
                 for face in self.faces:
-                    fw.write("    " + face['faceID'] + '\n    {\n')
+                    fw.write("    " + face["faceID"] + "\n    {\n")
                     fw.write("        type            fixedValue;\n")
-                    valString="        value          uniform 0;\n"
+                    valString = "        value          uniform 0;\n"
                     fw.write(valString)
-                    fw.write("    }\n" )
+                    fw.write("    }\n")
 
                 fw.write(closerText)
 
         return
-
 
     def writeSpeed_multi_h5(self):
         """
         this function write the U velocity files for t=1 and t=0
         """
 
-        print ("writing multiblock openFOAM U files ... ")
+        print("writing multiblock openFOAM U files ... ")
 
-        filename = os.path.join(self.cfd_path,self.datH5file)
+        filename = os.path.join(self.cfd_path, self.datH5file)
 
-        uCellXPat = re.compile(".*/cells/SV_U/.*",
-                                     re.IGNORECASE)
-        uCellYPat = re.compile(".*/cells/SV_V/.*",
-                                     re.IGNORECASE)
-        uCellZPat = re.compile(".*/cells/SV_W/.*",
-                                     re.IGNORECASE)
+        uCellXPat = re.compile(".*/cells/SV_U/.*", re.IGNORECASE)
+        uCellYPat = re.compile(".*/cells/SV_V/.*", re.IGNORECASE)
+        uCellZPat = re.compile(".*/cells/SV_W/.*", re.IGNORECASE)
 
-        uFaceXPat = re.compile(".*/faces/SV_U/.*",
-                                     re.IGNORECASE)
-        uFaceYPat = re.compile(".*/faces/SV_V/.*",
-                                     re.IGNORECASE)
+        uFaceXPat = re.compile(".*/faces/SV_U/.*", re.IGNORECASE)
+        uFaceYPat = re.compile(".*/faces/SV_V/.*", re.IGNORECASE)
 
-        uFaceZPat = re.compile(".*/faces/SV_W/.*",
-                                     re.IGNORECASE)
+        uFaceZPat = re.compile(".*/faces/SV_W/.*", re.IGNORECASE)
 
+        uOneFilePath = os.path.join(self.cfd_path, "1", "U")
 
-        uOneFilePath = os.path.join(self.cfd_path,'1','U')
+        xCellVelocity = get_h5_dataset_multi(filename, uCellXPat)
+        yCellVelocity = get_h5_dataset_multi(filename, uCellYPat)
+        zCellVelocity = get_h5_dataset_multi(filename, uCellZPat)
 
-
-        xCellVelocity = get_h5_dataset_multi(filename,uCellXPat)
-        yCellVelocity = get_h5_dataset_multi(filename,uCellYPat)
-        zCellVelocity = get_h5_dataset_multi(filename,uCellZPat)
-
-        xFaceVelocity = get_h5_dataset_multi(filename,uFaceXPat)
-        yFaceVelocity = get_h5_dataset_multi(filename,uFaceYPat)
-        zFaceVelocity = get_h5_dataset_multi(filename,uFaceZPat)
-
+        xFaceVelocity = get_h5_dataset_multi(filename, uFaceXPat)
+        yFaceVelocity = get_h5_dataset_multi(filename, uFaceYPat)
+        zFaceVelocity = get_h5_dataset_multi(filename, uFaceZPat)
 
         u1Header = """
-/*--------------------------------*- C++ -*-------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -2365,30 +2193,25 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 """
-        faceList = sorted(self.faceList, reverse=False,
-                                      key=lambda x:x['newOrderID'])
+        faceList = sorted(self.faceList, reverse=False, key=lambda x: x["newOrderID"])
 
-        with  open(uOneFilePath,'w') as fo:
-
-
+        with open(uOneFilePath, "w") as fo:
             uStr = "({:24.18e} {:24.18e} {:24.18e})\n"
             fo.write(u1Header)
             fo.write("internalField   nonuniform List<vector>\n")
             fo.write("{:d}\n".format(self.fluid_cellN))
             fo.write("(\n")
-            uXValues = extract_multiblock(self.fluid_cellID_min,
-                                          self.fluid_cellID_max,
-                                          xCellVelocity)
-            uYValues = extract_multiblock(self.fluid_cellID_min,
-                                          self.fluid_cellID_max,
-                                          yCellVelocity)
-            uZValues = extract_multiblock(self.fluid_cellID_min,
-                                          self.fluid_cellID_max,
-                                          zCellVelocity)
-            for uX,uY,uZ in zip(uXValues,
-                                uYValues,
-                                uZValues):
-                fo.write(uStr.format(uX,uY,uZ))
+            uXValues = extract_multiblock(
+                self.fluid_cellID_min, self.fluid_cellID_max, xCellVelocity
+            )
+            uYValues = extract_multiblock(
+                self.fluid_cellID_min, self.fluid_cellID_max, yCellVelocity
+            )
+            uZValues = extract_multiblock(
+                self.fluid_cellID_min, self.fluid_cellID_max, zCellVelocity
+            )
+            for uX, uY, uZ in zip(uXValues, uYValues, uZValues):
+                fo.write(uStr.format(uX, uY, uZ))
             fo.write(")\n")
             fo.write(";\n")
             fo.write("\n")
@@ -2396,45 +2219,39 @@ dimensions      [0 1 -1 0 0 0 0];
             fo.write("{\n")
 
             for face in faceList:
-
-                if face['faceType'] == 'internal':
+                if face["faceType"] == "internal":
                     continue
-                if face['fluid'] :
-
+                if face["fluid"]:
                     fo.write("    {}\n".format(face["faceName"]))
                     fo.write("    {\n")
-                    if face['faceType'] == 'wall':
+                    if face["faceType"] == "wall":
                         fo.write("        type        movingWallVelocity;\n")
                         fo.write("        value       uniform (0 0 0);\n")
-                    elif face['faceType'] == 'outlet':
+                    elif face["faceType"] == "outlet":
                         fo.write("        type            zeroGradient;\n")
-                    elif face['faceType'] == 'inlet':
-
-
-                        uXValues = extract_multiblock(face['minID'],
-                                                      face['maxID'],
-                                                      xFaceVelocity)
-                        uYValues = extract_multiblock(face['minID'],
-                                                      face['maxID'],
-                                                      yFaceVelocity)
-                        uZValues = extract_multiblock(face['minID'],
-                                                      face['maxID'],
-                                                      zFaceVelocity)
+                    elif face["faceType"] == "inlet":
+                        uXValues = extract_multiblock(
+                            face["minID"], face["maxID"], xFaceVelocity
+                        )
+                        uYValues = extract_multiblock(
+                            face["minID"], face["maxID"], yFaceVelocity
+                        )
+                        uZValues = extract_multiblock(
+                            face["minID"], face["maxID"], zFaceVelocity
+                        )
                         fo.write("        type            fixedValue;\n")
                         fo.write("        value   nonuniform List<vector>\n")
                         fo.write("{:d}\n".format(len(uXValues)))
                         fo.write("(\n")
-                        for v1,v2,v3 in zip(uXValues,uYValues,uZValues):
-                            fo.write(uStr.format(v1,v2,v3))
+                        for v1, v2, v3 in zip(uXValues, uYValues, uZValues):
+                            fo.write(uStr.format(v1, v2, v3))
                         fo.write(")\n")
                         fo.write(";\n")
                     fo.write("    }\n")
 
-
             fo.write("}\n")
 
         return
-
 
     def defineWalls_multi_h5(self):
         """
@@ -2442,43 +2259,41 @@ dimensions      [0 1 -1 0 0 0 0];
         wall, inlet and outlet
         """
 
-        filename = os.path.join(self.cfd_path,self.datH5file)
+        filename = os.path.join(self.cfd_path, self.datH5file)
 
-        phiPat = re.compile(".*/faces/SV_FLUX/.*",
-                                     re.IGNORECASE)
+        phiPat = re.compile(".*/faces/SV_FLUX/.*", re.IGNORECASE)
 
-        phiValues = get_h5_dataset_multi(filename,phiPat)
+        phiValues = get_h5_dataset_multi(filename, phiPat)
 
         for face in self.faceList:
-            if not face['fluid']  :
+            if not face["fluid"]:
                 continue
-            if (face['fluid'])  and face['faceType'] == 'internal':
+            if (face["fluid"]) and face["faceType"] == "internal":
                 continue
 
-
-            phiTemp=extract_multiblock(face['minID'],face['maxID'],phiValues)
+            phiTemp = extract_multiblock(face["minID"], face["maxID"], phiValues)
 
             if all(val == 0 for val in phiTemp):
                 face["faceType"] = "wall"
-            elif all(val >= 0 for val in phiTemp) :
+            elif all(val >= 0 for val in phiTemp):
                 face["faceType"] = "outlet"
-                if not all(val > 0 for val in phiTemp) :
-                    print("WARNING in outlet ", face['faceName'])
+                if not all(val > 0 for val in phiTemp):
+                    print("WARNING in outlet ", face["faceName"])
                     print("some zero phis are present")
-            elif all(val <= 0 for val in phiTemp) :
+            elif all(val <= 0 for val in phiTemp):
                 face["faceType"] = "inlet"
-                if not all(val < 0 for val in phiTemp) :
-                    print("WARNING in inlet ", face['faceName'])
+                if not all(val < 0 for val in phiTemp):
+                    print("WARNING in inlet ", face["faceName"])
                     print("some zero phis are present")
             else:
-                print("ERROR in face ", face['faceName'])
+                print("ERROR in face ", face["faceName"])
                 print("nonzero phis of different signs are present")
                 sys.exit()
 
-        #for dic in self.faceList:
+        # for dic in self.faceList:
         #    print (dic)
-        #df = pd.DataFrame(self.faceList)
-        #df.to_csv('faces.csv', index=True)
+        # df = pd.DataFrame(self.faceList)
+        # df.to_csv('faces.csv', index=True)
 
         return
 
@@ -2492,31 +2307,17 @@ dimensions      [0 1 -1 0 0 0 0];
           results
         """
 
+        print("writing multiblock openFOAM phi files ... ")
 
-        print ("writing multiblock openFOAM phi files ... ")
+        filename = os.path.join(self.cfd_path, self.datH5file)
 
-        filename = os.path.join(self.cfd_path,self.datH5file)
+        phiPat = re.compile(".*/faces/SV_FLUX/.*", re.IGNORECASE)
 
-        phiPat = re.compile(".*/faces/SV_FLUX/.*",
-                                     re.IGNORECASE)
+        phiOneFilePath = os.path.join(self.cfd_path, "1", "phi")
 
-
-        phiOneFilePath = os.path.join(self.cfd_path,'1','phi')
-
-        phiValues = get_h5_dataset_multi(filename,phiPat)
-
-
-
-
+        phiValues = get_h5_dataset_multi(filename, phiPat)
 
         phi1Header = """
-/*--------------------------------*- C++ -*-------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -2533,24 +2334,22 @@ dimensions      [0 3 -1 0 0 0 0];
 
         """
 
+        faceList = sorted(self.faceList, reverse=False, key=lambda x: x["newOrderID"])
 
-        faceList = sorted(self.faceList, reverse=False,
-                                      key=lambda x:x['newOrderID'])
-
-        with  open(phiOneFilePath,'w') as fo:
-
+        with open(phiOneFilePath, "w") as fo:
             fo.write(phi1Header)
             fo.write("internalField   nonuniform List<scalar>\n")
             # write the internal mesh
             for face in faceList:
-                if (face['fluid'])  and face['faceType'] == 'internal':
-                    phiTemp=extract_multiblock(face['minID'],face['maxID'],
-                            phiValues)
+                if (face["fluid"]) and face["faceType"] == "internal":
+                    phiTemp = extract_multiblock(
+                        face["minID"], face["maxID"], phiValues
+                    )
                     fo.write("{:d}\n".format(len(phiTemp)))
                     fo.write("(\n")
                     phiStr = "{:24.18e}\n"
                     for val in phiTemp:
-                        fo.write(phiStr.format(val/self.fluent_density))
+                        fo.write(phiStr.format(val / self.fluent_density))
             fo.write(")\n")
             fo.write(";\n")
             fo.write("\n")
@@ -2558,12 +2357,12 @@ dimensions      [0 3 -1 0 0 0 0];
             fo.write("{\n")
 
             for face in faceList:
-
-                if face['faceType'] == 'internal':
+                if face["faceType"] == "internal":
                     continue
-                if face['fluid'] :
-                    phiTemp=extract_multiblock(face['minID'],face['maxID'],
-                            phiValues)
+                if face["fluid"]:
+                    phiTemp = extract_multiblock(
+                        face["minID"], face["maxID"], phiValues
+                    )
                     fo.write("    {}\n".format(face["faceName"]))
                     fo.write("    {\n")
                     fo.write("        type            calculated;\n")
@@ -2571,24 +2370,20 @@ dimensions      [0 3 -1 0 0 0 0];
                         fo.write("        value           uniform 0;\n")
                     if face["faceType"] != "wall":
                         fo.write("        value   nonuniform List<scalar>\n")
-                        phiTemp=extract_multiblock(face['minID'],
-                                                   face['maxID'],
-                                                   phiValues)
+                        phiTemp = extract_multiblock(
+                            face["minID"], face["maxID"], phiValues
+                        )
                         fo.write("{:d}\n".format(len(phiTemp)))
                         fo.write("(\n")
                         for val in phiTemp:
-                            fo.write(phiStr.format(val/self.fluent_density))
+                            fo.write(phiStr.format(val / self.fluent_density))
                         fo.write(")\n")
                         fo.write(";\n")
                     fo.write("    }\n")
 
-
             fo.write("}\n")
 
-
         return
-
-
 
     def getFluidFaces(self):
         """
@@ -2599,18 +2394,17 @@ dimensions      [0 3 -1 0 0 0 0];
         of the face definition.
         """
 
-        filename = os.path.join(self.cfd_path,self.casfile)
+        filename = os.path.join(self.cfd_path, self.casfile)
 
-        regionPat1 = re.compile('\([^()]*?\)')
+        regionPat1 = re.compile("\([^()]*?\)")
 
         nameMatches = regionPat1.findall(self.cfdPostMeshInfoString)
 
-        faceNames = [name.strip('()') for name in nameMatches[1:]]
-
+        faceNames = [name.strip("()") for name in nameMatches[1:]]
 
         faceList = []
 
-        for i,val in enumerate(faceNames):
+        for i, val in enumerate(faceNames):
             newDict = {}
             name = val.split()[0]
             zoneTypeString = val.split()[1]
@@ -2618,162 +2412,149 @@ dimensions      [0 3 -1 0 0 0 0];
             if len(val.split()) > 3:
                 neighbourName = val.split()[3]
             else:
-                neighbourName = ''
+                neighbourName = ""
 
-            newDict['faceName'] = name
-            newDict['origOrderID'] = i
+            newDict["faceName"] = name
+            newDict["origOrderID"] = i
 
             # look for the face ID
-            filtVect = [v for v in self.headerDictCas if v['index']==39]
+            filtVect = [v for v in self.headerDictCas if v["index"] == 39]
             for entry in filtVect:
-                if entry['header'].split()[2] == name:
-                    newDict['regionID'] = int(entry['header'].split()[0])
+                if entry["header"].split()[2] == name:
+                    newDict["regionID"] = int(entry["header"].split()[0])
 
             # look for the min and max ID
-            filtVect = [v for v in self.headerDictCas if v['index']==3013]
+            filtVect = [v for v in self.headerDictCas if v["index"] == 3013]
             for entry in filtVect:
                 headerVec = []
-                for  val in entry['header'].split():
-                    intVal = int(val,16)
+                for val in entry["header"].split():
+                    intVal = int(val, 16)
                     headerVec.append(intVal)
 
-
-                if headerVec[0] == newDict['regionID']:
-                    newDict['minID'] = int(headerVec[1])
-                    newDict['maxID'] = int(headerVec[2])
-                    newDict['nFaces']=newDict['maxID']-newDict['minID'] + 1
-                    newDict['zoneType'] = int(headerVec[3])
-                    newDict['zoneTypeString'] = zoneTypeString
+                if headerVec[0] == newDict["regionID"]:
+                    newDict["minID"] = int(headerVec[1])
+                    newDict["maxID"] = int(headerVec[2])
+                    newDict["nFaces"] = newDict["maxID"] - newDict["minID"] + 1
+                    newDict["zoneType"] = int(headerVec[3])
+                    newDict["zoneTypeString"] = zoneTypeString
                     for region in self.regionList:
-                        if region['name'] == ownerName:
-                            newDict['faceOwner'] = int(region['regionID'])
-                    if neighbourName == '':
-                        newDict['faceNeighbour'] = 0
+                        if region["name"] == ownerName:
+                            newDict["faceOwner"] = int(region["regionID"])
+                    if neighbourName == "":
+                        newDict["faceNeighbour"] = 0
                     else:
                         for region in self.regionList:
-                            if region['name'] == neighbourName:
-                                newDict['faceNeighbour'] = int(
-                                        region['regionID'])
+                            if region["name"] == neighbourName:
+                                newDict["faceNeighbour"] = int(region["regionID"])
 
-                    if newDict['faceOwner'] == self.fluid_region_id:
-                        newDict['fluid'] = True
+                    if newDict["faceOwner"] == self.fluid_region_id:
+                        newDict["fluid"] = True
                     else:
-                        newDict['fluid'] = False
+                        newDict["fluid"] = False
 
-                    #up to this point i read only boundary walls
-                    newDict['faceType'] = 'wall'
-
+                    # up to this point i read only boundary walls
+                    newDict["faceType"] = "wall"
 
             faceList.append(newDict)
 
-        storedFaces = [v['faceName'] for v in faceList]
-        storedRegions = [v['name'] for v in self.regionList]
+        storedFaces = [v["faceName"] for v in faceList]
+        storedRegions = [v["name"] for v in self.regionList]
         stored = storedFaces + storedRegions
-        maxI = max([v['origOrderID'] for v in faceList])
-        i+=1
+        maxI = max([v["origOrderID"] for v in faceList])
+        i += 1
 
-        print (storedFaces)
+        print(storedFaces)
 
-        filtVect = [v for v in self.headerDictCas if v['index']==39]
+        filtVect = [v for v in self.headerDictCas if v["index"] == 39]
 
         for entry in filtVect:
-            name = entry['header'].split()[2]
+            name = entry["header"].split()[2]
 
-            if name  not in stored:
-
-                ownerName = name.split('-')[-1]
-                print (ownerName)
+            if name not in stored:
+                ownerName = name.split("-")[-1]
+                print(ownerName)
 
                 newDict = {}
-                newDict['faceName'] = name
-                newDict['origOrderID'] = i
-                i+=1
-                newDict['regionID'] = int(entry['header'].split()[0])
+                newDict["faceName"] = name
+                newDict["origOrderID"] = i
+                i += 1
+                newDict["regionID"] = int(entry["header"].split()[0])
 
                 # look for the min and max ID
-                filtVct1=[v for v in self.headerDictCas if v['index']==3013]
+                filtVct1 = [v for v in self.headerDictCas if v["index"] == 3013]
                 for entry2 in filtVct1:
                     headerVec = []
-                    for  val in entry2['header'].split():
-                        intVal = int(val,16)
+                    for val in entry2["header"].split():
+                        intVal = int(val, 16)
                         headerVec.append(intVal)
-                    if headerVec[0] == newDict['regionID']:
-                        newDict['faceType'] = 'internal'
-                        newDict['minID'] = int(headerVec[1])
-                        newDict['maxID'] = int(headerVec[2])
-                        newDict['nFaces']= (newDict['maxID']-
-                                newDict['minID'] + 1 )
-                        newDict['zoneType'] = int(headerVec[3])
-                        newDict['zoneTypeString'] = 'internal'
+                    if headerVec[0] == newDict["regionID"]:
+                        newDict["faceType"] = "internal"
+                        newDict["minID"] = int(headerVec[1])
+                        newDict["maxID"] = int(headerVec[2])
+                        newDict["nFaces"] = newDict["maxID"] - newDict["minID"] + 1
+                        newDict["zoneType"] = int(headerVec[3])
+                        newDict["zoneTypeString"] = "internal"
 
                         for region in self.regionList:
-                            if region['name'] == ownerName:
-                                newDict['faceOwner'] = int(
-                                        region['regionID'])
-                                newDict['faceNeighbour']=newDict['faceOwner']
+                            if region["name"] == ownerName:
+                                newDict["faceOwner"] = int(region["regionID"])
+                                newDict["faceNeighbour"] = newDict["faceOwner"]
 
-                        if newDict['faceOwner'] == self.fluid_region_id:
-                            newDict['fluid'] = True
+                        if newDict["faceOwner"] == self.fluid_region_id:
+                            newDict["fluid"] = True
                         else:
-                            newDict['fluid'] = False
+                            newDict["fluid"] = False
 
                 faceList.append(newDict)
 
-
-        faceList = sorted(faceList, reverse=False,
-                                      key=lambda x:x['origOrderID'])
+        faceList = sorted(faceList, reverse=False, key=lambda x: x["origOrderID"])
 
         # reorder the groups putting the internal fluidmesh at the beginning
         for face in faceList:
-            if face['fluid'] == True and face['faceType'] == 'internal':
-                face['newOrderID'] = 0
-                face['newMinID'] =   1
-                face['newMaxID'] = face['nFaces']
-                idTemp = face['nFaces']
+            if face["fluid"] == True and face["faceType"] == "internal":
+                face["newOrderID"] = 0
+                face["newMinID"] = 1
+                face["newMaxID"] = face["nFaces"]
+                idTemp = face["nFaces"]
                 break
 
         orderID = 1
         for face in faceList:
-            if face['fluid'] == False :
+            if face["fluid"] == False:
                 continue
-            if face['fluid'] == True :
-                if face['faceType'] == 'internal':
+            if face["fluid"] == True:
+                if face["faceType"] == "internal":
                     continue
                 else:
-                    face['newOrderID'] = orderID
-                    face['newMinID'] =   idTemp + 1
-                    face['newMaxID'] = idTemp + face['nFaces']
-                    idTemp = face['newMaxID']
+                    face["newOrderID"] = orderID
+                    face["newMinID"] = idTemp + 1
+                    face["newMaxID"] = idTemp + face["nFaces"]
+                    idTemp = face["newMaxID"]
                     orderID += 1
 
         for face in faceList:
-            if face['fluid'] == True :
+            if face["fluid"] == True:
                 continue
             else:
-                face['newOrderID'] = orderID
-                face['newMinID'] =   idTemp + 1
-                face['newMaxID'] = idTemp + face['nFaces']
-                idTemp = face['newMaxID']
+                face["newOrderID"] = orderID
+                face["newMinID"] = idTemp + 1
+                face["newMaxID"] = idTemp + face["nFaces"]
+                idTemp = face["newMaxID"]
                 orderID += 1
 
-        faceList = sorted(faceList, reverse=False,
-                                      key=lambda x:x['newOrderID'])
-
-
+        faceList = sorted(faceList, reverse=False, key=lambda x: x["newOrderID"])
 
         nWaterOwner = 0
 
         for face in faceList:
-            if face['fluid'] == True:
-                nWaterOwner += face['nFaces']
-
+            if face["fluid"] == True:
+                nWaterOwner += face["nFaces"]
 
         self.faceList = faceList
         self.nWaterFaces = nWaterOwner
 
         for dic in faceList:
-            print (dic)
-
+            print(dic)
 
         return
 
@@ -2786,112 +2567,106 @@ dimensions      [0 3 -1 0 0 0 0];
         of the face definition.
         """
 
-        filename = os.path.join(self.cfd_path,self.casH5file)
+        filename = os.path.join(self.cfd_path, self.casH5file)
 
-        facesNamePat = re.compile(".*/faces/zoneTopology/name\Z",
-                                     re.IGNORECASE)
-        facesPatMin = re.compile(".*/faces/zoneTopology/minId\Z",
-                                     re.IGNORECASE)
+        facesNamePat = re.compile(".*/faces/zoneTopology/name\Z", re.IGNORECASE)
+        facesPatMin = re.compile(".*/faces/zoneTopology/minId\Z", re.IGNORECASE)
 
-        facesPatMax = re.compile(".*/faces/zoneTopology/maxId\Z",
-                                     re.IGNORECASE)
+        facesPatMax = re.compile(".*/faces/zoneTopology/maxId\Z", re.IGNORECASE)
 
-        zoneTypePat = re.compile(".*/faces/zoneTopology/zoneType\Z",
-                                     re.IGNORECASE)
+        zoneTypePat = re.compile(".*/faces/zoneTopology/zoneType\Z", re.IGNORECASE)
 
-        faceOwnerPat = re.compile(".*/faces/zoneTopology/c0\Z",
-                                     re.IGNORECASE)
+        faceOwnerPat = re.compile(".*/faces/zoneTopology/c0\Z", re.IGNORECASE)
 
-        faceNeighPat = re.compile(".*/faces/zoneTopology/c1\Z",
-                                     re.IGNORECASE)
+        faceNeighPat = re.compile(".*/faces/zoneTopology/c1\Z", re.IGNORECASE)
 
-        faceNames = get_h5_dataset(filename,facesNamePat)
-        faceNames = list(faceNames[0].decode('UTF-8').split(';'))
+        faceNames = get_h5_dataset(filename, facesNamePat)
+        faceNames = list(faceNames[0].decode("UTF-8").split(";"))
         minIDs = list(get_h5_dataset(filename, facesPatMin))
         maxIDs = list(get_h5_dataset(filename, facesPatMax))
         zoneTypes = list(get_h5_dataset(filename, zoneTypePat))
         faceOwners = list(get_h5_dataset(filename, faceOwnerPat))
         faceNeighbours = list(get_h5_dataset(filename, faceNeighPat))
 
-        sortedLists = sorted(zip(faceNames,minIDs,maxIDs,zoneTypes,
-            faceOwners,faceNeighbours), key=lambda x:x[1])
+        sortedLists = sorted(
+            zip(faceNames, minIDs, maxIDs, zoneTypes, faceOwners, faceNeighbours),
+            key=lambda x: x[1],
+        )
 
-        faceNames, minIDs,maxIDs,zoneTypes, faceOwners, faceNeighbours = (
-                zip(*sortedLists))
+        faceNames, minIDs, maxIDs, zoneTypes, faceOwners, faceNeighbours = zip(
+            *sortedLists
+        )
 
         faceList = []
 
-        for i,val in enumerate(faceNames):
+        for i, val in enumerate(faceNames):
             newDict = {}
-            newDict['faceName'] = val
-            newDict['origOrderID'] = i
-            newDict['minID'] = int(minIDs[i])
-            newDict['maxID'] = int(maxIDs[i])
-            newDict['nFaces']=newDict['maxID'] - newDict['minID'] + 1
-            newDict['origNFaces']=newDict['maxID'] - newDict['minID'] + 1
-            newDict['zoneType'] = int(zoneTypes[i])
-            newDict['faceOwner'] = int(faceOwners[i])
-            newDict['faceNeighbour'] = int(faceNeighbours[i])
-            if newDict['faceOwner'] == self.fluid_region_id:
-                newDict['fluid'] = True
+            newDict["faceName"] = val
+            newDict["origOrderID"] = i
+            newDict["minID"] = int(minIDs[i])
+            newDict["maxID"] = int(maxIDs[i])
+            newDict["nFaces"] = newDict["maxID"] - newDict["minID"] + 1
+            newDict["origNFaces"] = newDict["maxID"] - newDict["minID"] + 1
+            newDict["zoneType"] = int(zoneTypes[i])
+            newDict["faceOwner"] = int(faceOwners[i])
+            newDict["faceNeighbour"] = int(faceNeighbours[i])
+            if newDict["faceOwner"] == self.fluid_region_id:
+                newDict["fluid"] = True
             else:
-                newDict['fluid'] = False
+                newDict["fluid"] = False
 
-            if newDict['zoneType'] == 2:
-                newDict['faceType'] = 'internal'
+            if newDict["zoneType"] == 2:
+                newDict["faceType"] = "internal"
             else:
-                newDict['faceType'] = 'wall'
+                newDict["faceType"] = "wall"
             faceList.append(newDict)
 
-        faceList = sorted(faceList, reverse=False,
-                                      key=lambda x:x['origOrderID'])
+        faceList = sorted(faceList, reverse=False, key=lambda x: x["origOrderID"])
 
         # reorder the groups putting the internal fluidmesh at the beginning
         for face in faceList:
-            if face['fluid'] == True and face['faceType'] == 'internal':
-                face['newOrderID'] = 0
-                face['newMinID'] =   1
-                face['newMaxID'] = face['nFaces']
-                idTemp = face['nFaces']
+            if face["fluid"] == True and face["faceType"] == "internal":
+                face["newOrderID"] = 0
+                face["newMinID"] = 1
+                face["newMaxID"] = face["nFaces"]
+                idTemp = face["nFaces"]
                 break
 
         orderID = 1
         for face in faceList:
-            if face['fluid'] == False :
+            if face["fluid"] == False:
                 continue
-            if face['fluid'] == True :
-                if face['faceType'] == 'internal':
+            if face["fluid"] == True:
+                if face["faceType"] == "internal":
                     continue
                 else:
-                    face['newOrderID'] = orderID
-                    face['newMinID'] =   idTemp + 1
-                    face['newMaxID'] = idTemp + face['nFaces']
-                    idTemp = face['newMaxID']
+                    face["newOrderID"] = orderID
+                    face["newMinID"] = idTemp + 1
+                    face["newMaxID"] = idTemp + face["nFaces"]
+                    idTemp = face["newMaxID"]
                     orderID += 1
 
         for face in faceList:
-            if face['fluid'] == True :
+            if face["fluid"] == True:
                 continue
             else:
-                face['newOrderID'] = orderID
-                face['newMinID'] =   idTemp + 1
-                face['newMaxID'] = idTemp + face['nFaces']
-                idTemp = face['newMaxID']
+                face["newOrderID"] = orderID
+                face["newMinID"] = idTemp + 1
+                face["newMaxID"] = idTemp + face["nFaces"]
+                idTemp = face["newMaxID"]
                 orderID += 1
 
-        #faceList = sorted(faceList, reverse=False,
+        # faceList = sorted(faceList, reverse=False,
         #                              key=lambda x:x['newOrderID'])
 
-        #for dic in faceList:
+        # for dic in faceList:
         #    print (dic)
-
 
         nWaterOwner = 0
 
         for face in faceList:
-            if face['fluid'] == True:
-                nWaterOwner += face['nFaces']
-
+            if face["fluid"] == True:
+                nWaterOwner += face["nFaces"]
 
         self.faceList = faceList
         self.nWaterFaces = nWaterOwner
@@ -2904,7 +2679,7 @@ dimensions      [0 3 -1 0 0 0 0];
         a dictionary that can be used in the other functions to get the data
         """
 
-        filename = os.path.join(self.cfd_path,self.casfile)
+        filename = os.path.join(self.cfd_path, self.casfile)
 
         self.headerDictCas = get_fluent_parse_headers(filename)
 
@@ -2918,57 +2693,54 @@ dimensions      [0 3 -1 0 0 0 0];
 
         # get region names
 
-        regionPat = re.compile('\(.*?\)')
-        regionPat1 = re.compile('\([^()]*?\)')
-        filename = os.path.join(self.cfd_path,self.casfile)
+        regionPat = re.compile("\(.*?\)")
+        regionPat1 = re.compile("\([^()]*?\)")
+        filename = os.path.join(self.cfd_path, self.casfile)
         regionNames = get_fluent_parse_regions(filename)
         self.cfdPostMeshInfoString = regionNames
 
         regionNames = regionPat1.findall(regionNames)
 
-        regionNames = regionNames[0].strip('()').split()
-
+        regionNames = regionNames[0].strip("()").split()
 
         ## define a list of dictionary with the region info
         regionList = []
         for name in regionNames:
             newDict = {}
-            newDict['name'] = name
+            newDict["name"] = name
 
             # look for the region ID
-            filtVect = [v for v in self.headerDictCas if v['index']==39]
+            filtVect = [v for v in self.headerDictCas if v["index"] == 39]
             for entry in filtVect:
-                if entry['header'].split()[2] == name:
-                    newDict['regionID'] = int(entry['header'].split()[0])
+                if entry["header"].split()[2] == name:
+                    newDict["regionID"] = int(entry["header"].split()[0])
 
             # look for the min and max ID
-            filtVect = [v for v in self.headerDictCas if v['index']==3012]
+            filtVect = [v for v in self.headerDictCas if v["index"] == 3012]
             for entry in filtVect:
                 headerVec = []
-                for  val in entry['header'].split():
-                    intVal = int(val,16)
+                for val in entry["header"].split():
+                    intVal = int(val, 16)
                     headerVec.append(intVal)
 
+                if headerVec[0] == newDict["regionID"]:
+                    newDict["minID"] = int(headerVec[1])
+                    newDict["maxID"] = int(headerVec[2])
 
-                if headerVec[0] == newDict['regionID']:
-                    newDict['minID'] = int(headerVec[1])
-                    newDict['maxID'] = int(headerVec[2])
-
-            if newDict['name'] == self.fluent_fluid_region_name:
-                newDict['fluid'] = True
-                self.fluid_region_id = int(newDict['regionID'])
-                self.fluid_cellID_min = int(newDict['minID'])
-                self.fluid_cellID_max = int(newDict['maxID'])
+            if newDict["name"] == self.fluent_fluid_region_name:
+                newDict["fluid"] = True
+                self.fluid_region_id = int(newDict["regionID"])
+                self.fluid_cellID_min = int(newDict["minID"])
+                self.fluid_cellID_max = int(newDict["maxID"])
             else:
-                newDict['fluid'] = False
+                newDict["fluid"] = False
 
             regionList.append(newDict)
 
         self.regionList = regionList
 
-        #for v in self.regionList:
+        # for v in self.regionList:
         #    print(v)
-
 
         return
 
@@ -2978,48 +2750,45 @@ dimensions      [0 3 -1 0 0 0 0];
         stores those that are of the fluid type.
         """
 
-        filename = os.path.join(self.cfd_path,self.casH5file)
+        filename = os.path.join(self.cfd_path, self.casH5file)
 
-        regionNamePat = re.compile(".*/cells/zoneTopology/name\Z",
-                                     re.IGNORECASE)
+        regionNamePat = re.compile(".*/cells/zoneTopology/name\Z", re.IGNORECASE)
 
-        regionIDPat = re.compile(".*/cells/zoneTopology/id\Z",
-                                     re.IGNORECASE)
+        regionIDPat = re.compile(".*/cells/zoneTopology/id\Z", re.IGNORECASE)
 
-        partitionIdPat = re.compile(".*/cells/partition/.*/partition-ids\Z",
-                                     re.IGNORECASE)
+        partitionIdPat = re.compile(
+            ".*/cells/partition/.*/partition-ids\Z", re.IGNORECASE
+        )
 
-        regionPatMin = re.compile(".*/cells/zoneTopology/minId\Z",
-                                     re.IGNORECASE)
+        regionPatMin = re.compile(".*/cells/zoneTopology/minId\Z", re.IGNORECASE)
 
-        regionPatMax = re.compile(".*/cells/zoneTopology/maxId\Z",
-                                     re.IGNORECASE)
+        regionPatMax = re.compile(".*/cells/zoneTopology/maxId\Z", re.IGNORECASE)
 
         regionMinIDPaths = []
         regionMaxIDPaths = []
 
-        regionNames = get_h5_dataset(filename,regionNamePat)
-        regionNames = regionNames[0].decode('UTF-8').split(';')
-        regionIDs = get_h5_dataset(filename,regionIDPat)
+        regionNames = get_h5_dataset(filename, regionNamePat)
+        regionNames = regionNames[0].decode("UTF-8").split(";")
+        regionIDs = get_h5_dataset(filename, regionIDPat)
         minIDs = get_h5_dataset(filename, regionPatMin)
         maxIDs = get_h5_dataset(filename, regionPatMax)
 
         # define a list of dictionary with the region info
         regionList = []
-        for i,val in enumerate(regionNames):
+        for i, val in enumerate(regionNames):
             newDict = {}
-            newDict['name'] = val
-            newDict['minID'] = int(minIDs[i])
-            newDict['maxID'] = int(maxIDs[i])
-            newDict['regionID'] = int(regionIDs[i])
+            newDict["name"] = val
+            newDict["minID"] = int(minIDs[i])
+            newDict["maxID"] = int(maxIDs[i])
+            newDict["regionID"] = int(regionIDs[i])
             if val == self.fluent_fluid_region_name:
-                newDict['fluid'] = True
+                newDict["fluid"] = True
                 self.fluid_region_id = int(regionIDs[i])
                 self.fluid_cellID_min = int(minIDs[i])
                 self.fluid_cellID_max = int(maxIDs[i])
-                self.fluid_cellN=self.fluid_cellID_max-self.fluid_cellID_min+1
+                self.fluid_cellN = self.fluid_cellID_max - self.fluid_cellID_min + 1
             else:
-                newDict['fluid'] = False
+                newDict["fluid"] = False
 
             regionList.append(newDict)
 
@@ -3033,33 +2802,24 @@ dimensions      [0 3 -1 0 0 0 0];
         assumed this values is always calculated: meaning that we always
         convert from a turbulent simulation.
         """
-        print ("writing multiblock openFOAM nut files ... ")
+        print("writing multiblock openFOAM nut files ... ")
 
-        filename = os.path.join(self.cfd_path,self.datH5file)
+        filename = os.path.join(self.cfd_path, self.datH5file)
 
-        mutCellPat = re.compile(".*/cells/SV_MU_T/.*",
-                                     re.IGNORECASE)
+        mutCellPat = re.compile(".*/cells/SV_MU_T/.*", re.IGNORECASE)
 
-        #mutCellValues = get_h5_dataset(filename,mutCellPat)
-        mutCellValues = get_h5_dataset_multi(filename,mutCellPat)
+        # mutCellValues = get_h5_dataset(filename,mutCellPat)
+        mutCellValues = get_h5_dataset_multi(filename, mutCellPat)
 
+        nutOneFilePath = os.path.join(self.cfd_path, "1", "nut")
 
-        nutOneFilePath = os.path.join(self.cfd_path,'1','nut')
-
-        filenameCAS = os.path.join(self.cfd_path,self.casH5file)
+        filenameCAS = os.path.join(self.cfd_path, self.casH5file)
 
         ownerPat = re.compile(".*/faces/c0/\d+\Z", re.IGNORECASE)
 
-        ownerList = get_h5_dataset(filenameCAS,ownerPat)
+        ownerList = get_h5_dataset(filenameCAS, ownerPat)
 
         nut1Header = """
-/*------------------------------*- C++ -*---------------------------------*\\
-| =========                 |                                               |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox         |
-|  \\    /   O peration     | Version:  2112                                |
-|   \\  /    A nd           | Website:  www.openfoam.com                    |
-|    \\/     M anipulation  |                                               |
-\*-------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
@@ -3074,22 +2834,20 @@ FoamFile
 dimensions      [0 2 -1 0 0 0 0];
 """
 
-        faceList = sorted(self.faceList, reverse=False,
-                                      key=lambda x:x['newOrderID'])
+        faceList = sorted(self.faceList, reverse=False, key=lambda x: x["newOrderID"])
 
-        mutValues = extract_multiblock(self.fluid_cellID_min,
-                                       self.fluid_cellID_max,
-                                       mutCellValues)
+        mutValues = extract_multiblock(
+            self.fluid_cellID_min, self.fluid_cellID_max, mutCellValues
+        )
 
-        with  open(nutOneFilePath,'w') as fo:
-
+        with open(nutOneFilePath, "w") as fo:
             nutStr = "{:24.18e}\n"
             fo.write(nut1Header)
             fo.write("internalField   nonuniform List<scalar>\n")
             fo.write("{:d}\n".format(self.fluid_cellN))
             fo.write("(\n")
             for val in mutValues:
-                fo.write(nutStr.format(val/self.fluent_density))
+                fo.write(nutStr.format(val / self.fluent_density))
 
             fo.write(")\n")
             fo.write(";\n")
@@ -3099,30 +2857,31 @@ dimensions      [0 2 -1 0 0 0 0];
             fo.write("{\n")
 
             for face in faceList:
-
-                if face['faceType'] == 'internal':
+                if face["faceType"] == "internal":
                     continue
-                if face['fluid'] :
-
+                if face["fluid"]:
                     fo.write("    {}\n".format(face["faceName"]))
                     fo.write("    {\n")
-                    if face['faceType'] == 'wall':
+                    if face["faceType"] == "wall":
                         fo.write("        type         nutkWallFunction;\n")
                         fo.write("        blending            stepwise;\n")
                         fo.write("        Cmu            0.09;\n")
                         fo.write("        kappa            0.41;\n")
                         fo.write("        E            9.8;\n")
                         fo.write("        value     uniform  0;\n")
-                    else :
+                    else:
                         fo.write("        type            calculated;\n")
                         fo.write("        value   nonuniform List<scalar>\n")
-                        faceOwn = ownerList[(face['minID']-1):face['maxID']]
+                        faceOwn = ownerList[(face["minID"] - 1) : face["maxID"]]
                         fo.write("{:d}\n".format(len(faceOwn)))
                         fo.write("(\n")
                         for ow in faceOwn:
-                            fo.write(nutStr.format(
-                                mutValues[int(ow-self.fluid_cellID_min)]/
-                                            self.fluent_density))
+                            fo.write(
+                                nutStr.format(
+                                    mutValues[int(ow - self.fluid_cellID_min)]
+                                    / self.fluent_density
+                                )
+                            )
                         fo.write(")\n")
                         fo.write(";\n")
                     fo.write("    }\n")
@@ -3131,24 +2890,24 @@ dimensions      [0 2 -1 0 0 0 0];
 
         return
 
-
     def getNumCells(self):
         """this function create an attribute to the class that specifies the
         number of internal cells. It does so by reading the U file"""
 
         folderItems = os.listdir(self.cfd_path)
 
-        folderTimes=[int(itm) for itm in folderItems if check_int(itm) == True]
+        folderTimes = [int(itm) for itm in folderItems if check_int(itm) == True]
 
         lastTime = max(folderTimes)
 
-        velocityFile = os.path.join(self.cfd_path,str(lastTime),'U')
+        velocityFile = os.path.join(self.cfd_path, str(lastTime), "U")
 
-        internalBlockPat = re.compile("internalField.*?(\d+).*?\(",
-                                          re.MULTILINE | re.DOTALL )
+        internalBlockPat = re.compile(
+            "internalField.*?(\d+).*?\(", re.MULTILINE | re.DOTALL
+        )
 
         try:
-            inpFile = open(velocityFile,'r',encoding="utf8", errors='ignore')
+            inpFile = open(velocityFile, "r", encoding="utf8", errors="ignore")
         except IOError:
             print("couldn't open velocity file")
             sys.exit()
@@ -3160,23 +2919,18 @@ dimensions      [0 2 -1 0 0 0 0];
 
         return
 
-
     def read_density_h5(self):
         """
         this function reads the density stored in the h5 fluent file
         """
 
-        filename = os.path.join(self.cfd_path,self.datH5file)
+        filename = os.path.join(self.cfd_path, self.datH5file)
 
-        cell_density_pat = re.compile(".*/cells/SV_DENSITY/.*",
-                                     re.IGNORECASE)
-
+        cell_density_pat = re.compile(".*/cells/SV_DENSITY/.*", re.IGNORECASE)
 
         cell_density_path = []
 
-
         with h5py.File(filename, "r") as fi:
-
             paths = get_dataset_keys(fi)
 
             for path in paths:
@@ -3186,9 +2940,10 @@ dimensions      [0 2 -1 0 0 0 0];
 
             if len(cell_density_path) == 1:
                 self.cell_density_path = cell_density_path[0]
-                if hasattr(self,'minIDregion'):
-                    self.fluent_density = (fi[self.cell_density_path]
-                                            [self.minIDregion - 1])
+                if hasattr(self, "minIDregion"):
+                    self.fluent_density = fi[self.cell_density_path][
+                        self.minIDregion - 1
+                    ]
                 else:
                     self.fluent_density = fi[self.cell_density_path][0]
             else:
@@ -3197,42 +2952,49 @@ dimensions      [0 2 -1 0 0 0 0];
         return
 
 
-
 def main():
-
-
-
-    parser = argparse.ArgumentParser(description = "FLUNED case generator version " + __version__)
-    parser.add_argument('-i','--input', type=str, help="input")
-    parser.add_argument('-l',"--launch_simulation", action ='store_true' ,
-            help="launch simulation", default = False)
-    parser.add_argument('-t',"--input_template", action ='store_true' ,
-            help="create an input template", default = False)
+    parser = argparse.ArgumentParser(
+        description="FLUNED case generator version " + __version__
+    )
+    parser.add_argument("-i", "--input", type=str, help="input")
+    parser.add_argument(
+        "-l",
+        "--launch_simulation",
+        action="store_true",
+        help="launch simulation",
+        default=False,
+    )
+    parser.add_argument(
+        "-t",
+        "--input_template",
+        action="store_true",
+        help="create an input template",
+        default=False,
+    )
     args = parser.parse_args()
 
     if not args.input and not args.input_template:
-        print ("WARNING no input provided")
-        print ("printing template and exiting")
+        print("WARNING no input provided")
+        print("printing template and exiting")
         create_input_template()
         sys.exit()
 
     if args.input_template:
-        print ("printing template and exiting")
+        print("printing template and exiting")
         create_input_template()
         sys.exit()
 
-    input_cases = read_input_file(args.input)
+    input_cases = read_fluned_input_file(args.input)
 
     # define a vector of FLUNED cases
 
     for case in input_cases:
-
-        print ("creating FLUNED case...")
+        print("creating FLUNED case...")
 
         fCase = FlunedCase(case)
 
-        if fCase.cfd_type == 'fluent-h5-multi':
-            print ("parsing h5 files ... ")
+        if fCase.cfd_type == "fluent-h5-multi":
+            print("parsing h5 files ... ")
             fCase.getH5files()
             fCase.create_case_folders_fluent()
             fCase.getFluidCells_h5()
@@ -3249,12 +3011,11 @@ def main():
             fCase.writeSpeed_multi_h5()
             fCase.writeNut_multi_h5()
 
-        if fCase.cfd_type == 'fluent-multi':
-            print ("parsing binary cas/dat files not implemented yet ... ")
+        if fCase.cfd_type == "fluent-multi":
+            print("parsing binary cas/dat files not implemented yet ... ")
             sys.exit()
 
-
-        print ("copying last CFD iteration files ... ")
+        print("copying last CFD iteration files ... ")
         fCase.create_case_folder()
         fCase.initialize_cfd_class()
         fCase.copy_last_phi()
@@ -3274,14 +3035,12 @@ def main():
         fCase.generateTrSourceFile()
 
         if args.launch_simulation:
-
             fCase.launch_solver()
 
-        print ("FINISHED!")
-
-
+        print("FINISHED!")
 
     return
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -265,10 +265,10 @@ def get_bins_from_lines(energy,prob,eps=1e-5):
     convert the enegy lines to bins
     """
     eb_vals = [0.0]
-    for ener in energy:
-        dl_val = ener*eps
-        eb_vals.append(ener-dl_val)
-        eb_vals.append(ener+dl_val)
+    for line in energy:
+        dl_val = line*eps
+        eb_vals.append(line-dl_val)
+        eb_vals.append(line+dl_val)
     pb_vals = []
     for p_val in prob:
         pb_vals.append(0.0)
