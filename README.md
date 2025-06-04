@@ -4,7 +4,7 @@ This repository includes FLUNED, a CFD-based tool for the simulation of activate
 
 More detail on the usage, installation and testing is provided below.
 
-For additional information contact: mdepietri@ind.uned.es
+For additional information contact: mdptr@mit.edu
 
 ## FLUNED-Repository Installation
 
@@ -50,9 +50,9 @@ The physics implemented is rather simple and has some limitations however it has
 
 A paper describing its development and validation can be found in [3]
 
-[1]doi: 10.1016/j.fusengdes.2020.111998\
-[2]doi: 10.1016/j.fusengdes.2020.111743\
-[3]doi: 10.1016/j.cpc.2023.108807
+[1]doi: [10.1016/j.fusengdes.2020.111998](https:\\doi.org\10.1016/j.fusengdes.2020.111998)\
+[2]doi: [10.1016/j.fusengdes.2020.111743](https:\\doi.org\10.1016/j.fusengdes.2020.111743)\
+[3]doi: [10.1016/j.cpc.2023.108807](https:\\doi.org\10.1016/j.cpc.2023.108807)
 
 ## FLUNED Usage
 
@@ -88,7 +88,7 @@ flunedPost
 
 ## FLUNED Tests
 
-A set of tests are present in the tests folder. These cases are very simple and have no physical accuracy, are just meant to test the integrated working of the scripts functionalities.
+A set of tests are present in the _tests-integration_ folder. These cases are very simple and have no physical accuracy, are just meant to test the integrated working of the scripts functionalities.
 To run these execute the following commands from a bash shell inside the tests folder called _FLUNED-Repository/tests-integration_
 
 1. Run the test suite.

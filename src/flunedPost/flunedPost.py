@@ -667,8 +667,8 @@ class flunedPostCase:
             print("couldn't open face file")
             sys.exit()
         with inpFile:
-            lineStartPat = re.compile("\A\s*\(")
-            defPat = re.compile("(?<=\().*(?=\))")
+            lineStartPat = re.compile(r"\A\s*\(")
+            defPat = re.compile(r"(?<=\().*(?=\))")
 
             start = False
             startLine = 0
@@ -709,7 +709,7 @@ class flunedPostCase:
             sys.exit()
         with inpFile:
             lineStartPat = re.compile("\A\s*\(")
-            defPat = re.compile("(?<=\().*(?=\))")
+            defPat = re.compile(r"(?<=\().*(?=\))")
 
             start = False
             startLine = 0
@@ -749,7 +749,7 @@ class flunedPostCase:
             sys.exit()
         with inpFile:
             lineStartPat = re.compile("\A\s*\(")
-            defPat = re.compile("(?<=\().*(?=\))")
+            defPat = re.compile(r"(?<=\().*(?=\))")
 
             start = False
             startLine = 0
@@ -800,7 +800,7 @@ class flunedPostCase:
             sys.exit()
         with inpFile:
             lineStartPat = re.compile("\A\s*\(")
-            defPat = re.compile("(?<=\().*(?=\))")
+            defPat = re.compile(r"(?<=\().*(?=\))")
 
             start = False
             startLine = 0
@@ -808,7 +808,7 @@ class flunedPostCase:
             targetLine = pointID
 
             for i, line in enumerate(inpFile):
-                if start == False:
+                if not start:
                     if len(lineStartPat.findall(line)) != 0:
                         startLine = i
                         targetLine = startLine + pointID + 1
@@ -834,7 +834,7 @@ class flunedPostCase:
 
         # common patterns
         internalBlockPat = re.compile(
-            "internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
+            r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
         )
 
         nElPat = re.compile("internalField.*?(\d+).*?\(", re.MULTILINE | re.DOTALL)
@@ -866,7 +866,7 @@ class flunedPostCase:
 
         # common patterns
         internalBlockPat = re.compile(
-            "internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
+            r"internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
         )
 
         uFile = os.path.join(self.fluned_path, "0", "U")
@@ -899,7 +899,7 @@ class flunedPostCase:
 
         # common patterns
         internalBlockPat = re.compile(
-            "internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
+            r"internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
         )
 
         gradFile = os.path.join(self.last_time_step, "grad(T)")
@@ -933,7 +933,7 @@ class flunedPostCase:
 
         # common patterns
         internalBlockPat = re.compile(
-            "internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
+            r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
         )
 
         tFile = os.path.join(self.last_time_step, "T")
@@ -1466,7 +1466,7 @@ class flunedPostCase:
         else:
             filename = ""
 
-        pat_string = "{}\.vtk\Z".format(filename)
+        pat_string = r"{}\.vtk\Z".format(filename)
 
         vtkFilePat = re.compile(pat_string, re.IGNORECASE)
 
@@ -1497,11 +1497,6 @@ class flunedPostCase:
         N17_decay_constant = 0.1661825
         O19_decay_constant = 0.02578672546
 
-        dummySpectrum = [
-            [0, 0],
-            [1, 1],
-        ]
-
         dummy_branching_ratio = 1
 
         if math.isclose(self.decay_constant, N16_decay_constant, rel_tol=1e-3):
@@ -1511,12 +1506,10 @@ class flunedPostCase:
         elif math.isclose(self.decay_constant, O19_decay_constant, rel_tol=1e-3):
             self.isotope = "o19"
         else:
-            self.isotope = "dummy"
             print(
-                "WARNING decay constant isotope not recognized, simulation decay constant: ",
-                self.decay_constant,
+                "ERROR, isotope not recognized"
             )
-            print("a dummy spectrum is assigned")
+            sys.exit()
 
         if self.isotope != "dummy":
             isotope_database = load_isotopes()
@@ -1524,35 +1517,16 @@ class flunedPostCase:
                 print("ERROR isotope not found in the database")
                 sys.exit()
             isotope_data = isotope_database[self.isotope.lower()]
-            self.spectrum = isotope_data["energy_spectrum_normalized"]
-            self.e_bins = isotope_data["e_bins"]
-            self.p_bins = isotope_data["p_bins"]
-            self.e_lines = isotope_data["e_lines"]
-            self.p_lines = isotope_data["p_lines"]
-            self.branching_ratio = isotope_data["branching_ratio"]
-            self.particle_type = isotope_data["emitting_particle"]
+            self.e_bins = isotope_data.e_bins
+            self.p_bins = isotope_data.p_bins
+            self.e_lines = isotope_data.e_lines
+            self.p_lines = isotope_data.p_lines
+            self.branching_ratio = isotope_data.branching_ratio
+            self.particle_type = isotope_data.emitting_particle
         else:
-            self.spectrum = dummySpectrum
             self.branching_ratio = dummy_branching_ratio
 
         return
-
-    # def getOriginalEmission(self):
-    #     """
-    #     this function reads the initial vtk and calculates the total
-    #     emission
-    #     """
-
-    #     totalAtoms = getTotalAtomsVtk(self.vtk_path, self.dataset)
-
-    #     totalEmissionVtk = (totalAtoms*
-    #                         self.decay_constant*
-    #                         self.branching_ratio*
-    #                         self.scaling)
-
-    #     self.originalEmissionRate = totalEmissionVtk
-
-    #     return
 
     def calculateSamplingCoordinates(self):
         """
