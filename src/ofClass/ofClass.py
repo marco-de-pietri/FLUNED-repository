@@ -5,7 +5,6 @@ import copy
 import math
 import os
 import re
-import sys
 
 import numpy as np
 import pyvista as pv
@@ -94,7 +93,7 @@ def merge_continue_runs(time_lists,data_lists):
 
 
     if len(time_lists) > 1:
-        for i,l in enumerate(time_lists_sorted):
+        for i,data_list in enumerate(time_lists_sorted):
             time_series_temp = copy.deepcopy(time_series)
             if i == 0:
                 continue
@@ -102,14 +101,14 @@ def merge_continue_runs(time_lists,data_lists):
             for j, val in enumerate(time_series_temp):
                 if val >= time_lists_sorted[i][0]:
                     time_series = time_series[0:j]
-                    time_series.extend(l)
+                    time_series.extend(data_list)
                     data_series = data_series[0:j]
                     data_series.extend(data_lists_sorted[i])
                     appended = True
                     break
 
             if not appended:
-                time_series.extend(l)
+                time_series.extend(data_list)
                 data_series.extend(data_lists_sorted[i])
 
 
@@ -612,7 +611,7 @@ class SimulationOF:
         elif dimension_vec == [ 0, 3, -1, 0, 0, 0, 0]:
             volumetric_flag = True
         else:
-            raise ValueError('The dimensions of phi are not recognized')
+            raise ValueError('The dimensions of phi are not recognized: ', dimension_vec)
 
         return volumetric_flag
 
@@ -725,6 +724,7 @@ class SimulationOF:
         list_data = False
         type_data = False
         numerosity = False
+        hold_path = ''
 
         for line, token in self.tokenizer(file_path):
             #print("line: ", line, "current_line: ", current_line, "token: ", token)

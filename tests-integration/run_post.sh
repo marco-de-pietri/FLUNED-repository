@@ -12,7 +12,7 @@ directories=(
 )
 
 
-# flunedPost options
+# fluned-post options
 options=(
 	"-s"
 	""
@@ -24,10 +24,10 @@ options=(
 
 length=${#directories[@]}
 
-# Loop through each directory and execute flunedPost
+# Loop through each directory and execute fluned-post
 for (( i=0; i<$length; i++ )); do
 
-      (cd $cases_folder${directories[$i]} && exec flunedPost ${options[$i]})
+      (cd $cases_folder${directories[$i]} && exec fluned-post ${options[$i]})
 done
 
 

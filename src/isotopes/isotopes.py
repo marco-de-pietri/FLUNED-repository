@@ -7,7 +7,6 @@ import numpy as np
 
 EPS = 1e-5
 
-
 @dataclass(frozen=True)
 class Isotope:
     name: str
@@ -34,10 +33,9 @@ class Isotope:
         object.__setattr__(self, "e_bins", e_bins)
         object.__setattr__(self, "p_bins", p_bins)
 
-
-def _bins_from_lines(
-    e_lines: list[float], p_lines: list[float], eps: float = EPS
-) -> tuple[np.ndarray, np.ndarray]:
+def _bins_from_lines(e_lines: list[float],
+                     p_lines: list[float],
+                     eps: float = EPS) -> tuple[np.ndarray, np.ndarray]:
     e_bins = [0.0]
     for e in e_lines:
         delta = max(abs(e) * eps, 1e-6)
@@ -52,3 +50,5 @@ def load_isotopes(path: Union[str, Path] = "isotopes.json") -> dict[str, Isotope
         p = Path(__file__).parent / p
     raw = json.loads(p.read_text(encoding="utf-8"))
     return {k: Isotope(**v) for k, v in raw.items()}
+
+

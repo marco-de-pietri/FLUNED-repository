@@ -83,7 +83,7 @@ FLUNED-solver
 5.	Once the simulation is finished, the post-processor can be launched in the simulation folder by running:
 
 ```
-flunedPost
+fluned-post
 ```
 
 ## FLUNED Tests
