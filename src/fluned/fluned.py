@@ -234,7 +234,7 @@ def read_fluned_input_file(path):
     """
 
     case_path = re.compile(
-        "^\s*case .{1,}?(?=^\s*case|\Z)", re.MULTILINE | re.DOTALL | re.IGNORECASE
+        r"^\s*case .{1,}?(?=^\s*case|\Z)", re.MULTILINE | re.DOTALL | re.IGNORECASE
     )
     cases_vec = []
     parameters = [
@@ -822,16 +822,16 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
             blockVector = []
             text = inpFile.read()
             faceDefPat = re.compile(
-                "\d+[\n\r\s]+?\(.*?[\n\r\s]+?\)", re.MULTILINE | re.DOTALL
+                r"\d+[\n\r\s]+?\(.*?[\n\r\s]+?\)", re.MULTILINE | re.DOTALL
             )
             faceNumberPat = re.compile(
-                "(\d+)[\n\r\s]+?\(.*?\)", re.MULTILINE | re.DOTALL
+                r"(\d+)[\n\r\s]+?\(.*?\)", re.MULTILINE | re.DOTALL
             )
             boundaryPat = re.compile(
-                "[^\s]+[\n\r\s]+?\{.*?\}", re.MULTILINE | re.DOTALL
+                r"[^\s]+[\n\r\s]+?\{.*?\}", re.MULTILINE | re.DOTALL
             )
             boundaryNamePat = re.compile(
-                "([^\s]+)[\n\r\s]+?\{.*?\}", re.MULTILINE | re.DOTALL
+                r"([^\s]+)[\n\r\s]+?\{.*?\}", re.MULTILINE | re.DOTALL
             )
             faceNPat = re.compile("nFaces.*?(\d+)")
             firstFacePat = re.compile("startFace.*?(\d+)")
@@ -866,7 +866,7 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
             print("couldn't open phi file")
             sys.exit()
         with inpFile:
-            facePhiPat = re.compile("\((.{1,}?)\)", re.MULTILINE | re.DOTALL)
+            facePhiPat = re.compile(r"\((.{1,}?)\)", re.MULTILINE | re.DOTALL)
             text = inpFile.read()
             wallFacePat = re.compile("value\s+uniform\s+0")
 
@@ -1415,7 +1415,7 @@ method          scotch;
 
         # common patterns
         internalBlockPat = re.compile(
-            "internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
+            r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
         )
 
         v_file_path = os.path.join(self.fluned_path, "0")
@@ -1496,7 +1496,7 @@ FoamFile
 
         filename = os.path.join(self.cfd_path, self.casH5file)
 
-        neighPat = re.compile(".*/faces/c1/\d+\Z", re.IGNORECASE)
+        neighPat = re.compile(r".*/faces/c1/\d+\Z", re.IGNORECASE)
 
         neighbourFilePath = os.path.join(
             self.cfd_path, "constant", "polyMesh", "neighbour"
@@ -1544,8 +1544,8 @@ FoamFile
 
         filename = os.path.join(self.cfd_path, self.casH5file)
 
-        facePat = re.compile(".*/faces/nodes/\d+/nnodes\Z", re.IGNORECASE)
-        face2Pat = re.compile(".*/faces/nodes/\d+/nodes\Z", re.IGNORECASE)
+        facePat = re.compile(r".*/faces/nodes/\d+/nnodes\Z", re.IGNORECASE)
+        face2Pat = re.compile(r".*/faces/nodes/\d+/nodes\Z", re.IGNORECASE)
 
         facesFilePath = os.path.join(self.cfd_path, "constant", "polyMesh", "faces")
 
@@ -1711,7 +1711,7 @@ FoamFile
 
         filename = os.path.join(self.cfd_path, self.casH5file)
 
-        ownerPat = re.compile(".*/faces/c0/\d+\Z", re.IGNORECASE)
+        ownerPat = re.compile(r".*/faces/c0/\d+\Z", re.IGNORECASE)
 
         ownerFilePath = os.path.join(self.cfd_path, "constant", "polyMesh", "owner")
 
@@ -1764,7 +1764,7 @@ FoamFile
 
         filename = os.path.join(self.cfd_path, self.casfile)
 
-        pointsPat = re.compile("^\(3010\s+\(.*?\).*\)", re.MULTILINE | re.DOTALL)
+        pointsPat = re.compile(r"^\(3010\s+\(.*?\).*\)", re.MULTILINE | re.DOTALL)
 
         pointsFilePath = os.path.join(self.cfd_path, "constant", "polyMesh", "points")
 
@@ -1820,7 +1820,7 @@ FoamFile
 
         filename = os.path.join(self.cfd_path, self.casH5file)
 
-        nodesPat = re.compile(".*/nodes/coords/\d+\Z", re.IGNORECASE)
+        nodesPat = re.compile(r".*/nodes/coords/\d+\Z", re.IGNORECASE)
 
         pointsFilePath = os.path.join(self.cfd_path, "constant", "polyMesh", "points")
 
@@ -1879,8 +1879,8 @@ FoamFile
     def getH5files(self):
         casH5files = []
         datH5files = []
-        casH5FilePat = re.compile("\.cas.h5\Z", re.IGNORECASE)
-        datH5FilePat = re.compile("\.dat.h5\Z", re.IGNORECASE)
+        casH5FilePat = re.compile(r"\.cas.h5\Z", re.IGNORECASE)
+        datH5FilePat = re.compile(r"\.dat.h5\Z", re.IGNORECASE)
 
         folder = self.cfd_path
 
@@ -1909,8 +1909,8 @@ FoamFile
     def getCASDATfiles(self):
         casfiles = []
         datfiles = []
-        casFilePat = re.compile("\.cas\Z", re.IGNORECASE)
-        datFilePat = re.compile("\.dat\Z", re.IGNORECASE)
+        casFilePat = re.compile(r"\.cas\Z", re.IGNORECASE)
+        datFilePat = re.compile(r"\.dat\Z", re.IGNORECASE)
 
         folder = self.cfd_path
 
@@ -2396,7 +2396,7 @@ dimensions      [0 3 -1 0 0 0 0];
 
         filename = os.path.join(self.cfd_path, self.casfile)
 
-        regionPat1 = re.compile("\([^()]*?\)")
+        regionPat1 = re.compile(r"\([^()]*?\)")
 
         nameMatches = regionPat1.findall(self.cfdPostMeshInfoString)
 
@@ -2569,16 +2569,16 @@ dimensions      [0 3 -1 0 0 0 0];
 
         filename = os.path.join(self.cfd_path, self.casH5file)
 
-        facesNamePat = re.compile(".*/faces/zoneTopology/name\Z", re.IGNORECASE)
-        facesPatMin = re.compile(".*/faces/zoneTopology/minId\Z", re.IGNORECASE)
+        facesNamePat = re.compile(r".*/faces/zoneTopology/name\Z", re.IGNORECASE)
+        facesPatMin = re.compile(r".*/faces/zoneTopology/minId\Z", re.IGNORECASE)
 
-        facesPatMax = re.compile(".*/faces/zoneTopology/maxId\Z", re.IGNORECASE)
+        facesPatMax = re.compile(r".*/faces/zoneTopology/maxId\Z", re.IGNORECASE)
 
-        zoneTypePat = re.compile(".*/faces/zoneTopology/zoneType\Z", re.IGNORECASE)
+        zoneTypePat = re.compile(r".*/faces/zoneTopology/zoneType\Z", re.IGNORECASE)
 
-        faceOwnerPat = re.compile(".*/faces/zoneTopology/c0\Z", re.IGNORECASE)
+        faceOwnerPat = re.compile(r".*/faces/zoneTopology/c0\Z", re.IGNORECASE)
 
-        faceNeighPat = re.compile(".*/faces/zoneTopology/c1\Z", re.IGNORECASE)
+        faceNeighPat = re.compile(r".*/faces/zoneTopology/c1\Z", re.IGNORECASE)
 
         faceNames = get_h5_dataset(filename, facesNamePat)
         faceNames = list(faceNames[0].decode("UTF-8").split(";"))
@@ -2693,8 +2693,8 @@ dimensions      [0 3 -1 0 0 0 0];
 
         # get region names
 
-        regionPat = re.compile("\(.*?\)")
-        regionPat1 = re.compile("\([^()]*?\)")
+        regionPat = re.compile(r"\(.*?\)")
+        regionPat1 = re.compile(r"\([^()]*?\)")
         filename = os.path.join(self.cfd_path, self.casfile)
         regionNames = get_fluent_parse_regions(filename)
         self.cfdPostMeshInfoString = regionNames
@@ -2752,17 +2752,17 @@ dimensions      [0 3 -1 0 0 0 0];
 
         filename = os.path.join(self.cfd_path, self.casH5file)
 
-        regionNamePat = re.compile(".*/cells/zoneTopology/name\Z", re.IGNORECASE)
+        regionNamePat = re.compile(r".*/cells/zoneTopology/name\Z", re.IGNORECASE)
 
-        regionIDPat = re.compile(".*/cells/zoneTopology/id\Z", re.IGNORECASE)
+        regionIDPat = re.compile(r".*/cells/zoneTopology/id\Z", re.IGNORECASE)
 
         partitionIdPat = re.compile(
-            ".*/cells/partition/.*/partition-ids\Z", re.IGNORECASE
+            r".*/cells/partition/.*/partition-ids\Z", re.IGNORECASE
         )
 
-        regionPatMin = re.compile(".*/cells/zoneTopology/minId\Z", re.IGNORECASE)
+        regionPatMin = re.compile(r".*/cells/zoneTopology/minId\Z", re.IGNORECASE)
 
-        regionPatMax = re.compile(".*/cells/zoneTopology/maxId\Z", re.IGNORECASE)
+        regionPatMax = re.compile(r".*/cells/zoneTopology/maxId\Z", re.IGNORECASE)
 
         regionMinIDPaths = []
         regionMaxIDPaths = []
@@ -2815,7 +2815,7 @@ dimensions      [0 3 -1 0 0 0 0];
 
         filenameCAS = os.path.join(self.cfd_path, self.casH5file)
 
-        ownerPat = re.compile(".*/faces/c0/\d+\Z", re.IGNORECASE)
+        ownerPat = re.compile(r".*/faces/c0/\d+\Z", re.IGNORECASE)
 
         ownerList = get_h5_dataset(filenameCAS, ownerPat)
 
