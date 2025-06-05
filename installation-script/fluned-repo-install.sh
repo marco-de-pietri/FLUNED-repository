@@ -43,7 +43,7 @@ DIR="FLUNED-repository"
 if [ -d "$DIR" ]; then
   rm -rf "$DIR"
 fi
-git clone -v --branch master --single-branch "https://github.com/marco-de-pietri/FLUNED-repository.git" "$DIR"
+git clone -v --branch main --single-branch "https://github.com/marco-de-pietri/FLUNED-repository.git" "$DIR"
 
 # Navigate to the cloned repository
 cd "$INSTALL_DIR/FLUNED-repository"
