@@ -53,6 +53,7 @@ def read_fluned_input_file(path):
     parameters = [
         "case",
         "time_treatment",
+        "simulation_type",
         "activation_const",
         "activation_dataset",
         "activation_dataset_error",
@@ -70,11 +71,11 @@ def read_fluned_input_file(path):
         "fluent_fluid_region_name",
     ]
     try:
-        fin = open(path, "r", encoding="utf8", errors="ignore")
+        with open(path, "r", encoding="utf8", errors="ignore") as fin:
+            text_block = fin.read()
     except IOError:
         print("couldn't open file")
-    with fin:
-        text_block = fin.read()
+        text_block = ""
 
     cases_blocks = case_path.findall(text_block)
 
@@ -140,47 +141,21 @@ def main():
 
         fCase = flunedCase()
         fCase.generate_case(case)
+        fCase.initialize_cfd_class()
 
         if fCase.cfd_type == "fluent-h5-multi":
             print("parsing h5 files ... ")
-            fCase.getH5files()
+            fCase.parse_fluent_simulation()
             fCase.create_case_folders_fluent()
-            fCase.getFluidCells_h5()
-            fCase.getFluidFaces_h5()
-            fCase.read_density_h5()
-            fCase.defineWalls_multi_h5()
-            fCase.writeOwner_multi_h5()
-            fCase.writeNeighbour_multi_h5()
-            fCase.write_cell_zones()
-            fCase.writeBoundary_multi_h5()
-            fCase.writeFaces_multi_h5()
-            fCase.writeNodes_multi_h5()
-            fCase.writePhi_multi_h5()
-            fCase.writeSpeed_multi_h5()
-            fCase.writeNut_multi_h5()
+            fCase.convert_fluent_to_openfoam()
 
         if fCase.cfd_type == "fluent-multi":
-            print("parsing binary cas/dat files not implemented yet ... ")
-            sys.exit()
+            raise NotImplementedError(
+                "Parsing binary cas/dat files not implemented yet"
+            )
 
-        print("copying last CFD iteration files ... ")
-        fCase.create_case_folder()
-        fCase.initialize_cfd_class()
-        fCase.copy_last_phi()
-        fCase.copy_last_u()
-        fCase.getNumCells()
-        fCase.copyLastNut()
-        fCase.copyPolyMesh()
-        fCase.reconstructFaces()
-        fCase.generate_system_file()
-        fCase.launch_vol_func_object()
-        fCase.generate_constant_file()
-        fCase.generate_zero_t()
-        fCase.generate_zero_ta()
-        fCase.generate_zero_td()
-        fCase.generate_zero_tr()
-        fCase.generateSourceFile()
-        fCase.generateTrSourceFile()
+        print("copying openfoam files from last CFD iteration ... ")
+        fCase.generate_fluned_files()
 
         if args.launch_simulation:
             fCase.launch_solver()

@@ -2,6 +2,7 @@
 import os
 import ast
 
+
 def collect_names_from_file(path: str) -> list[str]:
     with open(path, "r", encoding="utf-8") as f:
         try:
@@ -22,7 +23,7 @@ def collect_names_from_file(path: str) -> list[str]:
 
         def visit_FunctionDef(self, node: ast.FunctionDef):
             if self.current_class:
-                names.append(f"{self.current_class}.{node.name}")
+                names.append(f"{node.name} ({self.current_class})")
             else:
                 names.append(node.name)
             # don’t recurse into inner functions/methods further
@@ -33,9 +34,10 @@ def collect_names_from_file(path: str) -> list[str]:
     visitor.visit(tree)
     return names
 
+
 def main():
     all_names: list[str] = []
-    for root, _, files in os.walk("."):
+    for root, _, files in os.walk("src"):
         for fn in files:
             if fn.endswith(".py"):
                 full = os.path.join(root, fn)
@@ -46,6 +48,6 @@ def main():
         for name in sorted(all_names):
             out.write(name + "\n")
 
+
 if __name__ == "__main__":
     main()
-

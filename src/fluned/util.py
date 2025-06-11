@@ -1,10 +1,7 @@
 import linecache
 import tracemalloc
-import os
 import sys
 import gzip
-import vtk
-from vtk.util import numpy_support as VN
 
 
 def check_int(check_str):
@@ -71,53 +68,6 @@ def open_utf8_or_gzip(file_path):
     return data
 
 
-def sample_coordinates_vtk(vtk_file, dataset_name, coordinates):
-    """
-    this function reads the vtk and sample some datasets
-    """
-
-    check_file = os.path.isfile(vtk_file)
-    if not check_file:
-        print("ERROR activation file not found")
-        sys.exit()
-
-    # read the vtk file with an unstructured grid
-    reader = vtk.vtkStructuredGridReader()
-    reader.SetFileName(vtk_file)
-    reader.ReadAllVectorsOn()
-    reader.ReadAllScalarsOn()
-    reader.Update()
-    data = reader.GetOutput()
-
-    # define probe
-
-    points = vtk.vtkPoints()
-    points.SetNumberOfPoints(len(coordinates))
-
-    # print ("parsed  0/{:d}".format(len(coordinates)))
-    # step = pow(10,int(math.log10(len(coordinates)))-1)
-
-    for i, val in enumerate(coordinates):
-        points.SetPoint(i, val[0], val[1], val[2])
-    #     if (i+1) % step == 0:
-    #         print ("parsed  {:d}/{:d}".format(i+1,len(coordinates)))
-
-    polydata = vtk.vtkPolyData()
-    polydata.SetPoints(points)
-
-    # Perform the interpolation
-    probe_filter = vtk.vtkProbeFilter()
-    probe_filter.SetSourceData(data)
-    probe_filter.SetInputData(polydata)
-    probe_filter.Update()
-
-    vtk_array = probe_filter.GetOutput().GetPointData().GetArray(dataset_name)
-
-    reac_rates = VN.vtk_to_numpy(vtk_array)
-
-    return reac_rates
-
-
 def display_top(snapshot, key_type="lineno", limit=10):
     snapshot = snapshot.filter_traces(
         (
@@ -146,25 +96,3 @@ def display_top(snapshot, key_type="lineno", limit=10):
     print("Total allocated size: %.1f KiB" % (total / 1024))
 
     return
-
-def formatValues(vector):
-    maxLen = 70
-    returnString = ""
-    newLine = ""
-
-    for item in vector:
-        newNumber = "{:.7e}".format(item)
-        if returnString == "" and newLine == "":
-            newLine = newNumber
-            continue
-
-        if len(newLine + " " + newNumber) > maxLen:
-            returnString += newLine + "\n"
-            newLine = newNumber
-
-        else:
-            newLine = newLine + " " + newNumber
-
-    returnString += newLine + "\n"
-
-    return returnString

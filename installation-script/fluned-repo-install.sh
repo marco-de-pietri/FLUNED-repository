@@ -53,18 +53,14 @@ echo "Installing required dependencies..."
 wget -qO- https://astral.sh/uv/install.sh | sh
 
 #  Ensure uv is in PATH for the script's execution
-export PATH="$HOME/.local/bin:$PATH"
+grep -qxF 'export PATH="$PATH:$HOME/.local/bin"' "$rc_file" \
+  || printf '\nexport PATH="$PATH:$HOME/.local/bin"\n' >> "$rc_file"
+
 
 uv tool install . --python 3.13
 
 
 
-# 6) Install FLUNED with pipx using Python 3.11
-echo "Installing FLUNED using pipx..."
-pipx install --python python3.11 .
-
-grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$rc_file" \
-  || printf '\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$rc_file"
 
 
 
