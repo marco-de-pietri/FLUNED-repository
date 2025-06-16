@@ -2,10 +2,167 @@
 import re
 import sys
 import os
+import copy
 import argparse
 from .fluned_case_class import flunedCase
+import xml.etree.ElementTree as ET
+from typing import List, Set, Dict, Any
 
 __version__ = "0.1.0"
+
+
+def map_targets_to_channels(
+    xml_file: str, isotopes_index: Dict[str, int], reaction_rates_index: Dict[str, int]
+) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Parses the XML at `xml_file` and returns a dict mapping each target atom
+    to a list of channels. Each channel is a dict with:
+      - 'parent_nuclide': name of the nuclide
+      - 'reaction': reaction type
+      - 'channel_index': [parent_isotope_index, reaction_rate_index]
+
+    """
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+    result: Dict[str, List[Dict[str, Any]]] = {}
+
+    for nuclide in root.findall("nuclide"):
+        parent = nuclide.get("name")
+        if parent not in isotopes_index:
+            continue
+        parent_idx = isotopes_index[parent]
+
+        for rx in nuclide.findall("reaction"):
+            rtype = rx.get("type")
+            target = rx.get("target")
+            if rtype not in reaction_rates_index:
+                continue
+            reaction_idx = reaction_rates_index[rtype]
+            channel = {
+                "parent_nuclide": parent,
+                "reaction": rtype,
+                "channel_index": [parent_idx, reaction_idx],
+            }
+            if target in result:
+                result[target].append(channel)
+            else:
+                result[target] = [channel]
+
+    return result
+
+
+def filter_channels_by_source(
+    xml_file: str, channels: Dict[str, List[Dict[str, Any]]]
+) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Given a mapping of target nuclides to reaction channels, remove any
+    targets for which the corresponding <nuclide> element in the XML
+    has no <source> child.
+    """
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+
+    # Identify which nuclides have a <source> element
+    has_source = {
+        nu.get("name")
+        for nu in root.findall("nuclide")
+        if nu.find("source") is not None
+    }
+
+    # Filter out targets without a source
+    return {target: chans for target, chans in channels.items() if target in has_source}
+
+
+def generate_openmc_simulation_parameters(args_dict):
+    """
+    this function parse the depletion file and the chains.xml and return a dictionary
+    with the simulation parameters for the openmc cases, one for each isotope
+    """
+
+    cases = []
+
+    import openmc
+
+    depletion_isotopes, depletion_reactions = get_isotope_reactions_dicts(
+        args_dict["activation_file"]
+    )
+
+    target_isotopes_channels = get_openmc_reaction_channels(
+        openmc.config["chain_file"], depletion_isotopes, depletion_reactions
+    )
+
+    for target, channels in target_isotopes_channels.items():
+        new_case = copy.deepcopy(args_dict)
+
+        isotope = target.lower()
+
+        new_case["isotope"] = isotope
+
+        new_case["case"] = new_case["case"] + "_" + target.upper()
+
+        print(channels)
+
+        new_case["openmc_depletion_channels"] = channels
+
+        cases.append(new_case)
+
+    return cases
+
+
+def get_isotope_reactions_dicts(file_path):
+    """
+    this function  reads the depletion results and gets the dictionaries mapping the reactions and the parent isotopes
+    """
+
+    import openmc.deplete
+
+    depletion_results = openmc.deplete.Results(file_path)[0]
+
+    reaction_rates = depletion_results.rates[0]
+
+    return reaction_rates.index_nuc, reaction_rates.index_rx
+
+
+def filter_channels(
+    xml_file: str, channels: Dict[str, List[Dict[str, Any]]]
+) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Given a mapping of target nuclides to reaction channels, remove any
+    targets for which the corresponding <nuclide> element in the XML
+    has no <source> child.
+    """
+
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+
+    # Identify nuclides with a <source> of particle 'photon' or 'neutron'
+    valid_sources = set()
+    for nu in root.findall("nuclide"):
+        name = nu.get("name")
+        for src in nu.findall("source"):
+            if src.get("particle") in ("photon", "neutron"):
+                valid_sources.add(name)
+                break
+
+    # Filter out targets without a valid source
+    return {
+        target: chans for target, chans in channels.items() if target in valid_sources
+    }
+
+
+def get_openmc_reaction_channels(chain_file_path, isotopes_index, reactions_index):
+    """
+    This function takes the openmc chain file and returns the channel information that
+    leads to the formation of concerning radioisotopes
+    """
+
+    all_targets = map_targets_to_channels(
+        chain_file_path, isotopes_index, reactions_index
+    )
+
+    emitting_targets = filter_channels(chain_file_path, all_targets)
+
+    return emitting_targets
 
 
 def create_input_template():
@@ -54,6 +211,7 @@ def read_fluned_input_file(path):
         "case",
         "time_treatment",
         "simulation_type",
+        "openmc_material_map_file",
         "activation_const",
         "activation_dataset",
         "activation_dataset_error",
@@ -95,7 +253,14 @@ def read_fluned_input_file(path):
                 if args[0].lower() in parameters:
                     parameters_dict[args[0].lower()] = args[1]
 
-        cases_vec.append(parameters_dict)
+        if (
+            "simulation_type" in parameters_dict
+            and parameters_dict["simulation_type"].lower() == "openmc-multi"
+        ):
+            openmc_cases_dicts = generate_openmc_simulation_parameters(parameters_dict)
+            cases_vec.extend(openmc_cases_dicts)
+        else:
+            cases_vec.append(parameters_dict)
 
     return cases_vec
 

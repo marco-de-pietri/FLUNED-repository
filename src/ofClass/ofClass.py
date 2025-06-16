@@ -5,6 +5,7 @@ class for the OF simulations, this can be used to parse and generate files
 import copy
 import math
 import os
+import sys
 import re
 import pathlib
 

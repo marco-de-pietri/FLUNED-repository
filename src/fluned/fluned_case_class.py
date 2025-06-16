@@ -1,11 +1,11 @@
 import os
-import re
-import sys
 import shutil
 import numpy as np
 import subprocess
 from fluent_class.fluent_simulation import fluentSimulation
+from pathlib import Path
 import vtk
+import pyvista as pv
 
 from ofClass.fluned_tool_launchers import launch_volume_func_object
 from ofClass.fluned_tool_launchers import launch_grad_func_object
@@ -41,40 +41,103 @@ class flunedCase:
 
         self.case = arg_dict["case"]
         # set decay constant
-        if "decay_constant" in arg_dict:
-            self.decay_constant = float(arg_dict["decay_constant"])
 
-        if "simulation_type" in arg_dict:
-            if arg_dict["simulation_type"].lower() == "openmc-multi":
-                # test for access to openmc data
-                import openmc
+        # default value
+        if "simulation_type" not in arg_dict:
+            arg_dict["simulation_type"] = "single-isotope"
 
-                print("openmc test")
+        if arg_dict["simulation_type"] == "single-isotope":
+            if "isotope" in arg_dict:
+                isotope = arg_dict["isotope"].lower().replace("-", "")
+                if isotope not in ["n16", "o19", "n17", "f20", "custom"]:
+                    raise ValueError("isotope not recognized")
+                self.isotope = isotope
+            else:
+                self.isotope = "custom"
 
-                sys.exit()
+            if "decay_constant" in arg_dict:
+                self.decay_constant = float(arg_dict["decay_constant"])
 
-        if "isotope" in arg_dict:
-            isotope = arg_dict["isotope"].lower().replace("-", "")
-            if isotope not in ["n16", "o19", "n17", "f20", "custom"]:
-                raise ValueError("isotope not recognized")
-            self.isotope = isotope
-        else:
-            self.isotope = "custom"
+            if "activation_dataset" in arg_dict:
+                self.activation_dataset = arg_dict["activation_dataset"]
+
+            if "activation_dataset_error" in arg_dict:
+                self.activation_dataset_error = arg_dict["activation_dataset_error"]
+
+            if "activation_file" in arg_dict:
+                self.activation_file = os.path.normcase(arg_dict["activation_file"])
+
+        if arg_dict["simulation_type"] == "openmc-multi":
+            import openmc.data
+            import openmc.deplete
+
+            self.isotope = arg_dict["isotope"]
+
+            self.decay_constant = openmc.data.decay_constant(self.isotope)
+
+            # mapping of the reaction rates to the vtk file
+
+            reaction_rate_file_path = os.path.dirname(arg_dict["activation_file"])
+            activation_file_name = f"reaction_rate_{self.isotope.upper()}.vtk"
+            activation_file_path = os.path.join(
+                reaction_rate_file_path, activation_file_name
+            )
+            activation_dataset = "reaction_rate_m3"
+
+            self.activation_dataset = activation_dataset
+
+            rr_rates = []
+
+            depletion_results = openmc.deplete.Results(arg_dict["activation_file"])[0]
+
+            depletion_result_materials = depletion_results.index_mat
+            depletion_result_volumes = depletion_results.volume
+
+            rates = np.array(depletion_results.rates)
+
+            for channel in arg_dict["openmc_depletion_channels"]:
+                idxs = channel["channel_index"]
+
+                rr_rates.append(rates[0, :, idxs[0], idxs[1]])
+
+            total_rr = np.sum(rr_rates, axis=0)
+
+            integrated_rr = total_rr.sum()
+
+            print(f"debug total integrated rr for {self.isotope}: {integrated_rr}")
+
+            vtk_data = pv.read(arg_dict["openmc_material_map_file"])
+
+            material_map = vtk_data.cell_data["material"]
+
+            # array_test_1 = [val for val in depletion_result_materials.keys()]
+            # array_test_2 = [val for val in depletion_result_materials.values()]
+
+            # print("min max depletion file 1", min(array_test_1), max(array_test_1))
+            # print("type depletion file 1", type(array_test_1[0]))
+            # print("min max depletion file 2", min(array_test_2), max(array_test_2))
+            # print("type depletion file 2", type(array_test_2[0]))
+
+            # print(material_map)
+
+            rr_vtk = np.zeros_like(material_map, dtype=float)
+
+            for mat_idx, depl_idx in depletion_result_materials.items():
+                cell_idx = np.where(material_map == int(mat_idx))[0][0]
+
+                rr_vtk[int(cell_idx)] = total_rr[depl_idx]
+
+            vtk_data.cell_data[activation_dataset] = rr_vtk
+
+            vtk_data.save(activation_file_path)
+
+            self.activation_file = activation_file_path
 
         if "activation_const" in arg_dict:
             self.activation_const = float(arg_dict["activation_const"])
 
         if "activation_normalization" in arg_dict:
             self.activation_normalization = float(arg_dict["activation_normalization"])
-
-        if "activation_dataset" in arg_dict:
-            self.activation_dataset = arg_dict["activation_dataset"]
-
-        if "activation_dataset_error" in arg_dict:
-            self.activation_dataset_error = arg_dict["activation_dataset_error"]
-
-        if "activation_file" in arg_dict:
-            self.activation_file = os.path.normcase(arg_dict["activation_file"])
 
         if "fv_scheme" in arg_dict:
             if arg_dict["fv_scheme"].lower() in ["stable", "accurate"]:
@@ -99,7 +162,7 @@ class flunedCase:
             if "fluent_fluid_region_name" not in arg_dict:
                 print("ERROR: name of the fluid region to extract not")
                 print("specified! use parameter FLUENT_FLUID_REGION_NAME")
-                sys.exit()
+                raise ValueError()
             else:
                 self.fluent_fluid_region_name = arg_dict["fluent_fluid_region_name"]
 
@@ -114,8 +177,10 @@ class flunedCase:
 
         self.fluned_path = os.path.join(self.cfd_path, self.case)
 
-        if not os.path.exists(self.fluned_path):
-            os.mkdir(self.fluned_path)
+        # try:
+        #     Path(self.fluned_path).mkdir(parents=True)
+        # except FileExistsError:
+        #     pass
 
         return
 
