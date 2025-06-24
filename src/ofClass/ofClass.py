@@ -8,6 +8,9 @@ import os
 import sys
 import re
 import pathlib
+from lxml import etree as et
+import meshio
+import vtk
 
 import numpy as np
 import pyvista as pv
@@ -16,6 +19,8 @@ from .fluned_tool_launchers import launch_centroid_func_object
 from .fluned_tool_launchers import generate_vtk
 from .fluned_vtk_utils import (
     get_vtk_dimensions,
+    get_vtk_volumes,
+    get_vtk_celldata_array,
     sample_vtk,
     generate_external_stl,
     write_cartesian_vtk,
@@ -2486,11 +2491,6 @@ boundaryField
 
         print("reading scalar values...")
 
-        # find the last folder
-        # folderItms = os.listdir(self.fluned_path)
-        # folderTimes=[int(itm) for itm in folderItms if checkInt(itm) == True]
-        # lastTime = max(folderTimes)
-
         # common patterns
         internalBlockPat = re.compile(
             r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
@@ -2568,6 +2568,8 @@ boundaryField
         this function write the sample CDGS file
         """
 
+        print("writing source model file in CDGS format ...")
+
         cdgsFile = os.path.join(self.results_folder, "cartesian_sampled_source.cdgs")
 
         with open(cdgsFile, "w") as fw:
@@ -2630,5 +2632,284 @@ boundaryField
                     fw.write(specErrorString)
 
             fw.write("end_source_data\n")
+
+        return
+
+    def write_openmc_sm_source(self):
+        """
+        this function write the mesh-based radiation source file
+        """
+
+        print(
+            "writing openmc source model file of the FLUNED results sampled over a cartesian grid  ..."
+        )
+
+        openmc_source_file = os.path.join(
+            self.results_folder, "cartesian_sampled_source.xml"
+        )
+        openmc_source_file_name = os.path.basename(openmc_source_file)
+        openmc_source_import_commands = os.path.join(
+            self.results_folder, "openmc_commands.txt"
+        )
+
+        # now it is hardcoded, later I will find a better way to handle this
+        mesh_id = 100
+
+        mesh_lower_left = [min(self.x_nodes), min(self.y_nodes), min(self.z_nodes)]
+
+        mesh_upper_right = [max(self.x_nodes), max(self.y_nodes), max(self.z_nodes)]
+
+        # create root element
+        root = et.Element("source")
+
+        # create sublement with the mesh source
+        source_mesh = et.SubElement(
+            root,
+            "source",
+            type="mesh",
+            strength=str(self.normalized_sampled_total_emission_rate),
+            mesh=str(mesh_id),
+        )
+
+        arr = np.asarray(
+            self.cartesian_voxel_list, dtype=object
+        )  # keep objects untouched
+        reordered = arr.reshape(
+            (self.x_ints, self.y_ints, self.z_ints), order="C"
+        ).ravel(order="F")
+
+        ebins_temp = [e * 1e6 for e in self.e_lines]  # convert from MeV to eV
+        energy_parameters = [*ebins_temp, *self.p_lines]
+        particle_type = self.particle_type
+
+        for voxel in reordered:
+            sub_source = et.SubElement(
+                source_mesh,
+                "source",
+                type="independent",
+                strength=str(voxel["normalized_emission_rate_cm3"]),
+                particle=particle_type,
+            )
+
+            et.SubElement(sub_source, "angle", type="isotropic")
+            energy = et.SubElement(sub_source, "energy", type="discrete")
+            params = et.SubElement(energy, "parameters")
+            params.text = " ".join(map(str, energy_parameters))
+
+        # create mesh element with id attribute
+        mesh = et.SubElement(root, "mesh", id=str(mesh_id))
+
+        # add child elements with text content
+        dimension = et.SubElement(mesh, "dimension")
+        dimension.text = "{} {} {}".format(self.x_ints, self.y_ints, self.z_ints)
+
+        lower_left = et.SubElement(mesh, "lower_left")
+        lower_left.text = "{} {} {}".format(
+            mesh_lower_left[0], mesh_lower_left[1], mesh_lower_left[2]
+        )
+
+        upper_right = et.SubElement(mesh, "upper_right")
+        upper_right.text = "{} {} {}".format(
+            mesh_upper_right[0], mesh_upper_right[1], mesh_upper_right[2]
+        )
+
+        # write to file with xml declaration
+        tree = et.ElementTree(root)
+        tree.write(
+            openmc_source_file,
+            encoding="utf-8",
+            pretty_print=True,
+            xml_declaration=True,
+        )
+
+        with open(openmc_source_import_commands, "w") as f:
+            f.write("from lxml import etree\n")
+            f.write(
+                'source_root = etree.parse("{}").getroot()\n'.format(
+                    openmc_source_file_name
+                )
+            )
+            f.write("mesh_element = source_root.find('mesh')\n")
+            f.write("source_element = source_root.find('source')\n")
+            f.write("mesh_geo = openmc.RegularMesh().from_xml_element(mesh_element)\n")
+            f.write(
+                "mesh_source = openmc.MeshSource.from_xml_element(source_element, {100:mesh_geo})\n"
+            )
+
+        return
+
+    def write_openmc_um_source(self):
+        """
+        This function write the unstructured mesh-based radiation source file
+        based on the vtk file
+        """
+
+        print("writing openmc unstructured mesh source file ..")
+
+        openmc_source_file = os.path.join(self.results_folder, "um_fluned_source.xml")
+        h5m_basename = "um_geometry.h5m"
+        openmc_source_mesh_file = os.path.join(self.results_folder, h5m_basename)
+        vtk_intermediate_source_file = os.path.join(self.results_folder, "um_temp.vtk")
+        vtk_intermediate_source_file_2 = os.path.join(
+            self.results_folder, "um_temp2.vtk"
+        )
+        openmc_source_file_name = os.path.basename(openmc_source_file)
+        openmc_source_import_commands = os.path.join(
+            self.results_folder, "openmc_um_commands.txt"
+        )
+
+        # now it is hardcoded, later I will find a better way to handle this
+        mesh_id = 100
+
+        # scale the simulation vtk from meters to cm and triangularize it
+        if self.vtk_file_path.lower().endswith(".vtu"):
+            reader = vtk.vtkXMLUnstructuredGridReader()
+        else:  # legacy ASCII/Binary *.vtk
+            reader = vtk.vtkUnstructuredGridReader()
+            reader.ReadAllVectorsOn()
+            reader.ReadAllScalarsOn()
+        reader.SetFileName(self.vtk_file_path)
+        reader.Update()
+        mesh = reader.GetOutput()
+        mesh.GetPointData().Initialize()  # remove all point data
+        cell_data = mesh.GetCellData()
+        for i in reversed(range(cell_data.GetNumberOfArrays())):  # iterate safely
+            if cell_data.GetArrayName(i) != "T":
+                cell_data.RemoveArray(i)
+        sx, sy, sz = 100, 100, 100
+
+        tfm = vtk.vtkTransform()
+        tfm.Scale(sx, sy, sz)
+
+        tfilter = vtk.vtkTransformFilter()
+        tfilter.SetTransform(tfm)
+        tfilter.SetInputData(mesh)
+        tfilter.Update()
+        mesh_scaled = tfilter.GetOutput()
+
+        tri = vtk.vtkDataSetTriangleFilter()
+        tri.SetInputData(mesh_scaled)
+        tri.SetTetrahedraOnly(True)
+        tri.Update()
+        mesh_tet = tri.GetOutput()
+
+        writer = vtk.vtkUnstructuredGridWriter()
+        writer.SetFileTypeToBinary()
+        writer.SetFileName(vtk_intermediate_source_file)
+        if vtk.VTK_MAJOR_VERSION < 6:
+            writer.SetInput(mesh_tet)
+        else:
+            writer.SetInputData(mesh_tet)
+        writer.Write()
+
+        # make a vtk file with no cell data to convert to h5m
+        mesh_tet.GetCellData().Initialize()  # remove all cell data
+        writer = vtk.vtkUnstructuredGridWriter()
+        writer.SetFileTypeToBinary()
+        writer.SetFileName(vtk_intermediate_source_file_2)
+        if vtk.VTK_MAJOR_VERSION < 6:
+            writer.SetInput(mesh_tet)
+        else:
+            writer.SetInputData(mesh_tet)
+        writer.Write()
+
+        meshio_object = meshio.read(vtk_intermediate_source_file_2)
+        meshio.write(openmc_source_mesh_file, meshio_object)
+
+        # extract the data from the triangularized mesh
+        tri_mesh_volumes = get_vtk_volumes(vtk_intermediate_source_file)
+        tri_mesh_isotopes_coonc = get_vtk_celldata_array(
+            vtk_intermediate_source_file, "T"
+        )
+
+        # the 1e6 factor is to take into account that the concentration data is taken by the scaled mesh
+        tri_mesh_emission_rates = [
+            conc * vol * self.decay_constant * self.branching_ratio / 1e6
+            for conc, vol in zip(tri_mesh_isotopes_coonc, tri_mesh_volumes)
+        ]
+
+        print(
+            "consistency check, total emission rate from tetras in the vtk file: ",
+            sum(tri_mesh_emission_rates),
+        )
+        print(
+            "consistency check, total emission rate from the vtk file: ",
+            self.total_isotope_emission_rate,
+        )
+
+        with open(openmc_source_import_commands, "w") as f:
+            f.write("from lxml import etree\n")
+            f.write("parser = etree.XMLParser(huge_tree=True)\n")
+            f.write(
+                'source_root = etree.parse("{}", parser=parser).getroot()\n'.format(
+                    openmc_source_file_name
+                )
+            )
+            f.write("mesh_element = source_root.find('mesh')\n")
+            f.write(
+                "mesh_geo = openmc.UnstructuredMesh.from_xml_element(mesh_element)\n"
+            )
+            f.write("source_element = source_root.find('source')\n")
+            f.write(
+                "source = openmc.IndependentSource.from_xml_element(source_element, {100:mesh_geo})\n"
+            )
+
+        # create root element
+        root = et.Element("source")
+
+        # create sublement with the mesh source
+        source_mesh = et.SubElement(
+            root,
+            "source",
+            type="independent",
+            particle=self.particle_type,
+            strength=str(self.total_isotope_emission_rate),
+        )
+
+        space = et.SubElement(
+            source_mesh,
+            "space",
+            type="mesh",
+            mesh_id=str(mesh_id),
+            volume_normalized="False",
+        )
+        strengths = et.SubElement(space, "strengths")
+        strengths.text = " ".join(
+            map(
+                str,
+                [val for val in tri_mesh_emission_rates],
+            )
+        )  # adjust that the decay rate has been calculated after scaling the vtk file
+
+        # angle = et.SubElement(source_mesh, "angle", type="isotropic")
+
+        ebins_temp = [e * 1e6 for e in self.e_lines]  # convert from MeV to eV
+        energy_parameters = [*ebins_temp, *self.p_lines]
+        energy = et.SubElement(source_mesh, "energy", type="discrete")
+        params = et.SubElement(energy, "parameters")
+        params.text = " ".join(map(str, energy_parameters))
+
+        # create mesh element with id attribute
+        mesh = et.SubElement(
+            root,
+            "mesh",
+            id=str(mesh_id),
+            name="source_mesh",
+            type="unstructured",
+            library="moab",
+        )
+
+        # add child elements with text content
+        filename = et.SubElement(mesh, "filename")
+        filename.text = h5m_basename
+
+        # write to file with xml declaration
+        tree = et.ElementTree(root)
+        tree.write(
+            openmc_source_file,
+            encoding="utf-8",
+            pretty_print=True,
+            xml_declaration=True,
+        )
 
         return

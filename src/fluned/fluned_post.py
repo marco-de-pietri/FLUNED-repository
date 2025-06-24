@@ -59,14 +59,13 @@ def main():
             simCase.generate_cartesian_radiation_source_model()
 
         if args.cdgs:
-            pass
             simCase.fluned_simulation.write_cdgs()
 
-        elif args.openmc:
-            simCase.write_openmc_sm_source()
+        if args.openmc_sm:
+            simCase.fluned_simulation.write_openmc_sm_source()
 
-        elif args.openmc_um:
-            simCase.write_openmc_um_source()
+        if args.openmc_um:
+            simCase.fluned_simulation.write_openmc_um_source()
 
     simCase.write_results(args)
 

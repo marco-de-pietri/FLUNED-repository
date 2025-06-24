@@ -6,7 +6,7 @@ import copy
 import argparse
 from .fluned_case_class import flunedCase
 import xml.etree.ElementTree as ET
-from typing import List, Set, Dict, Any
+from typing import List, Dict, Any
 
 __version__ = "0.1.0"
 
@@ -176,20 +176,20 @@ def create_input_template():
     input_path = os.path.join(current_folder, input_name)
 
     template_text = """CASE  FLUNED_01_DEFAULT_N16
-TIME_TREATMENT  steadyState #steadyState or transient supported
-#ACTIVATION_FILE  {}
-#ACTIVATION_DATASET    "Value - Total"
-#ACTIVATION_CONST 1e16
-#ACTIVATION_NORMALIZATION 0 #leave zero if no normalization is required
-#DECAY_CONSTANT 0.0257867           #O19 decay const
-#DECAY_CONSTANT 0.1661825           #N17 decay const
-DECAY_CONSTANT 0.09721559           #N16 decay const
+TIME_TREATMENT  steadyState          #steadyState or transient supported
+# ACTIVATION_FILE  {}
+# ACTIVATION_DATASET    "Value - Total"
+# ACTIVATION_CONST 1e16
+# ACTIVATION_NORMALIZATION 0         # Leave zero if no normalization is required
+# DECAY_CONSTANT 0.0257867           # O19 decay const
+# DECAY_CONSTANT 0.1661825           # N17 decay const
+DECAY_CONSTANT 0.09721559            # N16 decay const
 INLET_CONC 1e10
 MOLECULAR_DIFFUSION 2e-09
 SCHMIDT_NUMBER   0.7
 CFD_PATH      "{}"
-CFD_TYPE    OpenFoam       # OpenFoam, fluent-h5-multi types supported
-#FLUENT_FLUID_REGION_NAME     region_name
+CFD_TYPE    OpenFoam                 # OpenFoam, fluent-h5-multi types supported
+# FLUENT_FLUID_REGION_NAME     region_name
 """
 
     with open(input_path, "w", encoding="utf-8") as fw:

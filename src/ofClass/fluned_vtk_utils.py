@@ -1,5 +1,6 @@
 import pyvista as pv
 import os
+import numpy as np
 
 
 def generate_external_stl(vtk_path, output_folder):
@@ -56,6 +57,29 @@ def get_vtk_dimensions(vtk_path):
     return bounds, volume_m3
 
 
+def get_vtk_volumes(file_path: str) -> np.ndarray:
+    """
+    Read a mesh from the given file and return an array of volumes for each cell.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the mesh file (VTK, VTP, STL, etc.)
+
+    Returns
+    -------
+    numpy.ndarray
+        1D array of cell volumes.
+    """
+    # Load the mesh
+    mesh = pv.read(file_path)
+    # Compute cell sizes (volumes)
+    mesh = mesh.compute_cell_sizes(volume=True)
+    # Extract the 'Volume' array from cell data
+    volumes = mesh.cell_data["Volume"]
+    return volumes
+
+
 def write_cartesian_vtk(out_vtk_path, dims, spacing, origin, dataset, dataset_name):
     """
     This function writes a cartesian mesh
@@ -65,3 +89,32 @@ def write_cartesian_vtk(out_vtk_path, dims, spacing, origin, dataset, dataset_na
     grid.save(out_vtk_path)
 
     return
+
+
+def get_vtk_celldata_array(file_path: str, array_name: str) -> np.ndarray:
+    """
+    Read a mesh from the given file and return the specified cell-data array.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the mesh file (VTK, VTP, STL, etc.).
+    array_name : str
+        Name of the cell-data array to extract.
+
+    Returns
+    -------
+    numpy.ndarray
+        1D array of the requested cell-data values.
+
+    Raises
+    ------
+    ValueError
+        If the specified array_name is not found in the mesh's cell data.
+    """
+    mesh = pv.read(file_path)
+    if array_name not in mesh.cell_data:
+        raise ValueError(
+            f"Cell-data array '{array_name}' not found. Available arrays: {list(mesh.cell_data.keys())}"
+        )
+    return mesh.cell_data[array_name]
