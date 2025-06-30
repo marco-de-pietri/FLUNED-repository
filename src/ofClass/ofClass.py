@@ -9,8 +9,6 @@ import sys
 import re
 import pathlib
 from lxml import etree as et
-import meshio
-import vtk
 
 import numpy as np
 import pyvista as pv
@@ -24,9 +22,11 @@ from .fluned_vtk_utils import (
     sample_vtk,
     generate_external_stl,
     write_cartesian_vtk,
+    generate_triangularized_h5m_um_mesh,
+    generate_triangularized_scalar_mesh,
 )
 
-from isotopes.isotopes import load_isotopes
+from isotopes.isotopes import bins_from_lines, load_isotopes
 
 
 def formatValues(vector):
@@ -69,7 +69,8 @@ def get_post_process_list(path, dir_prefix, face_name, col_name):
     """
 
     dir_name = dir_prefix + face_name
-    flow_folders = [itm for itm in os.listdir(path) if dir_name in itm]
+
+    flow_folders = [itm for itm in os.listdir(path) if itm == dir_name]
 
     if len(flow_folders) != 1:
         raise ValueError("Error with the number of flow folders")
@@ -475,7 +476,7 @@ class SimulationOF:
         # print (f"{self.average_ta[-1]:.2e}")
 
         self.parse_constants_file()
-        self.assign_isotope()
+        self.assign_isotope_data()
         self.get_time_treatment()
         self.read_volumes()
         self.read_t()
@@ -496,7 +497,7 @@ class SimulationOF:
         )
         self.total_isotope_activity = self.decay_constant * self.total_isotope_amount
         self.total_isotope_emission_rate = (
-            self.branching_ratio * self.total_isotope_activity
+            self.tot_p_emission * self.total_isotope_activity
         )
 
         return None
@@ -1269,7 +1270,7 @@ class SimulationOF:
                 concentration
                 * voxel_volume
                 * self.decay_constant
-                * self.branching_ratio
+                * self.tot_p_emission
                 * 1e-06
             )  # atoms per m3 to cm3
 
@@ -2120,7 +2121,7 @@ boundaryField
             r"internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
         )
 
-        gradFile = os.path.join(self.last_time, "grad(T)")
+        gradFile = os.path.join(self.path, self.last_time, "grad(T)")
         try:
             inpFile = open(gradFile, "r", encoding="utf8", errors="ignore")
         except IOError:
@@ -2187,6 +2188,12 @@ boundaryField
             else:
                 factor = activation_const
             activ_sources = [factor * rate for rate in sampledRates]
+
+            print("debug: total sampled reaction rate #/s pre scaling")
+            print(sum([rate * vol for rate, vol in zip(sampledRates, self.volumes)]))
+
+            print("debug: total sampled reaction rate #/s after scaling")
+            print(sum([rate * vol for rate, vol in zip(activ_sources, self.volumes)]))
 
             # 3.apply a normalization factor if provided
             if activation_normalization != 0:
@@ -2367,14 +2374,17 @@ boundaryField
 
         return
 
-    def assign_isotope(self):
+    def assign_isotope_data(self):
         """
         using the decay constant this function understand if we are
         considering N-16, N-17 or O-19 and assign the spectrum
         accordingly. If it is not possible a dummy spectrum is
         assigned
 
-        this will be changed by embedding the data in the simulation
+        the logic here is that if "custom" is assigned in the isotope sections
+        of the transportProperties file, it tries to fetch the data from the
+        database with the legacy workflow, otherwise it tries to get the data
+        from the chain xml file
         """
 
         N16_decay_constant = 0.09721559
@@ -2394,16 +2404,32 @@ boundaryField
             else:
                 raise ValueError("ERROR, isotope not recognized")
 
-        isotope_database = load_isotopes()
-        if self.isotope.lower() not in isotope_database:
-            raise ValueError("ERROR isotope not found in the database")
-        isotope_data = isotope_database[self.isotope.lower()]
-        self.e_bins = isotope_data.e_bins
-        self.p_bins = isotope_data.p_bins
-        self.e_lines = isotope_data.e_lines
-        self.p_lines = isotope_data.p_lines
-        self.branching_ratio = isotope_data.branching_ratio
-        self.particle_type = isotope_data.emitting_particle
+            isotope_database = load_isotopes()
+            if self.isotope.lower() not in isotope_database:
+                raise ValueError("ERROR isotope not found in the database")
+            isotope_data = isotope_database[self.isotope.lower()]
+            self.e_lines = isotope_data.e_lines
+            self.p_lines = isotope_data.p_lines
+            self.e_bins = isotope_data.e_bins
+            self.p_bins = isotope_data.p_bins
+            self.tot_p_emission = isotope_data.tot_p_emission
+            self.particle_type = isotope_data.emitting_particle
+
+        else:
+            # this functionality works only with phton emitting isotopes at the moment
+            import openmc
+
+            isotope_string_temp = self.isotope[0].upper() + self.isotope[1:].lower()
+            self.decay_photon_energy = openmc.data.decay_photon_energy(
+                isotope_string_temp
+            )
+
+            # openmc provides the data in electronVolt
+            self.e_lines = self.decay_photon_energy.x / 1e6
+            self.p_lines = self.decay_photon_energy.p
+            self.particle_type = "photon"
+            self.e_bins, self.p_bins = bins_from_lines(self.e_lines, self.p_lines)
+            self.tot_p_emission = sum(self.p_lines)
 
         return
 
@@ -2496,7 +2522,7 @@ boundaryField
             r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
         )
 
-        tFile = os.path.join(self.last_time, "T")
+        tFile = os.path.join(self.path, self.last_time, "T")
 
         try:
             inpFile = open(tFile, "r", encoding="utf8", errors="ignore")
@@ -2738,7 +2764,7 @@ boundaryField
 
         return
 
-    def write_openmc_um_source(self):
+    def write_openmc_um_source(self, mesh_id=100):
         """
         This function write the unstructured mesh-based radiation source file
         based on the vtk file
@@ -2746,96 +2772,26 @@ boundaryField
 
         print("writing openmc unstructured mesh source file ..")
 
-        openmc_source_file = os.path.join(self.results_folder, "um_fluned_source.xml")
+        openmc_source_file_name = "um_fluned_source.xml"
+        openmc_source_file = os.path.join(self.results_folder, openmc_source_file_name)
+
         h5m_basename = "um_geometry.h5m"
         openmc_source_mesh_file = os.path.join(self.results_folder, h5m_basename)
-        vtk_intermediate_source_file = os.path.join(self.results_folder, "um_temp.vtk")
-        vtk_intermediate_source_file_2 = os.path.join(
-            self.results_folder, "um_temp2.vtk"
+
+        vtk_tri_mesh_source_file = os.path.join(
+            self.results_folder, "triangularzed_t_scalar.vtk"
         )
-        openmc_source_file_name = os.path.basename(openmc_source_file)
+
         openmc_source_import_commands = os.path.join(
             self.results_folder, "openmc_um_commands.txt"
         )
 
-        # now it is hardcoded, later I will find a better way to handle this
-        mesh_id = 100
-
-        # scale the simulation vtk from meters to cm and triangularize it
-        if self.vtk_file_path.lower().endswith(".vtu"):
-            reader = vtk.vtkXMLUnstructuredGridReader()
-        else:  # legacy ASCII/Binary *.vtk
-            reader = vtk.vtkUnstructuredGridReader()
-            reader.ReadAllVectorsOn()
-            reader.ReadAllScalarsOn()
-        reader.SetFileName(self.vtk_file_path)
-        reader.Update()
-        mesh = reader.GetOutput()
-        mesh.GetPointData().Initialize()  # remove all point data
-        cell_data = mesh.GetCellData()
-        for i in reversed(range(cell_data.GetNumberOfArrays())):  # iterate safely
-            if cell_data.GetArrayName(i) != "T":
-                cell_data.RemoveArray(i)
-        sx, sy, sz = 100, 100, 100
-
-        tfm = vtk.vtkTransform()
-        tfm.Scale(sx, sy, sz)
-
-        tfilter = vtk.vtkTransformFilter()
-        tfilter.SetTransform(tfm)
-        tfilter.SetInputData(mesh)
-        tfilter.Update()
-        mesh_scaled = tfilter.GetOutput()
-
-        tri = vtk.vtkDataSetTriangleFilter()
-        tri.SetInputData(mesh_scaled)
-        tri.SetTetrahedraOnly(True)
-        tri.Update()
-        mesh_tet = tri.GetOutput()
-
-        writer = vtk.vtkUnstructuredGridWriter()
-        writer.SetFileTypeToBinary()
-        writer.SetFileName(vtk_intermediate_source_file)
-        if vtk.VTK_MAJOR_VERSION < 6:
-            writer.SetInput(mesh_tet)
-        else:
-            writer.SetInputData(mesh_tet)
-        writer.Write()
-
-        # make a vtk file with no cell data to convert to h5m
-        mesh_tet.GetCellData().Initialize()  # remove all cell data
-        writer = vtk.vtkUnstructuredGridWriter()
-        writer.SetFileTypeToBinary()
-        writer.SetFileName(vtk_intermediate_source_file_2)
-        if vtk.VTK_MAJOR_VERSION < 6:
-            writer.SetInput(mesh_tet)
-        else:
-            writer.SetInputData(mesh_tet)
-        writer.Write()
-
-        meshio_object = meshio.read(vtk_intermediate_source_file_2)
-        meshio.write(openmc_source_mesh_file, meshio_object)
-
-        # extract the data from the triangularized mesh
-        tri_mesh_volumes = get_vtk_volumes(vtk_intermediate_source_file)
-        tri_mesh_isotopes_coonc = get_vtk_celldata_array(
-            vtk_intermediate_source_file, "T"
+        self.compute_triangularized_emission_rates(
+            vtk_tri_mesh_source_file, scaling_factor=100.0, save_tri_mesh_vtk=True
         )
 
-        # the 1e6 factor is to take into account that the concentration data is taken by the scaled mesh
-        tri_mesh_emission_rates = [
-            conc * vol * self.decay_constant * self.branching_ratio / 1e6
-            for conc, vol in zip(tri_mesh_isotopes_coonc, tri_mesh_volumes)
-        ]
-
-        print(
-            "consistency check, total emission rate from tetras in the vtk file: ",
-            sum(tri_mesh_emission_rates),
-        )
-        print(
-            "consistency check, total emission rate from the vtk file: ",
-            self.total_isotope_emission_rate,
-        )
+        # save a scaled up h5m file
+        generate_triangularized_h5m_um_mesh(self.vtk_file_path, openmc_source_mesh_file)
 
         with open(openmc_source_import_commands, "w") as f:
             f.write("from lxml import etree\n")
@@ -2863,7 +2819,7 @@ boundaryField
             "source",
             type="independent",
             particle=self.particle_type,
-            strength=str(self.total_isotope_emission_rate),
+            strength=f"{self.total_isotope_emission_rate:.6e}",
         )
 
         space = et.SubElement(
@@ -2877,7 +2833,7 @@ boundaryField
         strengths.text = " ".join(
             map(
                 str,
-                [val for val in tri_mesh_emission_rates],
+                [val for val in self.tri_mesh_emission_rates],
             )
         )  # adjust that the decay rate has been calculated after scaling the vtk file
 
@@ -2911,5 +2867,60 @@ boundaryField
             pretty_print=True,
             xml_declaration=True,
         )
+
+        return
+
+    def compute_triangularized_emission_rates(
+        self,
+        tri_mesh_vtk_filepath,
+        scaling_factor=100.00,
+        cell_data_array="T",
+        save_tri_mesh_vtk=True,
+    ):
+        """
+        this function takes the vtk of the simulation, triangularizes it,
+        extracts the T array, volumes and computes the emission rates
+        (decay particle per second)
+        """
+
+        generate_triangularized_scalar_mesh(
+            self.vtk_file_path, tri_mesh_vtk_filepath, scaling_factor, cell_data_array
+        )
+
+        # extract the data from the triangularized mesh
+        tri_mesh_volumes = get_vtk_volumes(tri_mesh_vtk_filepath)
+        tri_mesh_isotopes_coonc = get_vtk_celldata_array(tri_mesh_vtk_filepath, "T")
+
+        # the 1e6 factor is to take into account that the concentration data is taken by the scaled mesh
+        self.tri_mesh_emission_rates = [
+            conc * vol * self.decay_constant * self.tot_p_emission / (scaling_factor**3)
+            for conc, vol in zip(tri_mesh_isotopes_coonc, tri_mesh_volumes)
+        ]
+
+        tot_triangularized = sum(self.tri_mesh_emission_rates)
+
+        if not math.isclose(
+            tot_triangularized,
+            self.total_isotope_emission_rate,
+            rel_tol=1e-5,
+            abs_tol=0,
+        ):
+            print("ERROR consistency issue after traingularizing the array")
+
+            print(
+                "total emission rate from tetras in the vtk file: ",
+                sum(self.tri_mesh_emission_rates),
+            )
+            print(
+                "total emission rate from the vtk file: ",
+                self.total_isotope_emission_rate,
+            )
+
+            print()
+
+            sys.exit()
+
+        if not save_tri_mesh_vtk:
+            os.remove(tri_mesh_vtk_filepath)
 
         return

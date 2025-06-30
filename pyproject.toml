@@ -27,6 +27,7 @@ dependencies = [
 
 [project.scripts]
 fluned-post = "fluned.fluned_post:main"
+fluned-post-multi-isotopes = "fluned.fluned_post_multi_isotopes:main"
 fluned = "fluned.fluned:main"
 
 [tool.setuptools]

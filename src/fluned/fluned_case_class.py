@@ -1,18 +1,20 @@
 import os
 import sys
+import h5py
+import pickle
 import shutil
 import numpy as np
 import subprocess
 from fluent_class.fluent_simulation import fluentSimulation
-from pathlib import Path
 import pyvista as pv
-from lxml import etree as et
 
 from ofClass.fluned_tool_launchers import launch_volume_func_object
 from ofClass.fluned_tool_launchers import launch_grad_func_object
 from .util import mod
 
+
 from ofClass.ofClass import SimulationOF
+from ofClass.fluned_vtk_utils import write_cartesian_vtk
 
 
 class flunedCase:
@@ -70,108 +72,90 @@ class flunedCase:
 
         if arg_dict["simulation_type"] == "openmc-multi":
             import openmc.data
-            import openmc.deplete
 
             self.isotope = arg_dict["isotope"]
+            isotope_string = self.isotope[0].upper() + self.isotope[1:].lower()
 
             self.decay_constant = openmc.data.decay_constant(self.isotope)
 
             # mapping of the reaction rates to the vtk file
 
-            reaction_rate_file_path = os.path.dirname(arg_dict["activation_file"])
+            reaction_rate_file_path = arg_dict["activation_file"]
+            reaction_rate_file_dir = os.path.dirname(arg_dict["activation_file"])
+
             activation_file_name = f"reaction_rate_{self.isotope.upper()}.vtk"
             activation_file_path = os.path.join(
-                reaction_rate_file_path, activation_file_name
+                reaction_rate_file_dir, activation_file_name
             )
             activation_dataset = "reaction_rate_m3"
 
             self.activation_dataset = activation_dataset
 
-            micro_rr_arr = []
+            with h5py.File(reaction_rate_file_path, "r") as f:
+                neutron_fluxes = pickle.loads(f["fluxes"][...].tobytes())
+                openmc_strenght = pickle.loads(f["openmc_strength"][...].tobytes())
+                isotope_densities = pickle.loads(f["isotope_density"][...].tobytes())
+                mesh_widths_cm = pickle.loads(f["mesh_width"][...].tobytes())
+                mesh_dimensions = pickle.loads(f["mesh_dimension"][...].tobytes())
+                mesh_lower_left_cm = pickle.loads(f["mesh_lower_left"][...].tobytes())
+                micro_xs_data = f["data"][:]
 
-            parent_atoms_arr = []
+            # print(openmc_strenght)
+            # print(type(neutron_fluxes))
+            # print(isotope_densities)
 
-            macro_rr_arr = []
+            print(mesh_widths_cm)
 
-            depletion_results = openmc.deplete.Results(arg_dict["activation_file"])[0]
+            # adapt to meters and pyvista format
+            mesh_lower_left_m = [coord * 0.01 for coord in mesh_lower_left_cm]
+            mesh_widths_m = [width * 0.01 for width in mesh_widths_cm]
+            mesh_dimensions_pv = [dim + 1 for dim in mesh_dimensions]
+            voxel_vol_m3 = np.prod(mesh_widths_m)
 
-            depletion_result_materials = depletion_results.index_mat
-
-            #
-            # print(f"debue depletion results volumes {len(depletion_result_volumes)}")
-
-            rates = np.array(depletion_results.rates)
-            print(f"debug rates shape {rates.shape}")
+            macro_xs_channels = []
 
             for channel in arg_dict["openmc_depletion_channels"]:
                 idxs = channel["channel_index"]
 
                 parent = channel["parent_nuclide"]
-                parent_atoms_index = depletion_results.index_nuc[parent]
 
-                parent_atoms = depletion_results.data[0, :, parent_atoms_index]
-
-                micro_rr = rates[0, :, idxs[0], idxs[1]]
-
-                macro_rr = micro_rr * parent_atoms
-
-                parent_atoms_arr.append(parent_atoms)
-                micro_rr_arr.append(micro_rr)
-                macro_rr_arr.append(macro_rr)
-
-            total_rr_micro = np.sum(
-                micro_rr_arr, axis=0
-            )  # no point in summing and storing, just for debugging
-            total_rr_macro = np.sum(macro_rr_arr, axis=0)
-            total_atoms = np.sum(
-                parent_atoms_arr, axis=0
-            )  # no point in summing and storing, just for debugging
-
-            integrated_rr = total_rr_macro.sum()
-
-            print(f"debug total integrated rr for {self.isotope}: {integrated_rr:.2e}")
-
-            vtk_data = pv.read(arg_dict["openmc_material_map_file"])
-
-            vtk_data = vtk_data.compute_cell_sizes()
-
-            material_map = vtk_data.cell_data["material"]
-
-            vtk_volume = vtk_data.cell_data["Volume"]
-
-            # array_test_1 = [val for val in depletion_result_materials.keys()]
-            # array_test_2 = [val for val in depletion_result_materials.values()]
-
-            # print("min max depletion file 1", min(array_test_1), max(array_test_1))
-            # print("type depletion file 1", type(array_test_1[0]))
-            # print("min max depletion file 2", min(array_test_2), max(array_test_2))
-            # print("type depletion file 2", type(array_test_2[0]))
-
-            # print(material_map)
-
-            micro_rr_vtk = np.zeros_like(material_map, dtype=float)
-            macro_rr_vtk = np.zeros_like(material_map, dtype=float)
-            rr_vtk = np.zeros_like(material_map, dtype=float)
-            parent_atoms_vtk = np.zeros_like(material_map, dtype=float)
-
-            print(f"debug: material info {depletion_result_materials}")
-
-            for mat_idx, depl_idx in depletion_result_materials.items():
-                cell_idx = np.where(material_map == int(mat_idx))[0][0]
-
-                micro_rr_vtk[int(cell_idx)] = total_rr_micro[depl_idx]
-                macro_rr_vtk[int(cell_idx)] = total_rr_macro[depl_idx]
-                rr_vtk[int(cell_idx)] = (
-                    total_rr_macro[depl_idx] / vtk_volume[int(cell_idx)]
+                macro_xs_channel = (
+                    micro_xs_data[:, idxs[0], idxs[1]] * isotope_densities[parent]
                 )
-                parent_atoms_vtk[int(cell_idx)] = total_atoms[depl_idx]
 
-            vtk_data.cell_data["microscopic_cross_sections"] = micro_rr_vtk
-            vtk_data.cell_data["macroscopic_cross_sections"] = macro_rr_vtk
-            vtk_data.cell_data["atom_number"] = parent_atoms_vtk
-            vtk_data.cell_data[activation_dataset] = rr_vtk
+                print("parent :", parent)
+                print("parent reaction :", channel["reaction"])
+                print("sum ", sum(micro_xs_data[:, idxs[0], idxs[1]]))
 
-            vtk_data.save(activation_file_path)
+                macro_xs_channels.append(macro_xs_channel)
+
+            total_rr_m3 = (
+                (np.multiply(np.sum(macro_xs_channel, axis=0), neutron_fluxes))
+                * openmc_strenght
+                / voxel_vol_m3
+            )
+
+            # print("debug - total rr :", sum(total_rr_m3))
+
+            write_cartesian_vtk(
+                activation_file_name,
+                mesh_dimensions_pv,
+                mesh_widths_m,
+                mesh_lower_left_m,
+                total_rr_m3,
+                activation_dataset,
+            )
+
+            write_cartesian_vtk(
+                "test2.vtk",
+                mesh_dimensions_pv,
+                mesh_widths_m,
+                mesh_lower_left_m,
+                np.array(neutron_fluxes) * 1e10,
+                "n_flux",
+            )
+
+            sys.exit()
 
             self.activation_file = activation_file_path
 
