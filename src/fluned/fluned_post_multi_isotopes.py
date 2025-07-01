@@ -29,7 +29,7 @@ def main():
 
     multi_isotopes_case.generate_openmc_um_source()
 
-    print("done")
+    print("Finished")
 
     return
 

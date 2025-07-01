@@ -85,8 +85,6 @@ class flunedCaseMultiIsotopes:
         the commands required to import the source model
         """
 
-        n_cases = len(self.fluned_cases)
-
         xml_source_basename = "source_mesh_file_"
         h5m_basename = "geometry.h5m"
         h5m_file_path = os.path.join(self.container_path, h5m_basename)

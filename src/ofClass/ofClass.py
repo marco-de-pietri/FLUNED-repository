@@ -492,6 +492,7 @@ class SimulationOF:
 
         self.isotope_amounts = [vol * t for vol, t in zip(self.volumes, self.t_scalar)]
         self.total_isotope_amount = sum(self.isotope_amounts)
+
         self.total_average_isotope_concentration = (
             self.total_isotope_amount / self.volume_m3
         )
@@ -2145,7 +2146,17 @@ boundaryField
         activation_dataset_error,
         activation_normalization,
     ):
-        """this file create the source file in the zero folder.
+        """this file create computes the reaction rates that are later written in the Source
+        file.
+        NB the source rates are intended as volumetric [#.m-3.s-1]
+
+        if the simulation was done with openmc or mcnp with no scale applied
+        it must be taken into account that the reaction rates are computed over
+        a mesh with volumetric values computed in mc [#.cm-3.s-1]
+
+        Fluned does not apply any correction factor for this, either apply a scaling factor in
+        the fluned input or modify the input data accordingly
+
         There are three modes:
         1) no activation, then the file contains only zeros.
         2) constant activation (with input value)
@@ -2189,11 +2200,11 @@ boundaryField
                 factor = activation_const
             activ_sources = [factor * rate for rate in sampledRates]
 
-            print("debug: total sampled reaction rate #/s pre scaling")
-            print(sum([rate * vol for rate, vol in zip(sampledRates, self.volumes)]))
+            # print("debug: total sampled reaction rate #/s pre scaling")
+            # print(sum([rate * vol for rate, vol in zip(sampledRates, self.volumes)]))
 
-            print("debug: total sampled reaction rate #/s after scaling")
-            print(sum([rate * vol for rate, vol in zip(activ_sources, self.volumes)]))
+            # print("debug: total sampled reaction rate #/s after scaling")
+            # print(sum([rate * vol for rate, vol in zip(activ_sources, self.volumes)]))
 
             # 3.apply a normalization factor if provided
             if activation_normalization != 0:
@@ -2426,7 +2437,11 @@ boundaryField
 
             # openmc provides the data in electronVolt
             self.e_lines = self.decay_photon_energy.x / 1e6
-            self.p_lines = self.decay_photon_energy.p
+
+            #  openmc provides the probability in Bq
+            self.p_lines = self.decay_photon_energy.p / openmc.data.decay_constant(
+                isotope_string_temp
+            )
             self.particle_type = "photon"
             self.e_bins, self.p_bins = bins_from_lines(self.e_lines, self.p_lines)
             self.tot_p_emission = sum(self.p_lines)
@@ -2438,9 +2453,9 @@ boundaryField
         variable and the others"""
 
         # common patterns
-        dtPat = re.compile("DT\s*DT.*")
+        dtPat = re.compile(r"DT\s*DT.*")
         isotope_pat = re.compile("isotope.*")
-        lambdaPat = re.compile("lambda\s*lambda.*")
+        lambdaPat = re.compile(r"lambda\s*lambda.*")
         schPat = re.compile(r"Sct\s*Sct.*")
 
         cFile = os.path.join(self.path, "constant", "transportProperties")
@@ -2882,6 +2897,9 @@ boundaryField
         extracts the T array, volumes and computes the emission rates
         (decay particle per second)
         """
+
+        # a scaling factor is applied to generate the mesh for the source with the
+        # units in cm for subsequent simulation
 
         generate_triangularized_scalar_mesh(
             self.vtk_file_path, tri_mesh_vtk_filepath, scaling_factor, cell_data_array

@@ -100,17 +100,10 @@ class flunedCase:
                 mesh_lower_left_cm = pickle.loads(f["mesh_lower_left"][...].tobytes())
                 micro_xs_data = f["data"][:]
 
-            # print(openmc_strenght)
-            # print(type(neutron_fluxes))
-            # print(isotope_densities)
-
-            print(mesh_widths_cm)
-
             # adapt to meters and pyvista format
             mesh_lower_left_m = [coord * 0.01 for coord in mesh_lower_left_cm]
             mesh_widths_m = [width * 0.01 for width in mesh_widths_cm]
             mesh_dimensions_pv = [dim + 1 for dim in mesh_dimensions]
-            voxel_vol_m3 = np.prod(mesh_widths_m)
 
             macro_xs_channels = []
 
@@ -123,17 +116,13 @@ class flunedCase:
                     micro_xs_data[:, idxs[0], idxs[1]] * isotope_densities[parent]
                 )
 
-                print("parent :", parent)
-                print("parent reaction :", channel["reaction"])
-                print("sum ", sum(micro_xs_data[:, idxs[0], idxs[1]]))
-
                 macro_xs_channels.append(macro_xs_channel)
 
             total_rr_m3 = (
-                (np.multiply(np.sum(macro_xs_channel, axis=0), neutron_fluxes))
-                * openmc_strenght
-                / voxel_vol_m3
-            )
+                np.multiply(np.sum(macro_xs_channels, axis=0), neutron_fluxes)
+            ) * openmc_strenght
+            # NB no scaling factor is hardcoded to go from cm-3 to m-3.
+            # either modify the input data or the fluned input file in the appropriate option
 
             # print("debug - total rr :", sum(total_rr_m3))
 
@@ -145,17 +134,6 @@ class flunedCase:
                 total_rr_m3,
                 activation_dataset,
             )
-
-            write_cartesian_vtk(
-                "test2.vtk",
-                mesh_dimensions_pv,
-                mesh_widths_m,
-                mesh_lower_left_m,
-                np.array(neutron_fluxes) * 1e10,
-                "n_flux",
-            )
-
-            sys.exit()
 
             self.activation_file = activation_file_path
 
