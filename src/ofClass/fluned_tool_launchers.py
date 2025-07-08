@@ -1,73 +1,127 @@
-import os
+"""foam_utils.py
+
+Thin wrappers around common OpenFOAM post-processing commands.
+
+"""
+from __future__ import annotations
+
 import subprocess
+import logging
+from datetime import datetime
+from pathlib import Path
+from typing import Sequence, Union
 
+# -----------------------------------------------------------------------------
+# Logging - WARNING by default (silent). Elevate to INFO when verbose=True.
+# -----------------------------------------------------------------------------
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logger.addHandler(_handler)
 
-def launch_volume_func_object(path):
+# -----------------------------------------------------------------------------
+# Internal helper
+# -----------------------------------------------------------------------------
+
+def _run_foam_command(
+    case_dir: Union[str, Path],
+    cmd: Sequence[str],
+    *,
+    log_file: bool = False,
+    verbose: bool = False,
+) -> None:
+    """Run *cmd* inside *case_dir*.
+
+    Parameters
+    ----------
+    case_dir
+        Path to the OpenFOAM case directory.
+    cmd
+        Command and arguments as a sequence of strings.
+    log_file
+        Write combined stdout/stderr to ``<command>_<timestamp>.log`` if *True*.
+    verbose
+        Stream child output to parent stdout/stderr and emit INFO-level log
+        messages if *True*.
     """
-    this function launch the utilities that calculates the volumes
-    - this field is needed only for the activation rate
-    interpolation
+    case_dir = Path(case_dir).expanduser().resolve()
+    if not case_dir.is_dir():
+        raise FileNotFoundError(f"{case_dir} is not a directory")
+
+    # Promote logger level when verbose output is requested.
+    if verbose and logger.level > logging.INFO:
+        logger.setLevel(logging.INFO)
+
+    logger.info("Running `%s` in %s", " ".join(cmd), case_dir)
+
+    if log_file:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = case_dir / f"{cmd[0]}_{ts}.log"
+        with log_path.open("a", encoding="utf-8") as out:
+            subprocess.run(cmd, cwd=case_dir, stdout=out, stderr=subprocess.STDOUT, check=True)
+    else:
+        stdout_target = None if verbose else subprocess.DEVNULL
+        stderr_target = None if verbose else subprocess.DEVNULL
+        subprocess.run(cmd, cwd=case_dir, stdout=stdout_target, stderr=stderr_target, check=True)
+
+# -----------------------------------------------------------------------------
+# 
+# -----------------------------------------------------------------------------
+
+def launch_volume_func_object(
+    path: Union[str, Path], *, log: bool = False, verbose: bool = False
+) -> None:
+    """Compute cell volumes via ``postProcess -func writeCellVolumes``."""
+    _run_foam_command(Path(path), ["postProcess", "-func", "writeCellVolumes"], log_file=log, verbose=verbose)
+
+
+def launch_centroid_func_object(
+    path: Union[str, Path], *, log: bool = False, verbose: bool = False
+) -> None:
+    """Compute cell centres via ``postProcess -func writeCellCentres``."""
+    _run_foam_command(Path(path), ["postProcess", "-func", "writeCellCentres"], log_file=log, verbose=verbose)
+
+
+def launch_grad_func_object(
+    path: Union[str, Path], *, log: bool = False, verbose: bool = False
+) -> None:
+    """Compute ?T via ``postProcess -func grad(T)``."""
+    _run_foam_command(Path(path), ["postProcess", "-func", "grad(T)"], log_file=log, verbose=verbose)
+
+
+def generate_vtk(
+    path: Union[str, Path], *, log: bool = False, verbose: bool = False
+) -> None:
+    """Export latest timestep fields to VTK using ``foamToVTK``.
+
+    OpenFOAM expects the regex after ``-excludePatches`` to be wrapped in
+    parentheses. Passing ``".*"`` without the outer pair results in exit status
+    1, hence the ``(".*")`` token.
     """
+    _run_foam_command(
+        Path(path),
+        [
+            "foamToVTK",
+            "-latestTime",
+            "-noFaceZones",
+            "-noFunctionObjects",
+            "-fields",
+            "(T Ta Td)",
+            "-excludePatches",
+            '(".*")',  # keep parentheses to satisfy foamToVTK
+        ],
+        log_file=log,
+        verbose=verbose,
+    )
 
-    print("calculating volumes  ...")
-    orig_folder = os.getcwd()
-    os.chdir(path)
-    launch_volumes = "postProcess -func writeCellVolumes".split()
-    with open("log", "a", encoding="utf-8") as outfile:
-        subprocess.Popen(launch_volumes, stdout=outfile).wait()
-    os.chdir(orig_folder)
-
-    return None
-
-
-def launch_centroid_func_object(path):
-    """this function launch the utilities that calculates the volume and
-    the centroids - this fields are needed only for the activation rate
-    interpolation"""
-
-    print("calculating centroids ...")
-    origFolder = os.getcwd()
-    os.chdir(path)
-    launchCentroids = "postProcess -func writeCellCentres".split()
-    with open("log", "a") as outfile:
-        _ = subprocess.Popen(launchCentroids, stdout=outfile).wait()
-    os.chdir(origFolder)
-
-    return
-
-
-def launch_grad_func_object(path):
-    """
-    launches the utility to calculate T gradient
-    """
-    print("launching gradient function object")
-    orig_folder = os.getcwd()
-    os.chdir(path)
-    launch_grad = "postProcess -func 'grad(T)'".split()
-    with open("log", "a", encoding="utf-8") as out_file:
-        subprocess.Popen(launch_grad, stdout=out_file).wait()
-    os.chdir(orig_folder)
-
-    return
-
-
-def generate_vtk(path):
-    """
-    launches the utility to create a vtk file
-    """
-
-    print("launching FoamToVTK utility")
-    orig_folder = os.getcwd()
-    os.chdir(path)
-    cmd_str_1 = "foamToVTK -latestTime -noFaceZones -noFunctionObjects "
-    cmd_str_3 = ' -excludePatches (".*")'
-    launch_f2vtk = cmd_str_1.split()
-    launch_f2vtk.append("-fields")
-    launch_f2vtk.append("(T Ta Td)")
-    launch_f2vtk.extend(cmd_str_3.split())
-    # print (launch_f2vtk)
-    with open("log", "a", encoding="utf-8") as outfile:
-        subprocess.Popen(launch_f2vtk, stdout=outfile).wait()
-    os.chdir(orig_folder)
-
-    return
+# -----------------------------------------------------------------------------
+# Re-export list
+# -----------------------------------------------------------------------------
+__all__: list[str] = [
+    "launch_volume_func_object",
+    "launch_centroid_func_object",
+    "launch_grad_func_object",
+    "generate_vtk",
+]

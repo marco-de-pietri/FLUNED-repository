@@ -6,7 +6,6 @@ import shutil
 import numpy as np
 import subprocess
 from fluent_class.fluent_simulation import fluentSimulation
-import pyvista as pv
 
 from ofClass.fluned_tool_launchers import launch_volume_func_object
 from ofClass.fluned_tool_launchers import launch_grad_func_object
