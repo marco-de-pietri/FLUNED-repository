@@ -13,12 +13,19 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
 
+try:
+    from importlib.metadata import version as _get_version
+except ImportError:
+    from pkg_resources import get_distribution as _get_version
+
+release = _get_version("fluned")
+# short X.Y version
+version = ".".join(release.split(".")[:2])
+
 project = "FLUNED"
 copyright = "2025, Marco De Pietri"
 author = "Marco De Pietri"
 
-version = "1.1"
-release = "1.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
