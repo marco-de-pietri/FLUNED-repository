@@ -18,7 +18,7 @@ try:
 except ImportError:
     from pkg_resources import get_distribution as _get_version
 
-release = _get_version("fluned")
+release = _get_version("src/fluned")
 # short X.Y version
 version = ".".join(release.split(".")[:2])
 
