@@ -1,14 +1,14 @@
 name: Build & Deploy Docs
 on:
   push:
-    branches: [ main , multi-isotope]
+    branches: [ main , multi-isotope-1]
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with: python-version: '3.x'
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: python-version: '3.13'
       - name: Install deps
         run: pip install sphinx sphinx-rtd-theme
       - name: Build HTML
