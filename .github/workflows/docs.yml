@@ -1,7 +1,7 @@
 name: Build & Deploy Docs
 on:
   push:
-    branches: [ main ]
+    branches: [ main , multi-isotope]
 jobs:
   deploy:
     runs-on: ubuntu-latest
