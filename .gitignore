@@ -1,4 +1,6 @@
 build/
+docs/source/_build
+
 linux64GccDPInt32Opt/
 .vscode/
 .pytest_cache/
