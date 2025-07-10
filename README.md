@@ -24,7 +24,10 @@ The tool takes as input the irradiation properties and a finished hydro-dynamic 
 
 ## Quickstart - Installation
 
-The recommended way to install FLUNED is to use the installation script present in the _FLUNED-Repository/installation-script/_ folder. The tools needs to run in a linux environment, the software requirements are OpenFOAM v12 and the packages listed either in the toml file or in the installation script.
+The recommended way to install FLUNED is to use the installation script present in the _FLUNED-Repository/installation-script/_ folder.
+
+The FLUNED components needs to run in a linux environment (linux or WSL2 in windows). FLUNED requires the installation of OpenFOAM v12, on which it is based. 
+The installation script uses the uv python package manager for the python supporting scripts.
 
 The simplest way is to download the script and run it with the following commands:
 
@@ -86,7 +89,7 @@ When citing FLUNED, please consider the following publication:
 
 De Pietri, M., Alguacil, J., Rodríguez, E. and Juárez, R., 2023. 
 Development and validation in water of FLUNED, an open-source tool for fluid activation calculations. 
-_Computer Physics Communications_, 291, p.108807. [https://doi.org/10.1016/j.cpc.2023.108807]
+_Computer Physics Communications_, 291, p.108807. <https://doi.org/10.1016/j.cpc.2023.108807>
 
 
 ## LICENSE
