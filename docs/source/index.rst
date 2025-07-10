@@ -16,6 +16,7 @@ FLUNED documentation
   installation
   theory
   usersguide
+  validation
   testing
   publications
 

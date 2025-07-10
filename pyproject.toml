@@ -5,14 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "FLUNED-repository"
 version = "1.1"
-description = "tool to simulate irradiated water in fusion installations"
+description = "Tool to simulate irradiated water in fusion installations"
 authors = [
   { name = "Marco De Pietri", email = "mdepietri@ind.uned.es" }
 ]
-# Python requirement
-# requires-python = ">=3.11, <3.12"
+requires-python = ">=3.11,<3.12"
 
-# Project dependencies (install_requires)
 dependencies = [
   "h5py",
   "numpy>=1.21,<2",
@@ -24,6 +22,13 @@ dependencies = [
   "tqdm",
 ]
 
+[project.optional-dependencies]
+docs = [
+  "sphinx>=7.3",
+  "sphinx-copybutton",
+  "furo",
+  "myst-parser",
+]
 
 [project.scripts]
 fluned-post = "fluned.fluned_post:main"
@@ -31,7 +36,7 @@ fluned-post-multi-isotopes = "fluned.fluned_post_multi_isotopes:main"
 fluned = "fluned.fluned:main"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 include-package-data = true
 
 [tool.setuptools.packages.find]
@@ -39,4 +44,3 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "isotopes" = ["isotopes.json"]
-

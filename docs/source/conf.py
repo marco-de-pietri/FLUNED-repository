@@ -20,18 +20,6 @@ pkg = importlib.import_module(pkg_name)
 
 release = version = pkg.__version__          # e.g., "1.4.3"
 
-# sys.path.insert(
-#     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-# )
-#
-# try:
-#     from importlib.metadata import version as _get_version
-# except ImportError:
-#     from pkg_resources import get_distribution as _get_version
-#
-# release = _get_version("fluned")
-# # short X.Y version
-# version = ".".join(release.split(".")[:2])
 
 project = "FLUNED"
 copyright = "2025, Marco De Pietri"
