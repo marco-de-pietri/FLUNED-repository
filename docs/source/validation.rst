@@ -22,13 +22,14 @@ For the validation benchmark, the circuit scheme and the graphs summarizing the 
    FNG-2019 Water Activation experimental Circuit.
 
 
-
 .. figure:: _static/results.png
    :alt: FLUNED simulation results against the FNG-2019 Water Activation experimental measurements.
    :width: 100%
    :align: center
 
    FLUNED simulation results against the FNG-2019 Water Activation experimental measurements.
+
+
 
 
 
