@@ -5,9 +5,10 @@ Installation
 
 The recommeded installation method is running the  installation script present in the ``FLUNED-Repository/installation-script/`` folder.
 
-This scripts installs the required dependencies, compiles the FLUNED solver and install the python modules which expose the pre- and post-processor scripts.
+This script installs the required dependencies, compiles the FLUNED solver and install the python modules which expose the pre- and post-processor scripts.
+Users can also check the script and, if required, install the components with a different workflow or tooling.
 
-The tools needs to run in a linux environment (linux of WSL2 in windows). FLUNED requires the installation of OpenFOAM v12, on which it is based. 
+The FLUNED components needs to run in a linux environment (linux or WSL2 in windows). FLUNED requires the installation of OpenFOAM v12, on which it is based. 
 The installation script uses the uv python package manager for the python supporting scripts.
 
 The simplest way is to download the script and run it with the following commands:
@@ -36,5 +37,4 @@ The simplest way is to download the script and run it with the following command
 
       source ~/.bashrc
 
-Users can also check the script and, if required, install it with a different workflow or tooling.
 

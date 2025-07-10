@@ -1,38 +1,35 @@
-
 =======
 Testing
 =======
 
-
-
-A set of tests are present in the ``tests-integration`` folder. These cases are very simple and have no physical accuracy, are just meant to test the integrated working of the scripts functionalities.
-To run these execute the following commands from a bash shell inside the tests folder called ``FLUNED-Repository/tests-integration``.
+A set of tests are present in the ``tests-integration`` folder. 
+These cases are very simple and have no physical accuracy; they are just meant to test the integrated working of the scripts' functionalities. 
+To run them, execute the following commands from a Bash shell inside the ``FLUNED-Repository/tests-integration`` folder.
 
 1. Run the test suite.
 
-.. code-block:: bash
-   :linenos:
+   .. code-block:: bash
+      :linenos:
 
-    ./run_tests.sh
+      ./run_tests.sh
 
-2. Run the post processing script for the tests simulations:
+2. Run the post-processing script for the test simulations:
 
-.. code-block:: bash
-   :linenos:
+   .. code-block:: bash
+      :linenos:
 
-    ./run_post.sh
+      ./run_post.sh
 
-3. Run a script that executes the comparison between the test results and the expected results. This comparison will be written in the ``test_results`` file
-   
-.. code-block:: bash
-   :linenos:
+3. Compare the test results with the expected results (output written to ``test_results``):
 
-    ./eval_results.sh
+   .. code-block:: bash
+      :linenos:
 
-4. Clean the created files
+      ./eval_results.sh
 
-.. code-block:: bash
-   :linenos:
+4. Clean the generated files.
 
-    ./clean_tests.sh
+   .. code-block:: bash
+      :linenos:
 
+      ./clean_tests.sh
