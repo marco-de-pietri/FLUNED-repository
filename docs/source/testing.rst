@@ -13,26 +13,26 @@ To run these execute the following commands from a bash shell inside the tests f
 .. code-block:: bash
    :linenos:
 
-  ./run_tests.sh
+    ./run_tests.sh
 
 2. Run the post processing script for the tests simulations:
 
 .. code-block:: bash
    :linenos:
 
-  ./run_post.sh
+    ./run_post.sh
 
 3. Run a script that executes the comparison between the test results and the expected results. This comparison will be written in the ``test_results`` file
    
 .. code-block:: bash
    :linenos:
 
-  ./eval_results.sh
+    ./eval_results.sh
 
 4. Clean the created files
 
 .. code-block:: bash
    :linenos:
 
-  ./clean_tests.sh
+    ./clean_tests.sh
 
