@@ -13,6 +13,8 @@ FLUNED is a mesh-based tool for the simulation of the transport within water of 
 The tool takes as input the irradiation properties and a finished hydro-dynamic simulation performed with the code ANSYS FLUENT or OpenFOAM and creates a passive scalar simulation of the radio-isotope concentration.
 
 
+| <img src="docs/source/_static/mockup.png" alt="Run demo" width="100%"/> | <img src="docs/source/_static/mockup.png" alt="Output window" width="100%"/> |
+|:--:|:--:|
 
 ## Quickstart - Installation
 
@@ -77,6 +79,14 @@ fluned-post
 ```
 ```
 ```
+
+## Citing
+
+When citing FLUNED, please consider the following publication:
+
+De Pietri, M., Alguacil, J., Rodríguez, E. and Juárez, R., 2023. 
+Development and validation in water of FLUNED, an open-source tool for fluid activation calculations. 
+_Computer Physics Communications_, 291, p.108807. [https://doi.org/10.1016/j.cpc.2023.108807]
 
 
 ## LICENSE
