@@ -41,7 +41,11 @@ author = "Marco De Pietri"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = [
+    "sphinx_copybutton",   # adds a clipboard icon to every code block
+]
+copybutton_prompt_text = r">>> |\.\.\. "  # strip interactive prompts if you like
+copybutton_prompt_is_regexp = True
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

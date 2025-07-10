@@ -2,13 +2,17 @@
 
 This repository includes FLUNED, a CFD-based tool for the simulation of activated water in fusion installations.
 
-More detail on the usage, installation and testing is provided below.
+More detail on the usage, installation and testing is provided in the documentation pages:
+
+(FLUNED Documentation)[https://marco-de-pietri.github.io/FLUNED-repository/index.html]]
 
 For additional information contact: mdptr@mit.edu
 
-## FLUNED-Repository Installation
+## Overview
 
-The recommeded way is to use the installation script present in the _FLUNED-Repository/installation-script/_ folder.
+## Quickstart
+
+The recommended way is to use the installation script present in the _FLUNED-Repository/installation-script/_ folder.
 
 The tools needs to run in a linux environment, the software requirements are OpenFOAM v12 and the packages listed either in the toml file or in the installation script.
 
@@ -29,7 +33,7 @@ chmod +x fluned-repo-install.sh
 ./fluned-repo-install.sh
 ```
 
-4. Restart shell or source the .bashrc file
+4. Restart shell or source the rc configuration file 
 ```
 source ~/.bashrc
 ```
@@ -85,33 +89,8 @@ FLUNED-solver
 ```
 fluned-post
 ```
-
-## FLUNED Tests
-
-A set of tests are present in the _tests-integration_ folder. These cases are very simple and have no physical accuracy, are just meant to test the integrated working of the scripts functionalities.
-To run these execute the following commands from a bash shell inside the tests folder called _FLUNED-Repository/tests-integration_
-
-1. Run the test suite.
-
-```
-./run_tests.sh
 ```
 
-2. Run the post processing script for the tests simulations:
-
-```
-./run_post.sh
-```
-
-3. Run a script that executes the comparison between the test results and the expected results. This comparison will be written in the _test_results_ file
-```
-./eval_results.sh
-```
-
-4. Clean the created files
-```
-./clean_tests.sh
-```
 
 ## LICENSE
 All the code present in the FLUNED-Repository is open-source software licensed under the [GNU GPLv3](./LICENSE) license.
