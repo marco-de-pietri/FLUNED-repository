@@ -26,6 +26,7 @@ dependencies = [
 docs = [
   "sphinx>=7.3",
   "sphinx-copybutton",
+  "sphinx-rtd-theme",
   "furo",
   "myst-parser",
 ]
