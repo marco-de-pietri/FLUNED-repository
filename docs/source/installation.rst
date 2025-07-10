@@ -1,4 +1,3 @@
-
 ============
 Installation
 ============
@@ -8,7 +7,8 @@ The recommeded installation method is running the  installation script present i
 
 This scripts installs the required dependencies, compiles the FLUNED solver and install the python modules which expose the pre- and post-processor scripts.
 
-The tools needs to run in a linux environment, the software requirements are OpenFOAM v12 and the packages listed either in the toml file or in the installation script.
+The tools needs to run in a linux environment (linux of WSL2 in windows). FLUNED requires the installation of OpenFOAM v12, on which it is based. 
+The installation script uses the uv python package manager for the python supporting scripts.
 
 The simplest way is to download the script and run it with the following commands:
 

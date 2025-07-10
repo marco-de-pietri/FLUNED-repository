@@ -3,10 +3,15 @@ Publications
 ============
 
 
+--------------------------
+Description and Validation
+--------------------------
 
-The physics implemented is rather simple and has some limitations however it has been positively validated for water studies with the experimental neutron and photon data generated in the FNG water activaton experiment run in 2019 (_angeloneMeasurementDelayedNeutron2020_ [1], _nobsComputationalEvaluationN162020_ [2])
+* De Pietri, M., Alguacil, J., Rodríguez, E. and Juárez, R., 2023. Development and validation in water of FLUNED, an open-source tool for fluid activation calculations. **Computer Physics Communications**, 291, p.108807. `https://doi.org/10.1016/j.cpc.2023.108807`__.
 
+--------
+Coupling
+--------
 
-[1]doi: [10.1016/j.fusengdes.2020.111998](https:\\doi.org\10.1016/j.fusengdes.2020.111998)\
-[2]doi: [10.1016/j.fusengdes.2020.111743](https:\\doi.org\10.1016/j.fusengdes.2020.111743)\
-[3]doi: [10.1016/j.cpc.2023.108807](https:\\doi.org\10.1016/j.cpc.2023.108807)
+* De Pietri, M., Fiorina, C., Le Tonqueze, Y. and Juarez, R., 2024. Computational study of the Nitrogen-16 source term in the ITER vacuum vessel cooling circuit through the coupling of system-level analysis code and CFD. **Nuclear Engineering and Technology**, 56(8), pp.2990-2998. `https://doi.org/10.1016/j.net.2024.03.001`__.
+
