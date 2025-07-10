@@ -9,27 +9,23 @@ To run them, execute the following commands from a Bash shell inside the ``FLUNE
 1. Run the test suite.
 
    .. code-block:: bash
-      :linenos:
 
       ./run_tests.sh
 
 2. Run the post-processing script for the test simulations:
 
    .. code-block:: bash
-      :linenos:
 
-      ./run_post.sh
+        ./run_post.sh
 
 3. Compare the test results with the expected results (output written to ``test_results``):
 
    .. code-block:: bash
-      :linenos:
 
       ./eval_results.sh
 
 4. Clean the generated files.
 
    .. code-block:: bash
-      :linenos:
 
       ./clean_tests.sh
