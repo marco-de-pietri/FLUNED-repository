@@ -15,9 +15,9 @@ The tool takes as input the irradiation properties and a finished hydro-dynamic 
 
 
 <p align="center">
-  <img src="docs/source/_static/emission-rate-nwet.png" alt="Run demo"
+  <img src="docs/source/_static/emission-rate-nwet.png" alt="nwet neutron source emission rate"
        width="40%" style="display:inline-block;"/>
-  <img src="docs/source/_static/output.gif" alt="Output window"
+  <img src="docs/source/_static/output.gif" alt="vacuum vessel study"
        width="59%" style="display:inline-block;"/>
 </p>
 
