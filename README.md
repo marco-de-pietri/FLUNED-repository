@@ -2,11 +2,9 @@
 
 This repository includes FLUNED, a CFD-based tool for the simulation of activated water in fusion installations.
 
-More detail on the usage, installation and testing is provided in the documentation pages:
+More detail on the usage, installation and testing is provided in the documentation pages: [FLUNED Documentation](https://marco-de-pietri.github.io/FLUNED-repository/index.html)
 
-(FLUNED Documentation)[https://marco-de-pietri.github.io/FLUNED-repository/index.html]]
-
-For additional information contact: mdptr@mit.edu
+For additional information or contact: mdptr@mit.edu
 
 ## FLUNED Overview
 
@@ -16,7 +14,7 @@ The tool takes as input the irradiation properties and a finished hydro-dynamic 
 
 
 
-## Quickstart
+## Quickstart - Installation
 
 The recommended way is to use the installation script present in the _FLUNED-Repository/installation-script/_ folder.
 
@@ -46,19 +44,19 @@ source ~/.bashrc
 
 
 
-## FLUNED Usage
+## Quickstart - usage
 
 The pre/post-processor scripts and the solver are designed to simplify the user simulation process. From the command line in the folder where the Ansys - FLUENT or OpenFOAM files are located the following workflow is recommended.
 
- 1.	Generate the FLUNED input:
+ 1.	 Generate a FLUNED input template:
 
  ```
  fluned -t
  ```
 
- 2.	Modify the input_template file with the appropriate parameters. The file will contain the default values together with the available options.
+ 2.	 Modify the input_template file with the appropriate parameters. The file will contain the default values together with the available options.
 
- 3.	Launch the FLUNED pre-processor:
+ 3.	 Launch the FLUNED pre-processor:
 
  ```
  fluned -i input-file
@@ -72,10 +70,11 @@ This will create a folder named as the FLUNED case reported in the input file. T
 FLUNED-solver
 ```
 
-5.	Once the simulation is finished, the post-processor can be launched in the simulation folder by running:
+5.	Once the simulation is finished, the post-processor can be launched in the simulation folder by simply running:
 
 ```
 fluned-post
+```
 ```
 ```
 
