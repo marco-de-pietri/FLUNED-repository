@@ -13,7 +13,7 @@ FLUNED is a mesh-based tool for the simulation of the transport within water of 
 The tool takes as input the irradiation properties and a finished hydro-dynamic simulation performed with the code ANSYS FLUENT or OpenFOAM and creates a passive scalar simulation of the radio-isotope concentration.
 
 
-| <img src="docs/source/_static/mockup.png" alt="Run demo" width="100%"/> | <img src="docs/source/_static/mockup.png" alt="Output window" width="100%"/> |
+| <img src="docs/source/_static/emission-rate-nwet.png" alt="Run demo" width="100%"/> | <img src="docs/source/_static/smaller.gif" alt="Output window" width="100%"/> |
 |:--:|:--:|
 
 ## Quickstart - Installation
