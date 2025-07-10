@@ -3,4 +3,112 @@ Theory
 ======
 
 
-nobel level complexity
+Overview
+--------
+
+In this section the theoretical model is summarized, a detailed description is presented in the initial FLUNED paper (`De Pietri et al., 2023 <https://doi.org/10.1016/j.cpc.2023.108807>`_).
+
+The concentration of a radioactive species :math:`N_\alpha` is treated as a
+passive scalar that does not alter the underlying flow or transport
+processes.  
+Its space-time evolution is governed by six key
+equations, summarised below.
+
+Governing Conservation Equation
+-------------------------------
+
+.. math::
+   :label: eq1
+
+   \frac{\partial N_\alpha}{\partial t}
+   + \nabla \!\cdot\! \bigl(\mathbf{U}\,N_\alpha\bigr)
+   \;=\;
+   \nabla \!\cdot\!\bigl(D_\alpha\,\nabla N_\alpha\bigr)
+   + S_\alpha(N,\phi)
+
+* :math:`\mathbf{U}` - coolant velocity vector  
+* :math:`D_\alpha` - molecular diffusivity of species :math:`\alpha`  
+* :math:`S_\alpha` - volumetric source term (neutron interactions + decay)
+
+Reynolds Decomposition
+----------------------
+
+For turbulent flows the scalar is split into mean and fluctuating parts,
+
+.. math::
+   :label: eq2
+
+   N_\alpha(\mathbf{x},t) \;=\; \langle N_\alpha \rangle
+   \;+\; N_\alpha'
+
+Averaging (1) with (2) gives
+
+.. math::
+   :label: eq3
+
+   \frac{\partial\langle N_\alpha\rangle}{\partial t}
+   + \nabla\!\cdot\!\bigl(\langle\mathbf{U}\rangle\,\langle N_\alpha\rangle\bigr)
+   + \nabla\!\cdot\!\langle \mathbf{u}' N_\alpha' \rangle
+   \;=\;
+   \nabla\!\cdot\!\bigl(D_\alpha\,\nabla\langle N_\alpha\rangle\bigr)
+   + \langle S_\alpha(N,\phi)\rangle
+
+Turbulent Closure - Gradient Diffusion Hypothesis
+-------------------------------------------------
+
+.. math::
+   :label: eq4
+
+   \langle \mathbf{u}' N_\alpha' \rangle
+   \;=\;
+   -\,D_t\,\nabla\langle N_\alpha\rangle
+   \;=\;
+   -\,\frac{\nu_t}{\mathrm{Sc}_t}\;\nabla\langle N_\alpha\rangle
+
+* :math:`D_t` - turbulent diffusivity  
+* :math:`\nu_t` - turbulent viscosity  
+* :math:`\mathrm{Sc}_t \approx 0.7` - turbulent Schmidt number  
+* Valid only under isotropic-turbulence assumptions.
+
+General Source Term
+-------------------
+
+.. math::
+   :label: eq5
+
+   \sum_{i\neq\alpha}
+        (\langle\phi\sigma\rangle_{i\rightarrow\alpha} + \lambda_{i\rightarrow\alpha})\,N_i(t)
+   \;-\;
+   \sum_{i\neq\alpha}
+        (\langle\phi\sigma\rangle_{\alpha\rightarrow i} + \lambda_{\alpha\rightarrow i})\,N_\alpha(t)
+
+* First (positive) sum - production of :math:`\alpha` from parents :math:`i`.  
+* Second (negative) sum - loss of :math:`\alpha` via decay or transmutation.  
+* :math:`\lambda_{x\rightarrow y}` - instantaneous decay constant.  
+* :math:`\langle\phi\sigma\rangle` - neutron-flux-weighted reaction rate.
+
+Simplified Source Term (Single-Step Transmutation + Decay)
+----------------------------------------------------------
+
+Under the study's assumptions (constant parent isotopes, single-step
+generation + decay):
+
+.. math::
+   :label: eq6
+
+   \langle S_\alpha(N,\phi)\rangle
+   \;=\;
+   \mathrm{RR}_\alpha(\phi)\;-\;\lambda_\alpha N_\alpha
+
+* :math:`\mathrm{RR}_\alpha` - neutron-induced reaction rate producing
+  isotope :math:`\alpha`.  
+* :math:`\lambda_\alpha` - decay constant of :math:`\alpha`.
+
+Laminar-Flow Limit
+------------------
+
+For laminar regimes, (3) reduces to (1) with  
+
+* :math:`D_t = 0 \quad (\nu_t = 0)`  
+* all variables in their instantaneous form (no ensemble averaging).
+
