@@ -18,7 +18,7 @@ The tool takes as input the irradiation properties and a finished hydro-dynamic 
   <img src="docs/source/_static/emission-rate-nwet.png" alt="Run demo"
        width="40%" style="display:inline-block;"/>
   <img src="docs/source/_static/smaller.gif" alt="Output window"
-       width="60%" style="display:inline-block;"/>
+       width="59%" style="display:inline-block;"/>
 </p>
 
 
