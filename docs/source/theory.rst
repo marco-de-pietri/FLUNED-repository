@@ -33,7 +33,7 @@ Governing Conservation Equation
 Reynolds Decomposition
 ----------------------
 
-By applying the Reynolds decomposition for turbulent:
+By applying the Reynolds decomposition for turbulent flows:
 
 .. math::
    :label: eq2

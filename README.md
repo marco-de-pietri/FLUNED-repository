@@ -18,9 +18,7 @@ The tool takes as input the irradiation properties and a finished hydro-dynamic 
 
 ## Quickstart - Installation
 
-The recommended way is to use the installation script present in the _FLUNED-Repository/installation-script/_ folder.
-
-The tools needs to run in a linux environment, the software requirements are OpenFOAM v12 and the packages listed either in the toml file or in the installation script.
+The recommended way to install FLUNED is to use the installation script present in the _FLUNED-Repository/installation-script/_ folder. The tools needs to run in a linux environment, the software requirements are OpenFOAM v12 and the packages listed either in the toml file or in the installation script.
 
 The simplest way is to download the script and run it with the following commands:
 
@@ -43,8 +41,6 @@ chmod +x fluned-repo-install.sh
 ```
 source ~/.bashrc
 ```
-
-
 
 ## Quickstart - usage
 
@@ -76,7 +72,6 @@ FLUNED-solver
 
 ```
 fluned-post
-```
 ```
 ```
 
