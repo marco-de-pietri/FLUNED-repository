@@ -3,15 +3,31 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-====================
-FLUNED documentation
-====================
 
+======
+FLUNED
+======
+
+FLUNED is an open-source, mesh-based tool that reconstructs the time-dependent distribution of activation products in water-cooling 
+circuits exposed to fusion-neutron irradiation.  
+Starting from completed CFD run (OpenFOAM® or ANSYS® Fluent) and the neutron-induced activation data, 
+it solves an advection–diffusion–decay problem and outputs concentration fields ready for dose-rate, shielding, or licensing analyses.
+
+Key features
+------------
+
+* **CFD-agnostic input** – import meshes and flow fields directly from OpenFOAM/Fluent results; no re-meshing or solver modification required.  
+* **Fast parallel solver** – C++ core built on OpenFOAM classes; scales to HPC clusters via native MPI decomposition.  
+* **One-command workflow** – `fluned -t` (template), `fluned -i` (pre-process), `FLUNED-solver`, and `fluned-post` streamline the full simulation loop.  
+* **Peer-reviewed & validated** – benchmarked against the 2019 FNG water-activation experiment and documented in *Computer Physics Communications* 291 (2023).  
+* **Quick install** – one-step script (`fluned-repo-install.sh`) for Linux/WSL2, including all Python helper tools.
+* **GPL-3.0 License** 
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   :hidden:
 
   installation
   theory

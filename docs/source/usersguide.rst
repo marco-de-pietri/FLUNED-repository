@@ -2,14 +2,14 @@
 User's Guide
 ============
 
-# FLUNED Input File Reference
 
 This page documents all keywords that can appear in a `FLUNED` input, their
 purpose, default behaviour and the range of values they accept.
 
 A generic template can be created by running `fluned -t`
 
-## Keyword‑by‑keyword guide
+Input Keywords guide
+------------------------
 
 Every directive is case‑insensitive and must appear on its own line.  Comment text after a
 `#` is ignored.
@@ -22,8 +22,8 @@ distinguish multiple studies that share the same CFD file set.
 Chooses the time integration strategy for the scalar transport solver.
 
 * `steadyState` – runs a pseudo‑steady calculation until convergence.
-* `transient`   – using the steady-state velocity field of the input CFD simulation, it 
-  calculates the temporal evolution of a the radioisotope concentration field given the 
+* `transient`   – using the steady-state velocity field of the input CFD simulation, 
+  it calculates the temporal evolution of a the radioisotope concentration field given the 
   chosen boundary conditions
 
 `ACTIVATION_FILE` 
@@ -56,7 +56,7 @@ Radio‑isotope concentration imposed at **all** inlet patches \[ m⁻³].
 `MOLECULAR_DIFFUSION` *(optional)*
 Molecular diffusion coefficient *D* for the species in **m² s⁻¹**.
 
-`SCHMIDT_NUMBER` *(optional)*
+`SCHMIDT_NUMBER`
 Dimensionless *Sc = ν⁄D*.  When provided, turbulent diffusivity is taken as
 *νₜ⁄Sc*.  Leave the default `0.7` unless you have specific experimental data.
 
@@ -75,10 +75,10 @@ this is the case root.  For Ansys Fluent supply the folder that holds the
 Identifies the CFD format:
 
 * `OpenFoam`        – native OpenFOAM directory tree.
-* `fluent-h5-multi` – *recommended* HDF5 export of a **multi‑region** Fluent case.
+* `fluent-h5-multi` – HDF5 export of a Fluent case in H5 format containing one or more fluid regions. 
+  If more than one is present, the `FLUENT_FLUID_REGION_NAME` parameter must be spcified.
 
-`FLUENT_FLUID_REGION_NAME` *(required for Fluent cases)*
-Exact name of the fluid cell zone to be extracted (as shown by Fluentʼs
-*Display → Zones* panel).  Ignored for OpenFOAM inputs.
+`FLUENT_FLUID_REGION_NAME` 
+Exact name of the fluid cell zone to be extracted.  Ignored for OpenFOAM inputs.
 
 
