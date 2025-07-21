@@ -6,7 +6,8 @@ from .util import display_top
 
 from .fluned_case_class import flunedCase
 
-__version__ = "0.1.0"
+
+from . import __version__
 
 
 def main():

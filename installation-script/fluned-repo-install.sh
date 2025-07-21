@@ -38,10 +38,15 @@ source /opt/openfoam12/etc/bashrc # Source OpenFOAM environment for this subshel
 # Clone the FLUNED-repository from GitHub using HTTPS
 echo "Cloning FLUNED repository..."
 DIR="FLUNED-repository"
+
 if [ -d "$DIR" ]; then
-  rm -rf "$DIR"
+  echo "Repository already exists in '$DIR', skipping clone."
+else
+  echo "Cloning FLUNED repository into '$DIR'..."
+  git clone -v --branch main --single-branch \
+    "https://github.com/marco-de-pietri/FLUNED-repository.git" "$DIR"
 fi
-git clone -v --branch main --single-branch "https://github.com/marco-de-pietri/FLUNED-repository.git" "$DIR"
+
 
 # Navigate to the cloned repository
 cd "$INSTALL_DIR/FLUNED-repository"

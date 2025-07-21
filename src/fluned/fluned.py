@@ -6,14 +6,13 @@ import copy
 import argparse
 import h5py
 import pickle
-import numpy as np
 from .fluned_case_class import flunedCase
 from .openmc_chain_file_util import (
     map_targets_to_channels,
     filter_channels,
 )
 
-__version__ = "0.1.0"
+from . import __version__
 
 
 def generate_openmc_simulation_parameters(args_dict):
