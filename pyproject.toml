@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "FLUNED-repository"
 dynamic     = ["version"]
-description = "Tool to simulate irradiated water in fusion installations"
+description = "Tool to simulate irradiated coolant in fusion installations"
 authors = [
   { name = "Marco De Pietri", email = "mdepietri@ind.uned.es" }
 ]

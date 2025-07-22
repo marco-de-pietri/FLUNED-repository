@@ -1,5 +1,4 @@
 import os
-import sys
 import h5py
 import pickle
 import shutil
@@ -410,208 +409,124 @@ class flunedCase:
         if self.fluned_simulation.time_treatment == "steadystate":
             self.write_summary_steady(arguments)
         else:
-            raise NotImplementedError("ERROR transient summary not implemented yet")
-            # self.write_summary_transient(arguments)
+            self.write_summary_transient(arguments)
 
         return None
 
     def write_summary_transient(self, arguments):
         """
-        this function is not ready yet after the large 2025 refactoring
+        This function writes the summary file in the RESULTS/ folder
         """
-        # sumFile = os.path.join(self.results_folder, "SUMMARY.csv")
-        #
-        # inletAtoms = 0
-        # inletFlow = 0
-        # outletAtoms = 0
-        # outletFlow = 0
-        #
-        # patches = sorted(self.patches.values(), key=lambda x: x.face_id)
-        #
-        # for face in patches:
-        #     if face["typeFile"] == "inlet":
-        #         inletAtoms += abs(face["TFlowFileLast"])
-        #         inletFlow += abs(face["phiFlowFileLast"])
-        #
-        #     if face["typeFile"] == "outlet":
-        #         outletAtoms += abs(face["TFlowFileLast"])
-        #         outletFlow += abs(face["phiFlowFileLast"])
-        #
-        # totalInletConc = inletAtoms / inletFlow
-        # totalInActivity = totalInletConc * self.decay_constant
-        #
-        # totalOutletConc = outletAtoms / outletFlow
-        # totalOutActivity = totalOutletConc * self.decay_constant
-        #
-        # cellActivity = np.zeros(len(self.t_scalar))
-        #
-        # for i in range(len(self.t_scalar)):
-        #     if self.t_scalar[i] > 0:
-        #         cellActivity[i] = (
-        #             self.TScalar[i] * self.Volumes[i] * self.decay_constant
-        #         )
-        #     else:
-        #         cellActivity[i] = 0
-        #
-        # totActivity = sum(cellActivity)
-        # avgActivity = totActivity / sum(self.volumes)
-        #
-        # averageVolume = sum(self.volumes) / len(self.volumes)
-        #
-        # negCheck = any(n < 0 for n in self.t_scalar)
-        #
-        # with open(sumFile, "w") as fw:
-        #     fw.write("FLUNED SIMULATION SUMMARY\n")
-        #     fw.write("CASE,{},\n".format(self.case))
-        #     fw.write("TRANSIENT SIMULATION\n")
-        #     fw.write("N ELEMENTS,{},\n".format(len(self.t_scalar)))
-        #     fw.write("ISOTOPE,{},\n".format(self.isotope.upper()))
-        #     fw.write("DECAY CONSTANT,{:e},\n".format(self.decay_constant))
-        #     fw.write("MOL DIFFUSION,{:e},\n".format(self.molecular_dif))
-        #     fw.write("TURB SCHMIDT N,{:f},\n".format(self.schmidt_number))
-        #     fw.write("\n")
-        #     fw.write("\n")
-        #     fw.write("QUALITY\n")
-        #     fw.write("AVG VOL [m3],{:e},\n".format(averageVolume))
-        #
-        #     if negCheck:
-        #         fw.write("WARNING some elements are negative")
-        #
-        #     if arguments.cdgs:
-        #         fw.write("\n")
-        #         fw.write("\n")
-        #         fw.write("SOURCE SAMPLING\n")
-        #         fw.write("SAMPLING RESOLUTION [m],{:f},\n".format(self.precision))
-        #         fw.write(
-        #             "SAMPLED VOXELS [#],{:d},\n".format(
-        #                 self.xInts * self.yInts * self.zInts
-        #             )
-        #         )
-        #         fw.write(
-        #             "VTK EMISSION RATE [#/s],{:e},\n".format(self.originalEmissionRate)
-        #         )
-        #         sampString = "SAMPLED EMISSION RATE (UNSCALED) [#/s],{:e},\n"
-        #         fw.write(sampString.format(self.unscaledEmissionRate))
-        #
-        #     fw.write("\n")
-        #     fw.write("\n")
-        #     fw.write("ACTIVATION\n")
-        #     fw.write("INLET ATOMS FINAL [#/s],{:.5e},\n".format(inletAtoms))
-        #     fw.write("OUTLET ATOMS FINAL [#/s],{:.5e},\n".format(outletAtoms))
-        #     fw.write("TOT IN ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(totalInActivity))
-        #     fw.write(
-        #         "TOT OUT ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(totalOutActivity)
-        #     )
-        #     fw.write("TOT CASE ACTIVITY FINAL [Bq],{:.5e},\n".format(totActivity))
-        #     fw.write("TOT AVG ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(avgActivity))
-        #     if totalInActivity != 0:
-        #         normAvgActivity = avgActivity / totalInActivity
-        #         stri = "INLET-NORMALIZED AVG ACTIVITY FINAL [Bq/m3],{:.5e},\n"
-        #         fw.write(stri.format(normAvgActivity))
-        #
-        #     if inletAtoms != 0:
-        #         reductionRate = outletAtoms / inletAtoms
-        #         fw.write("OUT/IN RATIO FINAL,{:.5e},\n".format(reductionRate))
-        #
-        #     fw.write("\n")
-        #     fw.write("\n")
-        #     fw.write("FACES\n")
-        #
-        #     for face in patches:
-        #         if face.face_type != "wall":
-        #             fw.write(face.face_id)
-        #             fw.write("\n")
-        #             fw.write("TYPE,{},\n".format(face.face_type))
-        #             fw.write("AREA [m2],{:.5e},\n".format(face["areaFile"]))
-        #             fw.write(
-        #                 "FLUID FLOW FINAL [m3/s],{:.5e},\n".format(
-        #                     face["phiFlowFileLast"]
-        #                 )
-        #             )
-        #             fw.write(
-        #                 "ATOM FLOW FINAL [#/s],{:.5e},\n".format(face["TFlowFileLast"])
-        #             )
-        #             fw.write(
-        #                 "ATOM CONC FINAL [#/m3],{:.5e},\n".format(face["avTFileLast"])
-        #             )
-        #             fw.write(
-        #                 "SPECIFIC ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(
-        #                     abs(face["avTFileLast"]) * self.decay_constant
-        #                 )
-        #             )
-        #             if face["typeFile"] == "outlet":
-        #                 fluxFrac = abs(face["phiFlowFileLast"] / outletFlow)
-        #                 fw.write(
-        #                     "AVG RTD RES T [s],{:.5f},\n".format(
-        #                         abs(face["rtdResTime"])
-        #                     )
-        #                 )
-        #                 fw.write(
-        #                     "RTD FACE RED RATE,{:.5f},\n".format(
-        #                         fluxFrac * (face["rtdDecRate"])
-        #                     )
-        #                 )
-        #             fw.write("\n")
-        #
-        # for face in self.facesPost:
-        #     if face["typeFile"] == "wall":
-        #         continue
-        #
-        #     # write the flowing atoms at inlet-outlet
-        #     faceSummary = (
-        #         "face-atom-flow-" + face["faceID"] + "-" + face["typeFile"] + ".csv"
-        #     )
-        #     sumFile1 = os.path.join(self.results_folder, faceSummary)
-        #     with open(sumFile1, "w") as fw:
-        #         for t, c in zip(face["timeFile"], face["TFlowFile"]):
-        #             fw.write("{:.3f},{:.5e},\n".format(t, c))
-        #
-        #     # write the concentration at inlet-outlet
-        #     faceSummary = (
-        #         "face-conc-" + face["faceID"] + "-" + face["typeFile"] + ".csv"
-        #     )
-        #     sumFile1 = os.path.join(self.results_folder, faceSummary)
-        #     with open(sumFile1, "w") as fw:
-        #         for t, c in zip(face["timeFile"], face["avTFile"]):
-        #             fw.write("{:.3f},{:.5e},\n".format(t, c))
-        #
-        #     # write the specific activity at inlet-outlet
-        #     faceSummary = (
-        #         "face-specific-activity-"
-        #         + face["faceID"]
-        #         + "-"
-        #         + face["typeFile"]
-        #         + ".csv"
-        #     )
-        #     sumFile1 = os.path.join(self.results_folder, faceSummary)
-        #     with open(sumFile1, "w") as fw:
-        #         for t, c in zip(face["timeFile"], face["avTFile"]):
-        #             fw.write("{:.3f},{:.5e},\n".format(t, c * self.decay_constant))
-        #
-        #     # write the specific time-conc at inlet-outlet
-        #     faceSummary = (
-        #         "face-fictitious-time-"
-        #         + face["faceID"]
-        #         + "-"
-        #         + face["typeFile"]
-        #         + ".csv"
-        #     )
-        #     sumFile1 = os.path.join(self.results_folder, faceSummary)
-        #     with open(sumFile1, "w") as fw:
-        #         for t, c in zip(face["timeFile"], face["avTrFile"]):
-        #             fw.write("{:.3f},{:.5e},\n".format(t, c))
-        #
-        #     # write the RTD at inlet-outlet
-        #     faceSummary = (
-        #         "face-RTD-raw-" + face["faceID"] + "-" + face["typeFile"] + ".csv"
-        #     )
-        #     sumFile1 = os.path.join(self.results_folder, faceSummary)
-        #     with open(sumFile1, "w") as fw:
-        #         for t, g in zip(face["timeFile"], face["avTrGrad"]):
-        #             fw.write("{:.3f},{:.5e},\n".format(t, g))
-        #
-        # return
-        #
+
+        summary_file = os.path.join(
+            self.fluned_simulation.results_folder, "SUMMARY.csv"
+        )
+
+        results_sim = self.fluned_simulation
+
+        inlet_atoms = abs(results_sim.total_inlet_t_atoms)
+        inlet_activity = abs(results_sim.inlet_td_conc_atoms_m3[-1])
+
+        outlet_activity = results_sim.outlet_t_conc_atoms_m3[-1]
+        outlet_atoms = results_sim.total_outlet_t_atoms
+
+        tot_activity = results_sim.total_isotope_activity
+        avg_activity = results_sim.total_average_isotope_concentration
+
+        averageVolume = sum(results_sim.volumes) / len(results_sim.volumes)
+
+        faces_post = sorted(results_sim.patches.values(), key=lambda x: x.face_id)
+
+        negCheck = any(n < 0 for n in results_sim.t_scalar)
+
+        with open(summary_file, "w") as fw:
+            fw.write("FLUNED SIMULATION SUMMARY\n")
+            fw.write("CASE,{},\n".format(results_sim.case))
+            fw.write("TRANSIENT SIMULATION\n")
+            fw.write("N ELEMENTS,{},\n".format(results_sim.n_internal_cells))
+            fw.write("ISOTOPE,{},\n".format(results_sim.isotope.upper()))
+            fw.write("DECAY CONSTANT,{:e},\n".format(results_sim.decay_constant))
+            fw.write("MOL DIFFUSION,{:e},\n".format(results_sim.molecular_diffusion))
+            fw.write("TURB SCHMIDT N,{:f},\n".format(results_sim.schmidt_number))
+            fw.write("\n")
+            fw.write("\n")
+            fw.write("QUALITY\n")
+            fw.write("AVG VOL [m3],{:e},\n".format(averageVolume))
+            if negCheck:
+                fw.write("WARNING some elements are negative")
+            if arguments.cdgs:
+                fw.write("\n")
+                fw.write("\n")
+                fw.write("source sampling\n")
+                fw.write(
+                    "sampling resolution [m],{:f},\n".format(
+                        self.source_sampling_resolution_cm / 100
+                    )
+                )
+                fw.write(
+                    "sampled voxels [#],{:d},\n".format(
+                        results_sim.x_ints * results_sim.y_ints * results_sim.z_ints
+                    )
+                )
+                fw.write(
+                    "vtk emission rate [#/s],{:e},\n".format(
+                        results_sim.total_isotope_emission_rate
+                    )
+                )
+                sampstring = "sampled emission rate (unscaled) [#/s],{:e},\n"
+                fw.write(sampstring.format(results_sim.raw_sampled_total_emission_rate))
+            fw.write("\n")
+            fw.write("\n")
+            fw.write("ACTIVATION\n")
+            fw.write("INLET ATOMS FINAL [#/s],{:.5e},\n".format(inlet_atoms))
+            fw.write("OUTLET ATOMS FINAL [#/s],{:.5e},\n".format(outlet_atoms))
+            fw.write("TOT IN ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(inlet_activity))
+            fw.write("TOT OUT ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(outlet_activity))
+            fw.write("TOT CASE ACTIVITY FINAL [Bq],{:.5e},\n".format(tot_activity))
+            fw.write("TOT AVG ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(avg_activity))
+            if inlet_activity != 0:
+                norm_avg_activity = abs(avg_activity / inlet_activity)
+                string = "INLET-NORMALIZED AVG ACTIVITY FINAL [Bq/m3],{:.5e},\n"
+                fw.write(string.format(norm_avg_activity))
+
+            if inlet_atoms != 0:
+                reduction_rate = abs(outlet_atoms / inlet_atoms)
+                fw.write("OUT/IN RATIO FINAL,{:.5e},\n".format(reduction_rate))
+
+            fw.write("\n")
+            fw.write("\n")
+
+            fw.write("FACES\n")
+
+            for face in faces_post:
+                if face.face_type != "wall":
+                    fw.write(face.face_id)
+                    fw.write("\n")
+                    fw.write("TYPE,{},\n".format(face.face_type))
+                    fw.write("AREA [m2],{:.5e},\n".format(face.area_m2))
+                    fw.write(
+                        "FLUID FLOW FINAL [m3/s],{:.5e},\n".format(
+                            face.post_process_flow[-1]
+                        )
+                    )
+                    fw.write(
+                        "ATOM FLOW FINAL [#/s],{:.5e},\n".format(
+                            face.post_process_t_flow[-1]
+                        )
+                    )
+                    fw.write(
+                        "ATOM CONC FINAL [#/m3],{:.5e},\n".format(
+                            face.t_conc_atoms_m3[-1]
+                        )
+                    )
+                    fw.write(
+                        "SPECIFIC ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(
+                            abs(face.t_conc_atoms_m3[-1]) * results_sim.decay_constant
+                        )
+                    )
+                    fw.write("\n")
+
+        return
 
     def write_summary_steady(self, arguments):
         """
@@ -700,24 +615,24 @@ class flunedCase:
             if arguments.cdgs:
                 fw.write("\n")
                 fw.write("\n")
-                fw.write("SOURCE SAMPLING\n")
+                fw.write("source sampling\n")
                 fw.write(
-                    "SAMPLING RESOLUTION [m],{:f},\n".format(
+                    "sampling resolution [m],{:f},\n".format(
                         self.source_sampling_resolution_cm / 100
                     )
                 )
                 fw.write(
-                    "SAMPLED VOXELS [#],{:d},\n".format(
+                    "sampled voxels [#],{:d},\n".format(
                         results_sim.x_ints * results_sim.y_ints * results_sim.z_ints
                     )
                 )
                 fw.write(
-                    "VTK EMISSION RATE [#/s],{:e},\n".format(
+                    "vtk emission rate [#/s],{:e},\n".format(
                         results_sim.total_isotope_emission_rate
                     )
                 )
-                sampString = "SAMPLED EMISSION RATE (UNSCALED) [#/s],{:e},\n"
-                fw.write(sampString.format(results_sim.raw_sampled_total_emission_rate))
+                sampstring = "sampled emission rate (unscaled) [#/s],{:e},\n"
+                fw.write(sampstring.format(results_sim.raw_sampled_total_emission_rate))
             fw.write("\n")
             fw.write("\n")
             fw.write("ACTIVATION\n")
