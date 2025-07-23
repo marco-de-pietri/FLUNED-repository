@@ -5,7 +5,7 @@ Input File Guide
 This page documents all keywords that can appear in a `FLUNED` input, their
 purpose, default behaviour and the range of values they accept.
 
-To start, a generic template can be created by running `fluned -t`
+To start, a generic template can be created by running `fluned -t`.
 
 Every directive is case‑insensitive, except for the files and folder paths, and must appear on its own line.  
 Comment text after a `#` is ignored.

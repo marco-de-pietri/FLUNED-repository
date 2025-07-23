@@ -4,7 +4,7 @@ Single Isotope workflow
 For a single-isotope computation, the simulation workflow requires a completed CFD simulation.
 The path to the simulation is provided through the fluned pre-processor input.
 The pre-processor will analyize the CFD simulation and create inside it a FLUNED case simulation folder, according to the various parameters included in the input.
-The various parameters are described in more detail in:: :doc:`keywords`.
+The various parameters are described in more detail in: :doc:`keywords`.
 
 In addition, the test simulations in the  ``FLUNED-Repository/tests-integration`` folder constitute a useful resource to understand and test the wrokflow for single-isotope calculations.
 

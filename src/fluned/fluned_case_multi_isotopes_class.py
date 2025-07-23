@@ -7,6 +7,14 @@ from .fluned_case_class import flunedCase
 from ofClass.fluned_vtk_utils import generate_triangularized_h5m_um_mesh
 
 
+def openmc_fluned_coupling():
+    """
+    This function can be imported in a openmc python script to run openmc simulations
+    """
+
+    return
+
+
 class flunedCaseMultiIsotopes:
     """
     this class manages multiple fluned simulations
