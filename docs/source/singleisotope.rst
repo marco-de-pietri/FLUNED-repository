@@ -12,7 +12,7 @@ From the command line, in the folder where the Ansys‑FLUENT or OpenFOAM files 
 
     Generate a FLUNED input template::
 
-    .. code-block:: console
+    .. code-block:: bash
 
         fluned -t
 
@@ -21,7 +21,7 @@ From the command line, in the folder where the Ansys‑FLUENT or OpenFOAM files 
 
     Launch the FLUNED pre‑processor::
 
-    .. code-block:: console
+    .. code-block:: bash
 
         fluned -i input-file
 
@@ -33,13 +33,13 @@ From the command line, in the folder where the Ansys‑FLUENT or OpenFOAM files 
 
     In the FLUNED case folder, launch the solver::
 
-    .. code-block:: console
+    .. code-block:: bash
 
         FLUNED-solver
 
     Once the simulation is finished, run the post‑processor in the simulation folder::
 
-    .. code-block:: console
+    .. code-block:: bash
 
         fluned-post
 

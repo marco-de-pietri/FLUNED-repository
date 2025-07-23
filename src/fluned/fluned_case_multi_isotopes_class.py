@@ -1,5 +1,8 @@
 import os
 import sys
+import h5py
+import numpy as np
+import pickle
 from lxml import etree as et
 from typing import Union
 from .fluned_case_class import flunedCase
@@ -7,10 +10,62 @@ from .fluned_case_class import flunedCase
 from ofClass.fluned_vtk_utils import generate_triangularized_h5m_um_mesh
 
 
-def openmc_fluned_coupling():
+def openmc_fluned_coupling(
+    filename: str,
+    mat_densities,
+    mesh_width,
+    mesh_dimension,
+    mesh_lower_left,
+    openmc_source_strength,
+    all_micro_xs,
+    flux_in_each_mesh_voxel,
+    *,
+    compression: str | None = "gzip",
+    level: int = 4,
+) -> None:
     """
-    This function can be imported in a openmc python script to run openmc simulations
+    This function can be imported in a openmc python script to export activation data required for coupled openmc/fluned simulations
     """
+
+    micro_xs_data = np.stack([np.squeeze(a.data, axis=-1) for a in all_micro_xs])
+    fluxes = [flux[0] for flux in flux_in_each_mesh_voxel]
+
+    input_dict = {}
+    input_dict["isotope_density"] = mat_densities
+    input_dict["mesh_width"] = mesh_width
+    input_dict["mesh_dimension"] = mesh_dimension
+    input_dict["mesh_lower_left"] = mesh_lower_left
+    input_dict["openmc_strength"] = openmc_source_strength
+    input_dict["fluxes"] = fluxes
+    input_dict["index_nuc"] = all_micro_xs[0]._index_nuc
+    input_dict["index_rx"] = all_micro_xs[0]._index_rx
+
+    with h5py.File(filename, "w") as f:
+        # ── store Python objects ──────────────────────────────────────────────
+        for key, value in input_dict.items():
+            blob = pickle.dumps(value, protocol=pickle.HIGHEST_PROTOCOL)
+            arr = np.frombuffer(blob, dtype=np.uint8)
+            f.create_dataset(
+                key,
+                data=arr,
+                dtype=np.uint8,
+                compression=compression,
+                compression_opts=level,
+            )
+
+        # ── store a large array raw ────────────────────────────────
+        if micro_xs_data is not None:
+            array = micro_xs_data
+            ds_name = "data"
+            chunk_shape = tuple(min(s, 1024) for s in array.shape)  # simple chunking
+            f.create_dataset(
+                ds_name,
+                data=array,
+                dtype=array.dtype,
+                chunks=chunk_shape,
+                compression=compression,
+                compression_opts=level,
+            )
 
     return
 

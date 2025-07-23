@@ -2,14 +2,14 @@
 User's Guide
 ============
 
-..
-..
-.. .. toctree::
-..    :maxdepth: 0
-..    :hidden:
-..    :titlesonly:
-..
-..   singleisotope
-..   openmccoupling
-..   keywords
-..
+
+
+ .. toctree::
+    :maxdepth: 0
+    :hidden:
+    :titlesonly:
+
+   singleisotope
+   openmccoupling
+   keywords
+
