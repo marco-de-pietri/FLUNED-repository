@@ -6,7 +6,8 @@ from .util import display_top
 
 from .fluned_case_class import flunedCase
 
-__version__ = "0.1.0"
+
+from . import __version__
 
 
 def main():
@@ -21,7 +22,7 @@ def main():
         "-s", "--cdgs", action="store_true", help="print cdgs", default=False
     )
     parser.add_argument(
-        "--openmc",
+        "--openmc-sm",
         action="store_true",
         help="generate a openmc regular mesh source format",
         default=False,
@@ -33,13 +34,10 @@ def main():
         default=False,
     )
     parser.add_argument(
-        "--precision", type=float, default=0.01, help="sampling precision in m"
+        "--precision", type=float, default=1, help="sampling precision in cm"
     )
     parser.add_argument(
         "--dataset", type=str, default="T", help="dataset in the vtk file to sample"
-    )
-    parser.add_argument(
-        "--scaling", type=float, default=1, help="scaling factor for the total emission"
     )
     args = parser.parse_args()
 
@@ -47,50 +45,30 @@ def main():
         tracemalloc.start()
 
     simulation_folder = os.getcwd()
-    # simCase = flunedPostCase(simulationFolder)
     simCase = flunedCase(fluned_path=simulation_folder)
-    simCase.parse_constant()
-    simCase.get_isotope()
-    simCase.get_time_treatment()
-    simCase.get_last_time_step()
+    simCase.parse_fluned_simulation()
 
     if args.check:
-        simCase.launch_grad_func_object()
-        simCase.read_velocities()
-        simCase.read_grad_t()
-
-    simCase.read_volumes()
-    simCase.read_t()
-    simCase.readPostProcess_flows()
-    simCase.readPostProcess_Tflows()
-    simCase.readPostProcess_Trflows()
-    simCase.generate_vtk()
-    simCase.create_results_folder()
+        simCase.launch_check_mode()
 
     # write source files
-    if args.cdgs or args.openmc or args.openmc_um:
-        simCase.precision = args.precision
-        simCase.dataset = args.dataset
-        simCase.scaling = args.scaling
-        simCase.get_vtk_path()
-        simCase.get_total_decays()
-        simCase.write_external_stl()
+    if args.cdgs or args.openmc_sm or args.openmc_um:
+        simCase.source_sampling_resolution_cm = args.precision
+        simCase.source_sampling_dataset = args.dataset
 
         if args.cdgs or args.openmc:
-            simCase.calculateSamplingCoordinates()
-            simCase.sampleCoordinatesValues()
-            simCase.write_sampled_source_vtk()
+            simCase.generate_cartesian_radiation_source_model()
 
         if args.cdgs:
-            simCase.writeCDGS()
+            simCase.fluned_simulation.write_cdgs()
 
-        elif args.openmc:
-            simCase.writeOpenMCSource()
+        if args.openmc_sm:
+            simCase.fluned_simulation.write_openmc_sm_source()
 
-        elif args.openmc_um:
-            simCase.write_openmc_um_source()
+        if args.openmc_um:
+            simCase.fluned_simulation.write_openmc_um_source()
 
-    simCase.write_summary(args)
+    simCase.write_results(args)
 
     print("Finished!")
 

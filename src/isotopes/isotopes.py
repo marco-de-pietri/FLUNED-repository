@@ -7,6 +7,7 @@ import numpy as np
 
 EPS = 1e-5
 
+
 @dataclass(frozen=True)
 class Isotope:
     name: str
@@ -16,7 +17,7 @@ class Isotope:
     emitting_particle: str
     data_source: str
     # derived fields
-    branching_ratio: float = field(init=False)
+    tot_p_emission: float = field(init=False)
     p_lines_norm: np.ndarray = field(init=False)
     e_bins: np.ndarray = field(init=False)
     p_bins: np.ndarray = field(init=False)
@@ -24,18 +25,19 @@ class Isotope:
     def __post_init__(self):
         if len(self.e_lines) != len(self.p_lines):
             raise ValueError(f"{self.name}: e_lines and p_lines length mismatch")
-        object.__setattr__(self, "branching_ratio", sum(self.p_lines))
-        if self.branching_ratio == 0:
-            raise ValueError(f"{self.name}: branching_ratio is zero")
-        p_norm = np.asarray(self.p_lines) / self.branching_ratio
-        e_bins, p_bins = _bins_from_lines(self.e_lines, self.p_lines)
+        object.__setattr__(self, "tot_p_emission", sum(self.p_lines))
+        if self.tot_p_emission == 0:
+            raise ValueError(f"{self.name}: sum of emitting lines is zero")
+        p_norm = np.asarray(self.p_lines) / self.tot_p_emission
+        e_bins, p_bins = bins_from_lines(self.e_lines, self.p_lines)
         object.__setattr__(self, "p_lines_norm", p_norm)
         object.__setattr__(self, "e_bins", e_bins)
         object.__setattr__(self, "p_bins", p_bins)
 
-def _bins_from_lines(e_lines: list[float],
-                     p_lines: list[float],
-                     eps: float = EPS) -> tuple[np.ndarray, np.ndarray]:
+
+def bins_from_lines(
+    e_lines: list[float], p_lines: list[float], eps: float = EPS
+) -> tuple[np.ndarray, np.ndarray]:
     e_bins = [0.0]
     for e in e_lines:
         delta = max(abs(e) * eps, 1e-6)
@@ -50,5 +52,3 @@ def load_isotopes(path: Union[str, Path] = "isotopes.json") -> dict[str, Isotope
         p = Path(__file__).parent / p
     raw = json.loads(p.read_text(encoding="utf-8"))
     return {k: Isotope(**v) for k, v in raw.items()}
-
-
