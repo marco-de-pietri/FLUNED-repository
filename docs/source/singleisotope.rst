@@ -12,18 +12,18 @@ From the command line, in the folder where the Ansys‑FLUENT or OpenFOAM files 
 
     Generate a FLUNED input template::
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-        fluned -t
+          fluned -t
 
     Modify the input_template file with the appropriate parameters.
     The file will contain the default values together with the available options.
 
-    Launch the FLUNED pre‑processor::
+    Launch the FLUNED pre‑processor:
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-        fluned -i input-file
+          fluned -i input-file
 
     This command creates a folder named as the FLUNED case reported in the input file.
     The generated simulation files follow the OpenFOAM structure, so additional tweaking of
@@ -31,16 +31,16 @@ From the command line, in the folder where the Ansys‑FLUENT or OpenFOAM files 
     Thanks to the modularity of OpenFOAM classes, FLUNED simulations can be run in parallel
     using the standard OpenFOAM commands.
 
-    In the FLUNED case folder, launch the solver::
+    In the FLUNED case folder, launch the solver:
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-        FLUNED-solver
+          FLUNED-solver
 
-    Once the simulation is finished, run the post‑processor in the simulation folder::
+    Once the simulation is finished, run the post‑processor in the simulation folder:
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-        fluned-post
+          fluned-post
 
 

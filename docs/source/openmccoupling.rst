@@ -1,7 +1,7 @@
 Multiple Isotopes workflow
 --------------------------
 
-FLUNED incorporates the possilibity of using activation data for an arbitrary irradiated flowing material, calculated in openMC, and use it in FLUNED simulations.
+FLUNED incorporates the possilibity of using activation data for an arbitrary irradiated flowing fluid, calculated in openMC, and use it in FLUNED simulations.
 This requires to perform an activation calculation with the openmc.deplete module over a cartesian mesh tally covering the flowing material spatial domain. 
 The user is responsible for checking the spatial correspondence between the CFD mesh domain and the relevant OpenMC cells. 
 However, exact spatial correspondence is not required as reaction rates are computed by combining the neutron fluxes in each mesh voxel with the parent radioisotopes atom densities as provided by the OpenMC material, regardless of the cell positions.
@@ -13,12 +13,12 @@ The relevant radioisotopes are determined using the chain file used by the openm
 
 The transfer of data from an openmc simulation to fluned is done by saving the relevant data into an H5 file whose path is passed as the **ACTIVATION_FILE** parameter in the fluned pre-processor input.
 The data is packaged by the helper function `openmc_fluned_coupling defined` in the source file: ``FLUNED-Repository/src/fluned_case_multi_isotopes_class.py``.
-This function must be imported and called in the openmc input script file after running the function `openmc.deplete.get_microxs_and_flux` function of the deplete module.
+This function can be copied or imported and called in the openmc input script file after running the function `openmc.deplete.get_microxs_and_flux` function of the deplete module.
 An example of this process is shown in the code block below.
 
 
 
-code::
+.. code-block:: python
 
     import openmc
     import openmc.deplete
@@ -127,7 +127,7 @@ This post-processor can be launched by simply running in the CFD folder containi
 
    .. code-block:: bash
 
-      fluned_post_multi_isotopes
+      fluned-post-multi-isotopes
 
 This post-processor crawls the folders with the completed FLUNED cases and generates a computational model of the radiation source of the activated fluid.
 The geometry of the computational model is the tetrahedralized Unstructured Mesh of the CFD and FLUNED simulations. 
