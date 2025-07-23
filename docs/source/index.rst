@@ -10,7 +10,7 @@ FLUNED
 
 FLUNED is an open-source, mesh-based tool that reconstructs the time-dependent distribution of activation products in cooling 
 circuits exposed to fusion-neutron irradiation.  
-Starting from completed CFD run (OpenFOAM® or ANSYS® Fluent) and the neutron-induced activation data, 
+Starting from completed CFD run (OpenFOAM or ANSYS Fluent) and the neutron-induced activation data, 
 it solves an advection–diffusion–decay problem and outputs concentration fields ready for dose-rate, shielding, or licensing analyses.
 
 Key features
@@ -26,9 +26,10 @@ Key features
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
    :hidden:
+   :titlesonly:
 
   installation
   theory

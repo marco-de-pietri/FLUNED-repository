@@ -1,5 +1,6 @@
-Input Keywords guide
-------------------------
+================
+Input File Guide
+================
 
 This page documents all keywords that can appear in a `FLUNED` input, their
 purpose, default behaviour and the range of values they accept.
@@ -8,6 +9,12 @@ To start, a generic template can be created by running `fluned -t`
 
 Every directive is case‑insensitive, except for the files and folder paths, and must appear on its own line.  
 Comment text after a `#` is ignored.
+
+The fluned pre-processor input file can be structured to initiate the generation of more than one case at the time by including multiple sets of input keywords, one for each case.
+The keywords set must be separated by at least one empty line and the CASE parameters cannot be repeated.
+
+Keyword List
+------------
 
 **CASE**  *(required)*
 A short ASCII label (no spaces) that becomes the name of the FLUNED simulation folder.
