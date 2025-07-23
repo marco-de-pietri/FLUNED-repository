@@ -12,13 +12,13 @@ import importlib
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[2]   
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-pkg_name = "fluned"                      # src/modulename/__init__.py
+pkg_name = "fluned"  # src/modulename/__init__.py
 pkg = importlib.import_module(pkg_name)
 
-release = version = pkg.__version__          # e.g., "1.4.3"
+release = version = pkg.__version__  # e.g., "1.4.3"
 
 
 project = "FLUNED"
@@ -30,7 +30,7 @@ author = "Marco De Pietri"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx_copybutton",   # adds a clipboard icon to every code block
+    "sphinx_copybutton",  # adds a clipboard icon to every code block
 ]
 copybutton_prompt_text = r">>> |\.\.\. "  # strip interactive prompts if you like
 copybutton_prompt_is_regexp = True
@@ -44,3 +44,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+
+html_theme_options = {
+    "includehidden": True,
+}
