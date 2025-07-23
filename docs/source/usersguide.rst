@@ -5,7 +5,7 @@ User's Guide
 
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 0
    :hidden:
    :titlesonly:
 

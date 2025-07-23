@@ -54,21 +54,28 @@ Multiplicative factor applied to the sampled activation map before it is written
 the `Source` field.  Keep the default `0` to disable any scaling.
 
 **DECAY_CONSTANT** *(required ≥ 1)*
-Radio‑isotope decay constant in s⁻¹. No value is required if running a multi-species simulation using data from OpenMC.
+Radio‑isotope decay constant in s⁻¹. No value is required when running a multi-species simulation using data from OpenMC.
 
 **ISOTOPE** *(optional)*
 Isotope string tag, if not specified a `custom` tag is applied and the decay constant must be specified.
+No value is required when running a multi-species simulation using data from OpenMC.
 
 **INLET_CONC** *(required)*
 Radio‑isotope concentration imposed at all inlet patches \[ m⁻³].
+Currently, when running a multi-species simulation using data from OpenMC, the same concentration will applied to all the isotopes. 
+This will be improved in future releases.
 
 **MOLECULAR_DIFFUSION** *(required)*
 Molecular diffusion coefficient *D* for the species in m² s⁻¹.
+Currently, when running a multi-species simulation using data from OpenMC, the same molecular diffusion will applied to all the isotopes. 
+This will be improved in future releases.
 
 **SCHMIDT_NUMBER** *(required)* 
 Parameter required for the application of the Gradient Diffusion Hypothesis.  
 When provided, turbulent diffusivity is taken as *νₜ⁄Sc*.  
 A value of `0.7` is often recommended in the literature.
+Currently, when running a multi-species simulation using data from OpenMC, the same Schmidt Number will applied to all the isotopes. 
+This will be improved in future releases.
 
 **FV_SCHEME** *(optional)*
 Controls spatial discretisation accuracy.

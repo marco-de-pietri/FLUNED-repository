@@ -16,7 +16,7 @@ To run them, execute the following commands from a Bash shell inside the ``FLUNE
 
    .. code-block:: bash
 
-        ./run_post.sh
+      ./run_post.sh
 
 3. Compare the test results with the expected results (output written to ``test_results``):
 
