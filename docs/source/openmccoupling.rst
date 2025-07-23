@@ -125,9 +125,9 @@ An example of this process is shown in the code block below.
 After running the FLUNED solver for each radioisotope, a specific post-processor for the multiple-isotope workflow is provided. 
 This post-processor can be launched by simply running in the CFD folder containing the various FLUNED cases the following command:
 
-   .. code-block:: bash
+.. code-block:: bash
 
-      fluned-post-multi-isotopes
+    fluned-post-multi-isotopes
 
 This post-processor crawls the folders with the completed FLUNED cases and generates a computational model of the radiation source of the activated fluid.
 The geometry of the computational model is the tetrahedralized Unstructured Mesh of the CFD and FLUNED simulations. 

@@ -10,37 +10,35 @@ In addition, the test simulations in the  `FLUNED-Repository/tests-integration` 
 
 From the command line, in the folder where the Ansys‑FLUENT or OpenFOAM files are located, the following workflow for single-isotope simulations is recommended.
 
-    Generate a FLUNED input template::
+1. Generate a FLUNED input template:
 
-      .. code-block:: bash
+.. code-block:: bash
 
-          fluned -t
+    fluned -t
 
-    Modify the input_template file with the appropriate parameters.
-    The file will contain the default values together with the available options.
+2. Modify the input_template file with the appropriate parameters. The file will contain the default values together with the available options.
 
-    Launch the FLUNED pre‑processor:
+3. Launch the FLUNED pre‑processor:
 
-      .. code-block:: bash
+.. code-block:: bash
 
-          fluned -i input-file
+    fluned -i input-file
 
-    This command creates a folder named as the FLUNED case reported in the input file.
-    The generated simulation files follow the OpenFOAM structure, so additional tweaking of
-    simulation parameters is possible if you have previous knowledge of OpenFOAM.
-    Thanks to the modularity of OpenFOAM classes, FLUNED simulations can be run in parallel
-    using the standard OpenFOAM commands.
+This command creates a folder named as the FLUNED case reported in the input file.
+The generated simulation files follow the OpenFOAM structure, so additional tweaking of
+simulation parameters is possible if you have previous knowledge of OpenFOAM.
+Thanks to the modularity of OpenFOAM classes, FLUNED simulations can be run in parallel
+using the standard OpenFOAM commands.
 
-    In the FLUNED case folder, launch the solver:
+4. In the FLUNED case folder, launch the solver:
 
-      .. code-block:: bash
+.. code-block:: bash
 
-          FLUNED-solver
+    FLUNED-solver
 
-    Once the simulation is finished, run the post‑processor in the simulation folder:
+5. Once the simulation is finished, run the post‑processor in the simulation folder:
 
-      .. code-block:: bash
+.. code-block:: bash
 
-          fluned-post
-
+    fluned-post
 
