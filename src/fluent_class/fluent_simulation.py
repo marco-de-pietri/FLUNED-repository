@@ -535,7 +535,7 @@ FoamFile
             # store the number of nodes per face
             nPointsTemp = nFacesVec[(face["minID"] - 1) : face["maxID"]]
             # number of nodes needed to define one face
-            face["nPoints"] = sum(nPointsTemp)
+            face["nPoints"] = int(np.sum(nPointsTemp))
             face["minPointID"] = pointIDTemp
             face["maxPointID"] = face["minPointID"] + face["nPoints"] - 1
             pointIDTemp += face["nPoints"]
@@ -561,7 +561,7 @@ FoamFile
             for face in faceList:
                 if not face["fluid"]:
                     continue
-                nPointsTemp = nFacesVec[(face["minID"] - 1) : face["maxID"]]
+                nPointsTemp = nFacesVec[(face["minID"] - 1) : face["maxID"]].astype(int)
                 pointsTemp = facesDef[(face["minPointID"] - 1) : face["maxPointID"]]
                 i = 0
                 # print (len(nPointsTemp))

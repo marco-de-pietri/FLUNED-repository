@@ -131,8 +131,8 @@ def get_h5_dataset_multi(file, regPat):
 
         for patMatch in allMatches:
             newDict = {}
-            newDict["minID"] = fi[patMatch].attrs["minId"]
-            newDict["maxID"] = fi[patMatch].attrs["maxId"]
+            newDict["minID"] = fi[patMatch].attrs["minId"].item()
+            newDict["maxID"] = fi[patMatch].attrs["maxId"].item()
             newDict["values"] = fi[patMatch][()]
 
             resultArray.append(newDict)
