@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
+import argparse
+import copy
+import os
+import pickle
 import re
 import sys
-import os
-import copy
-import argparse
+
 import h5py
-import pickle
-from .fluned_case_class import flunedCase
-from .openmc_chain_file_util import (
-    map_targets_to_channels,
-    filter_channels,
-)
 
 from . import __version__
+from .fluned_case_class import flunedCase
+from .openmc_chain_file_util import (
+    filter_channels,
+    map_targets_to_channels,
+)
 
 
 def generate_openmc_simulation_parameters(args_dict):
@@ -23,7 +24,7 @@ def generate_openmc_simulation_parameters(args_dict):
 
     cases = []
 
-    import openmc # type: ignore[import]
+    import openmc  # type: ignore[import]
 
     depletion_isotopes, depletion_reactions = get_isotope_reactions_dicts(
         args_dict["activation_file"]
@@ -83,7 +84,7 @@ def create_input_template():
     this function generates an input template file
     """
 
-    input_name = "inputTemplate"
+    input_name = "input_template"
     current_folder = os.getcwd()
 
     input_path = os.path.join(current_folder, input_name)

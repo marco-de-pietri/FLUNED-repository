@@ -141,18 +141,15 @@ def get_h5_dataset_multi(file, regPat):
 
 
 def extract_multiblock(minID, maxID, dataBlock):
+    minID = int(minID)
+    maxID = int(maxID)
     found = False
-
     for block in dataBlock:
         if (minID >= block["minID"]) and (maxID <= block["maxID"]):
             found = True
-
-            blockIDmin = int(minID - block["minID"])
-            blockIDmax = int(maxID - block["minID"] + 1)
-
+            blockIDmin = minID - int(block["minID"])
+            blockIDmax = maxID - int(block["minID"]) + 1
             array = block["values"][blockIDmin:blockIDmax]
-
     if not found:
         raise ValueError("ERROR range not found in the datablock")
-
     return array

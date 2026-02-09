@@ -17,9 +17,6 @@ def main():
         default=os.getcwd(),
         help="folder containing the fluned simulations",
     )
-    parser.add_argument(
-        "--dataset", type=str, default="T", help="dataset in the vtk file to sample"
-    )
     args = parser.parse_args()
 
     multi_isotopes_case = flunedCaseMultiIsotopes(args.folder)

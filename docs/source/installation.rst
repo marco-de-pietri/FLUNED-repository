@@ -17,7 +17,7 @@ The simplest way is to download the script and run it with the following command
 
    .. code-block:: bash
 
-      wget https://raw.githubusercontent.com/marco-de-pietri/FLUNED-repository/refs/heads/master/installation-script/fluned-repo-install.sh
+      wget https://raw.githubusercontent.com/marco-de-pietri/FLUNED-repository/refs/heads/main/installation-script/fluned-repo-install.sh
 
 2. Make it executable
 

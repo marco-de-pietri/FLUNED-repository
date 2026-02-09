@@ -414,6 +414,7 @@ class SimulationOF:
             inp_file = open(boundary_file, "r", encoding="utf8", errors="ignore")
         except IOError:
             print("couldn't open boundary file")
+            raise FileNotFoundError(f"Unable to open phi file at '{boundary_file}'")
         with inp_file:
             text = inp_file.read()
 
@@ -450,6 +451,7 @@ class SimulationOF:
             inp_file = open(phi_file_path, "r", encoding="utf8", errors="ignore")
         except IOError:
             print("couldn't open phi file")
+            raise FileNotFoundError(f"Unable to open phi file at '{phi_file_path}'")
         with inp_file:
             face_phi_pat = re.compile(r"\((.{1,}?)\)", re.MULTILINE | re.DOTALL)
             text = inp_file.read()
@@ -493,8 +495,10 @@ class SimulationOF:
         """
 
         time_folders = self.get_time_folders()
+        time_folders_vals = [float(folder) for folder in time_folders]
+        idx = time_folders_vals.index(max(time_folders_vals))
 
-        return max(time_folders)
+        return time_folders[idx]
 
     def get_time_folders(self):
         """
@@ -987,7 +991,7 @@ class SimulationOF:
 
         return
 
-    def sample_source_to_cartesian_mesh(self, dataset: str):
+    def sample_source_to_cartesian_mesh(self, dataset: str | None):
         """
         this function takes the cartesian sampling coordinates computed before and
         use them to:
@@ -1896,7 +1900,7 @@ boundaryField
 
         if the simulation was done with openmc or mcnp with no scale applied
         it must be taken into account that the reaction rates are computed over
-        a mesh with volumetric values computed in mc [#.cm-3.s-1]
+        a mesh with volumetric values computed in cm [#.cm-3.s-1]
 
         Fluned does not apply any correction factor for this, either apply a scaling factor in
         the fluned input or modify the input data accordingly
@@ -1954,12 +1958,16 @@ boundaryField
             if activation_normalization != 0:
                 vec = [rate * vol for rate, vol in zip(activ_sources, self.volumes)]
 
-                totalSampled = sum(vec)
+                total_sampled = sum(vec)
                 print("total sampled atoms/s")
-                print(totalSampled)
-                normFactor = activation_normalization / totalSampled
+                print(total_sampled)
+                if total_sampled == 0:
+                    raise ValueError(
+                        "ERROR: total sampled reaction rate is zero, cannot apply normalization factor"
+                    )
+                normalization_factor = activation_normalization / total_sampled
 
-                activ_sources = [rate * normFactor for rate in activ_sources]
+                activ_sources = [rate * normalization_factor for rate in activ_sources]
 
                 nVec = [rate * vol for rate, vol in zip(activ_sources, self.volumes)]
 
@@ -2651,7 +2659,9 @@ boundaryField
 
         # extract the data from the triangularized mesh
         tri_mesh_volumes = get_vtk_volumes(tri_mesh_vtk_filepath)
-        tri_mesh_isotopes_coonc = get_vtk_celldata_array(tri_mesh_vtk_filepath, "T")
+        tri_mesh_isotopes_coonc = get_vtk_celldata_array(
+            tri_mesh_vtk_filepath, cell_data_array
+        )
 
         # the 1e6 factor is to take into account that the concentration data is taken by the scaled mesh
         self.tri_mesh_emission_rates = [

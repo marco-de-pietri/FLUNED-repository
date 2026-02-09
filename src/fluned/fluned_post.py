@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-import os
 import argparse
+import os
 import tracemalloc
-from .util import display_top
-
-from .fluned_case_class import flunedCase
-
 
 from . import __version__
+from .fluned_case_class import flunedCase
+from .util import display_top
 
 
 def main():
@@ -45,30 +43,30 @@ def main():
         tracemalloc.start()
 
     simulation_folder = os.getcwd()
-    simCase = flunedCase(fluned_path=simulation_folder)
-    simCase.parse_fluned_simulation()
+    fluned_case = flunedCase(fluned_path=simulation_folder)
+    fluned_case.parse_fluned_simulation()
 
     if args.check:
-        simCase.launch_check_mode()
+        fluned_case.launch_check_mode()
 
     # write source files
     if args.cdgs or args.openmc_sm or args.openmc_um:
-        simCase.source_sampling_resolution_cm = args.precision
-        simCase.source_sampling_dataset = args.dataset
+        fluned_case.source_sampling_resolution_cm = args.precision
+        fluned_case.source_sampling_dataset = args.dataset
 
-        if args.cdgs or args.openmc:
-            simCase.generate_cartesian_radiation_source_model()
+        if args.cdgs or args.openmc_sm:
+            fluned_case.generate_cartesian_radiation_source_model()
 
         if args.cdgs:
-            simCase.fluned_simulation.write_cdgs()
+            fluned_case.fluned_simulation.write_cdgs()
 
         if args.openmc_sm:
-            simCase.fluned_simulation.write_openmc_sm_source()
+            fluned_case.fluned_simulation.write_openmc_sm_source()
 
         if args.openmc_um:
-            simCase.fluned_simulation.write_openmc_um_source()
+            fluned_case.fluned_simulation.write_openmc_um_source()
 
-    simCase.write_results(args)
+    fluned_case.write_results(args)
 
     print("Finished!")
 
