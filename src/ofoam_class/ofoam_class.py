@@ -4,35 +4,33 @@ class for the OF simulations, this can be used to parse and generate files
 
 import math
 import os
-import sys
-import re
 import pathlib
-import lxml.etree as et
+import re
+import sys
+from typing import Optional
 
+import lxml.etree as et
 import numpy as np
 import pyvista as pv
-from fluned.util import open_utf8_or_gzip
-from .fluned_tool_launchers import launch_centroid_func_object
-from .fluned_tool_launchers import generate_vtk
-from .fluned_vtk_utils import (
-    get_vtk_dimensions,
-    get_vtk_volumes,
-    get_vtk_celldata_array,
-    sample_vtk,
-    generate_external_stl,
-    write_cartesian_vtk,
-    generate_triangularized_h5m_um_mesh,
-    generate_triangularized_scalar_mesh,
-)
 
+from fluned.util import open_utf8_or_gzip
 from isotopes.isotopes import bins_from_lines, load_isotopes
 
+from .fluned_tool_launchers import generate_vtk, launch_centroid_func_object
+from .fluned_vtk_utils import (
+    generate_external_stl,
+    generate_triangularized_h5m_um_mesh,
+    generate_triangularized_scalar_mesh,
+    get_vtk_celldata_array,
+    get_vtk_dimensions,
+    get_vtk_volumes,
+    sample_vtk,
+    write_cartesian_vtk,
+)
 from .patch_class import (
     PatchClass,
     get_post_process_list,
 )
-
-from typing import Optional
 
 
 def formatValues(vector):
@@ -917,11 +915,14 @@ class SimulationOF:
 
         return
 
-    def calculate_cartesian_sampling_coordinates(self, sampling_res_cm):
+    def calculate_cartesian_sampling_coordinates(self, sampling_res_cm: float | None):
         """
         this function returns a list of dictionaries with the info relative to
         the sampling coordinates
         """
+
+        if sampling_res_cm is None or sampling_res_cm <= 0:
+            raise ValueError("sampling_res_cm argument must be a positive number")
 
         vtk_boundaries = self.vtk_dimensions
 
@@ -947,7 +948,6 @@ class SimulationOF:
         y_nodes = [(y_bounds[0] + sampling_res_cm * i) for i in range(y_ints + 1)]
         z_nodes = [(z_bounds[0] + sampling_res_cm * i) for i in range(z_ints + 1)]
 
-        xyz_nodes = [x_nodes, y_nodes, z_nodes]
         sample_coordinates_m = []
 
         voxel_list = []
@@ -987,7 +987,7 @@ class SimulationOF:
 
         return
 
-    def sample_source_to_cartesian_mesh(self, dataset):
+    def sample_source_to_cartesian_mesh(self, dataset: str):
         """
         this function takes the cartesian sampling coordinates computed before and
         use them to:
@@ -998,6 +998,9 @@ class SimulationOF:
         NB the generated sampled values are in cm scale as this process is done to
         generate radiation sources either for openMC or MCNP
         """
+
+        if dataset is None or dataset == "":
+            raise ValueError("dataset argument cannot be None or empty string")
 
         sampled_cartesian_concentrations = sample_vtk(
             self.vtk_file_path, dataset, self.cartesian_sample_coordinates_m
@@ -2169,7 +2172,7 @@ boundaryField
 
         else:
             # this functionality works only with phton emitting isotopes at the moment
-            import openmc
+            import openmc  # type: ignore[import]
 
             isotope_string_temp = self.isotope[0].upper() + self.isotope[1:].lower()
             self.decay_photon_energy = openmc.data.decay_photon_energy(

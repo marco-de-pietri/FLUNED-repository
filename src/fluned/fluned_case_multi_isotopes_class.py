@@ -1,13 +1,15 @@
 import os
+import pickle
 import sys
+from typing import Union
+
 import h5py
 import numpy as np
-import pickle
-from lxml import etree as et
-from typing import Union
-from .fluned_case_class import flunedCase
+from lxml import etree as et  # type: ignore[attr-defined]
 
-from ofClass.fluned_vtk_utils import generate_triangularized_h5m_um_mesh
+from ofoam_class.fluned_vtk_utils import generate_triangularized_h5m_um_mesh
+
+from .fluned_case_class import flunedCase
 
 
 def openmc_fluned_coupling(

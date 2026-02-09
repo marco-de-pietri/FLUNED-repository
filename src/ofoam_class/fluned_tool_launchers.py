@@ -3,10 +3,11 @@
 Thin wrappers around common OpenFOAM post-processing commands.
 
 """
+
 from __future__ import annotations
 
-import subprocess
 import logging
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Sequence, Union
@@ -18,12 +19,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 if not logger.handlers:
     _handler = logging.StreamHandler()
-    _handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    _handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    )
     logger.addHandler(_handler)
 
 # -----------------------------------------------------------------------------
 # Internal helper
 # -----------------------------------------------------------------------------
+
 
 def _run_foam_command(
     case_dir: Union[str, Path],
@@ -60,35 +64,53 @@ def _run_foam_command(
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         log_path = case_dir / f"{cmd[0]}_{ts}.log"
         with log_path.open("a", encoding="utf-8") as out:
-            subprocess.run(cmd, cwd=case_dir, stdout=out, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(
+                cmd, cwd=case_dir, stdout=out, stderr=subprocess.STDOUT, check=True
+            )
     else:
         stdout_target = None if verbose else subprocess.DEVNULL
         stderr_target = None if verbose else subprocess.DEVNULL
-        subprocess.run(cmd, cwd=case_dir, stdout=stdout_target, stderr=stderr_target, check=True)
+        subprocess.run(
+            cmd, cwd=case_dir, stdout=stdout_target, stderr=stderr_target, check=True
+        )
+
 
 # -----------------------------------------------------------------------------
-# 
+#
 # -----------------------------------------------------------------------------
+
 
 def launch_volume_func_object(
     path: Union[str, Path], *, log: bool = False, verbose: bool = False
 ) -> None:
     """Compute cell volumes via ``postProcess -func writeCellVolumes``."""
-    _run_foam_command(Path(path), ["postProcess", "-func", "writeCellVolumes"], log_file=log, verbose=verbose)
+    _run_foam_command(
+        Path(path),
+        ["postProcess", "-func", "writeCellVolumes"],
+        log_file=log,
+        verbose=verbose,
+    )
 
 
 def launch_centroid_func_object(
     path: Union[str, Path], *, log: bool = False, verbose: bool = False
 ) -> None:
     """Compute cell centres via ``postProcess -func writeCellCentres``."""
-    _run_foam_command(Path(path), ["postProcess", "-func", "writeCellCentres"], log_file=log, verbose=verbose)
+    _run_foam_command(
+        Path(path),
+        ["postProcess", "-func", "writeCellCentres"],
+        log_file=log,
+        verbose=verbose,
+    )
 
 
 def launch_grad_func_object(
     path: Union[str, Path], *, log: bool = False, verbose: bool = False
 ) -> None:
     """Compute ?T via ``postProcess -func grad(T)``."""
-    _run_foam_command(Path(path), ["postProcess", "-func", "grad(T)"], log_file=log, verbose=verbose)
+    _run_foam_command(
+        Path(path), ["postProcess", "-func", "grad(T)"], log_file=log, verbose=verbose
+    )
 
 
 def generate_vtk(
@@ -115,6 +137,7 @@ def generate_vtk(
         log_file=log,
         verbose=verbose,
     )
+
 
 # -----------------------------------------------------------------------------
 # Re-export list

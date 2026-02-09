@@ -1,5 +1,4 @@
 import h5py
-import sys
 
 
 def get_dataset_keys(f):
@@ -31,7 +30,7 @@ def lookup_h5_regex(file, regPat):
 
             print("fuction name: lookup_h5_regex")
 
-            sys.exit()
+            raise ValueError("Error with regex search in h5 file")
 
         else:
             matchPath = allMatches[0]
@@ -64,7 +63,7 @@ def get_h5_path_dataset(file, regPat):
 
             print("fuction name: get_h5_path_dataset")
 
-            sys.exit()
+            raise ValueError("Error with regex search in h5 file")
 
         else:
             matchPath = allMatches[0]
@@ -103,7 +102,7 @@ def get_h5_dataset(file, regPat):
 
             print("fuction name: get_h5_dataset")
 
-            sys.exit()
+            raise ValueError("Error with regex search in h5 file")
 
         else:
             matchPath = allMatches[0]
@@ -154,7 +153,6 @@ def extract_multiblock(minID, maxID, dataBlock):
             array = block["values"][blockIDmin:blockIDmax]
 
     if not found:
-        print("ERROR range not found in the datablock")
-        sys.exit()
+        raise ValueError("ERROR range not found in the datablock")
 
     return array

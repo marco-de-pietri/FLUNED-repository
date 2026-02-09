@@ -1,7 +1,7 @@
-import linecache
-import tracemalloc
-import sys
 import gzip
+import linecache
+import sys
+import tracemalloc
 
 
 def check_int(check_str):

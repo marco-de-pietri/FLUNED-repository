@@ -1,18 +1,20 @@
 import os
-import h5py
 import pickle
 import shutil
-import numpy as np
 import subprocess
+
+import h5py
+import numpy as np
+
 from fluent_class.fluent_simulation import fluentSimulation
+from ofoam_class.fluned_tool_launchers import (
+    launch_grad_func_object,
+    launch_volume_func_object,
+)
+from ofoam_class.fluned_vtk_utils import write_cartesian_vtk
+from ofoam_class.ofoam_class import SimulationOF
 
-from ofClass.fluned_tool_launchers import launch_volume_func_object
-from ofClass.fluned_tool_launchers import launch_grad_func_object
 from .util import mod
-
-
-from ofClass.ofClass import SimulationOF
-from ofClass.fluned_vtk_utils import write_cartesian_vtk
 
 
 class flunedCase:
@@ -34,6 +36,8 @@ class flunedCase:
         self.fluned_path = fluned_path
         self.case = os.path.split(fluned_path)[1]
         self.num_internal_cells = 0
+        self.source_sampling_resolution_cm: float | None = None
+        self.source_sampling_dataset: str | None = None
 
     def generate_case(self, arg_dict):
         """
@@ -69,10 +73,10 @@ class flunedCase:
                 self.activation_file = os.path.normcase(arg_dict["activation_file"])
 
         if arg_dict["simulation_type"] == "openmc-multi":
-            import openmc.data
+            import openmc.data  # type: ignore[import]
 
             self.isotope = arg_dict["isotope"]
-            isotope_string = self.isotope[0].upper() + self.isotope[1:].lower()
+            # isotope_string = self.isotope[0].upper() + self.isotope[1:].lower()
 
             self.decay_constant = openmc.data.decay_constant(self.isotope)
 

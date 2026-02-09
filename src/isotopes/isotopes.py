@@ -1,8 +1,10 @@
 from __future__ import annotations
+
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Union
-import json
+
 import numpy as np
 
 EPS = 1e-5

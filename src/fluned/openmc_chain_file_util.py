@@ -1,5 +1,5 @@
-from typing import List, Dict, Any
 import xml.etree.ElementTree as ET
+from typing import Any, Dict, List
 
 
 def map_targets_to_channels(
@@ -26,8 +26,13 @@ def map_targets_to_channels(
         for rx in nuclide.findall("reaction"):
             rtype = rx.get("type")
             target = rx.get("target")
+
+            if target is None:
+                raise ValueError("target attribute missing in reaction element")
+
             if rtype not in reaction_rates_index:
                 continue
+
             reaction_idx = reaction_rates_index[rtype]
             channel = {
                 "parent_nuclide": parent,

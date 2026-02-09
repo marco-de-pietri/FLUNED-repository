@@ -23,7 +23,7 @@ def generate_openmc_simulation_parameters(args_dict):
 
     cases = []
 
-    import openmc
+    import openmc # type: ignore[import]
 
     depletion_isotopes, depletion_reactions = get_isotope_reactions_dicts(
         args_dict["activation_file"]

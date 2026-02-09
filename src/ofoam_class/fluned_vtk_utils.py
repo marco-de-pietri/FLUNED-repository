@@ -1,10 +1,11 @@
-import pyvista as pv
-from pathlib import Path
-import numpy as np
-import vtk
-import meshio
 import os
 from collections.abc import Sequence
+from pathlib import Path
+
+import meshio
+import numpy as np
+import pyvista as pv
+import vtk
 
 
 def generate_external_stl(vtk_path, output_folder):
@@ -220,7 +221,7 @@ def generate_triangularized_h5m_um_mesh(
     writer.SetFileTypeToBinary()
     writer.SetFileName(str(temp_vtk_path))
     if vtk.VTK_MAJOR_VERSION < 6:
-        writer.SetInput(mesh_tet)
+        writer.SetInput(mesh_tet)  # type: ignore[attr-defined]
     else:
         writer.SetInputData(mesh_tet)
     writer.Write()
@@ -278,7 +279,7 @@ def generate_triangularized_scalar_mesh(
     writer.SetFileTypeToBinary()
     writer.SetFileName(vtk_out_path)
     if vtk.VTK_MAJOR_VERSION < 6:
-        writer.SetInput(mesh_tet)
+        writer.SetInput(mesh_tet)  # type: ignore[attr-defined]
     else:
         writer.SetInputData(mesh_tet)
     writer.Write()

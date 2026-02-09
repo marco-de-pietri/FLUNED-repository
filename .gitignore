@@ -1,5 +1,7 @@
 build/
 docs/source/_build
+docs/**/*.md
+
 
 linux64GccDPInt32Opt/
 .vscode/

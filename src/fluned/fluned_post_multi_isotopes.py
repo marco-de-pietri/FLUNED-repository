@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-import os
 import argparse
-
-from .fluned_case_multi_isotopes_class import flunedCaseMultiIsotopes
-
+import os
 
 from . import __version__
+from .fluned_case_multi_isotopes_class import flunedCaseMultiIsotopes
 
 
 def main():
