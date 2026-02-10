@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 # Define variables
 INSTALL_DIR="$HOME/repos"
@@ -36,8 +35,8 @@ foam_line='[ -r /opt/openfoam12/etc/bashrc ] && . /opt/openfoam12/etc/bashrc'
 grep -qxF "$foam_line" "$rc_file" ||
   printf '\n# OpenFOAM\n%s\n' "$foam_line" >>"$rc_file"
 
-# Source OpenFOAM environment for this subshell (only if available)
-[ -r /opt/openfoam12/etc/bashrc ] && . /opt/openfoam12/etc/bashrc
+source /opt/openfoam12/etc/bashrc
+
 
 # Clone the FLUNED-repository from GitHub using HTTPS
 echo "Cloning FLUNED repository..."
