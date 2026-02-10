@@ -1808,29 +1808,90 @@ boundaryField
 
         return
 
+    # def read_centroids(self):
+    #     """this function reads the centroids from the 0 folder"""
+    #
+    #     # common patterns
+    #     internalBlockPat = re.compile(
+    #         "internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
+    #     )
+    #
+    #     cFile = os.path.join(self.path, "0", "C")
+    #     try:
+    #         inpFile = open(cFile, "r", encoding="utf8", errors="ignore")
+    #     except IOError:
+    #         raise FileNotFoundError("couldn't open  C file")
+    #     with inpFile:
+    #         text = inpFile.read()
+    #         numInternalBlocks = internalBlockPat.findall(text)
+    #         internalCentroids = numInternalBlocks[0].split("\n")[1:]
+    #         internalCentroids = [val.strip("()") for val in internalCentroids]
+    #         self.centroids = np.array(
+    #             [[float(val) for val in v.split()] for v in internalCentroids]
+    #         )
+    #
+    #     return
+
     def read_centroids(self):
-        """this function reads the centroids from the 0 folder"""
+        """Read centroids from the OpenFOAM '0/C' file and store them in self.centroids (N x 3)."""
 
-        # common patterns
-        internalBlockPat = re.compile(
-            "internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
+        c_file = os.path.join(self.path, "0", "C")
+        if not os.path.isfile(c_file):
+            raise FileNotFoundError(f"Couldn't find C file at: {c_file}")
+
+        with open(c_file, "r", encoding="utf8", errors="ignore") as f:
+            text = f.read()
+
+        # 1) Handle: internalField uniform (x y z);
+        m_uniform = re.search(
+            r"internalField\s+uniform\s*\(\s*([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s+"
+            r"([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s+"
+            r"([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\)\s*;",
+            text,
         )
-
-        cFile = os.path.join(self.path, "0", "C")
-        try:
-            inpFile = open(cFile, "r", encoding="utf8", errors="ignore")
-        except IOError:
-            raise FileNotFoundError("couldn't open  C file")
-        with inpFile:
-            text = inpFile.read()
-            numInternalBlocks = internalBlockPat.findall(text)
-            internalCentroids = numInternalBlocks[0].split("\n")[1:]
-            internalCentroids = [val.strip("()") for val in internalCentroids]
+        if m_uniform:
             self.centroids = np.array(
-                [[float(val) for val in v.split()] for v in internalCentroids]
+                [
+                    [
+                        float(m_uniform.group(1)),
+                        float(m_uniform.group(2)),
+                        float(m_uniform.group(3)),
+                    ]
+                ],
+                dtype=float,
+            )
+            return
+
+        # 2) Handle: internalField nonuniform ... ( ... );
+        # Works for: nonuniform List<vector> N ( ... ) ;  and similar variants.
+        m_nonuniform = re.search(
+            r"internalField\s+nonuniform\b.*?\(\s*(.*?)\s*\)\s*;",
+            text,
+            flags=re.DOTALL,
+        )
+        if not m_nonuniform:
+            raise ValueError(
+                "Could not locate an 'internalField uniform (...)' or "
+                "'internalField nonuniform ... ( ... );' block in 0/C"
             )
 
-        return
+        block = m_nonuniform.group(1)
+
+        # Extract all vectors like: (x y z) inside the block
+        vecs = re.findall(
+            r"\(\s*([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s+"
+            r"([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s+"
+            r"([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\)",
+            block,
+        )
+        if not vecs:
+            raise ValueError(
+                "Found internalField nonuniform block, but no '(x y z)' vectors were parsed."
+            )
+
+        self.centroids = np.array(
+            [[float(x), float(y), float(z)] for x, y, z in vecs], dtype=float
+        )
 
     def read_velocities(self):
         """this function reads the velocity from the U file located in the
@@ -2253,29 +2314,35 @@ boundaryField
 
     def get_time_treatment(self):
         """
-        this function parse the fvSchemes file to check if the simulation
-        is steady state or transient
+        Parse the fvSchemes file to determine whether the simulation
+        is steady-state or transient.
         """
 
-        # common patterns
-        ddtPat = re.compile("ddtSchemes.*?\{.{1,}?\}", re.MULTILINE | re.DOTALL)
-
         cFile = os.path.join(self.path, "system", "fvSchemes")
-        try:
-            inpFile = open(cFile, "r", encoding="utf8", errors="ignore")
-        except IOError:
-            raise FileNotFoundError("couldn't open fvSchemes file")
-        with inpFile:
-            text = inpFile.read()
-            ddtText = ddtPat.findall(text)[0]
-            if "euler" in ddtText.lower():
-                self.time_treatment = "transient"
-            elif "steadystate" in ddtText.lower():
-                self.time_treatment = "steadystate"
-            else:
-                raise ValueError("couldn't open recognise the time scheme")
 
-        return
+        if not os.path.isfile(cFile):
+            raise FileNotFoundError("couldn't open fvSchemes file")
+
+        # Match the whole ddtSchemes dictionary
+        ddtPat = re.compile(r"ddtSchemes\s*\{.*?\}", re.MULTILINE | re.DOTALL)
+
+        with open(cFile, "r", encoding="utf8", errors="ignore") as f:
+            text = f.read()
+
+        match = ddtPat.search(text)
+        if not match:
+            raise ValueError("ddtSchemes block not found in fvSchemes")
+
+        ddtText = match.group(0).lower()
+
+        if "euler" in ddtText:
+            self.time_treatment = "transient"
+        elif "steadystate" in ddtText:
+            self.time_treatment = "steadystate"
+        else:
+            raise ValueError("could not recognize the time discretization scheme")
+
+        return self.time_treatment
 
     def read_t(self):
         """

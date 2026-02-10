@@ -20,7 +20,7 @@ def generate_external_stl(vtk_path, output_folder):
     mesh = pv.read(vtk_path)
 
     # extract the exterior faces (drops internal cells)
-    surface = mesh.extract_surface().triangulate()
+    surface = mesh.extract_surface(algorithm=None).triangulate()
 
     # write STL (binary by default)
     surface.save(stl_path)
