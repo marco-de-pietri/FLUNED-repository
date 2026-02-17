@@ -6,7 +6,7 @@ import subprocess
 import h5py
 import numpy as np
 
-from fluent_class.fluent_simulation import fluentSimulation
+from fluned.fluent_class.fluent_simulation import fluentSimulation
 from ofoam_class.fluned_tool_launchers import (
     launch_grad_func_object,
     launch_volume_func_object,
