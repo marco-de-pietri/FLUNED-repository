@@ -90,7 +90,8 @@ def create_input_template():
     input_path = os.path.join(current_folder, input_name)
 
     template_text = """CASE  FLUNED_01_DEFAULT_N16
-TIME_TREATMENT  steadyState          #steadyState or transient supported
+TIME_TREATMENT  steadyState          # steadyState or transient supported
+SIMULATION_TYPE single-isotope       # single-isotope, openmc-multi supported
 # ACTIVATION_FILE  {}
 # ACTIVATION_DATASET    "Value - Total"
 # ACTIVATION_CONST 1e16
