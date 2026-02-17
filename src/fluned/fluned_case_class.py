@@ -7,12 +7,12 @@ import h5py
 import numpy as np
 
 from fluned.fluent_class.fluent_simulation import fluentSimulation
-from ofoam_class.fluned_tool_launchers import (
+from fluned.ofoam_class.fluned_tool_launchers import (
     launch_grad_func_object,
     launch_volume_func_object,
 )
-from ofoam_class.fluned_vtk_utils import write_cartesian_vtk
-from ofoam_class.ofoam_class import SimulationOF
+from fluned.ofoam_class.fluned_vtk_utils import write_cartesian_vtk
+from fluned.ofoam_class.ofoam_class import SimulationOF
 
 from .utils import mod
 
