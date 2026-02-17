@@ -13,7 +13,9 @@ __pycache__/
 Vc.gz
 *.swp
 .venv/
-/tests/**/*.vtk
-/tests/**/*.stl
-/tests/**/*.cdgs
+/tests-integration/**/*.vtk
+/tests-integration/**/*.stl
+/tests-integration/**/*.cdgs
 
+
+review_fluned.md

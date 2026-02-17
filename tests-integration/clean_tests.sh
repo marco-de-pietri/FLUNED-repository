@@ -1,22 +1,13 @@
 #!/bin/bash
 
-cases_folder="./cases"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cases_folder="$script_dir/cases"
+manifest_file="$script_dir/cases_manifest.txt"
 
-# Array of directories
-directories=(
-  "/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/"
-  "/02_DECAY/01_tewn_2022-Incompressible-tewn_2022_ref33/FLUNED_01_DEFAULT_N16/"
-  "/02_DECAY/01_tewn_2022-Incompressible-tewn_2022_ref33/FLUNED_02_DEFAULT_N17/"
-  "/03_FLUENT/01/FLUNED_01_DEFAULT/"
-  "/04_LAMINAR_FLOW/01_LAMINAR_005/FLUNED_01_DEFAULT_N16/"
-)
+while IFS= read -r line || [[ -n "$line" ]]; do
+  [[ -z "${line//[[:space:]]/}" || "$line" =~ ^[[:space:]]*# ]] && continue
+  dir="${line%%|*}"
+  rm -rf "$cases_folder$dir"
+done <"$manifest_file"
 
-length=${#directories[@]}
-
-# Loop through each directory
-for ((i = 0; i < $length; i++)); do
-
-  (rm -rf $cases_folder${directories[$i]})
-done
-
-(rm -f ./test_results)
+rm -f "$script_dir/test_results"

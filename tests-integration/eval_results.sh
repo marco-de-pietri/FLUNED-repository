@@ -1,22 +1,19 @@
 #!/bin/bash
 
-cases_folder="./cases"
-cmp_folder="./cases_solved"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cases_folder="$script_dir/cases"
+cmp_folder="$script_dir/cases_solved"
+manifest_file="$script_dir/cases_manifest.txt"
 res_file="/RESULTS/SUMMARY.csv"
-diff_file="./test_results"
+diff_file="$script_dir/test_results"
 
 # Truncate previous results
 : >"$diff_file"
 
-directories=(
-  "/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/"
-  "/02_DECAY/01_tewn_2022-Incompressible-tewn_2022_ref33/FLUNED_01_DEFAULT_N16/"
-  "/02_DECAY/01_tewn_2022-Incompressible-tewn_2022_ref33/FLUNED_02_DEFAULT_N17/"
-  "/03_FLUENT/01/FLUNED_01_DEFAULT/"
-  "/04_LAMINAR_FLOW/01_LAMINAR_005/FLUNED_01_DEFAULT_N16/"
-)
+while IFS= read -r line || [[ -n "$line" ]]; do
+  [[ -z "${line//[[:space:]]/}" || "$line" =~ ^[[:space:]]*# ]] && continue
+  dir="${line%%|*}"
 
-for dir in "${directories[@]}"; do
   echo "▶ Checking: $dir"
   echo "FLUNED TEST FOLDER: $dir" >>"$diff_file"
 
@@ -38,6 +35,6 @@ for dir in "${directories[@]}"; do
 
   echo >>"$diff_file"
   echo
-done
+done <"$manifest_file"
 
 echo "Done. Full diff log: $diff_file"

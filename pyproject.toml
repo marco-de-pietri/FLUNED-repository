@@ -44,7 +44,7 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"isotopes" = ["isotopes.json"]
+"fluned.isotopes" = ["isotopes.json"]
 
 [tool.setuptools.dynamic]
 version     = { attr = "fluned.__version__" }

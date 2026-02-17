@@ -7,22 +7,17 @@
 # Replace each RESULTS/SUMMARY.csv in the comparison tree with the one
 # from the corresponding case directory.
 
-cases_folder="./cases"
-cmp_folder="./cases_solved"          # destination tree to update
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cases_folder="$script_dir/cases"
+cmp_folder="$script_dir/cases_solved"          # destination tree to update
+manifest_file="$script_dir/cases_manifest.txt"
 res_file="/RESULTS/SUMMARY.csv"
-log_file="./replace_log"             # optional: keeps a record
+log_file="$script_dir/replace_log"             # optional: keeps a record
 
-# Array of relative test-case directories
-directories=(
-    "/01_ACTIVATION/06_mockup2-Incompressible-fixGeom3_kEpsilon/FLUNED_01_DEFAULT/"
-    "/02_DECAY/01_tewn_2022-Incompressible-tewn_2022_ref33/FLUNED_01_DEFAULT_N16/"
-    "/02_DECAY/01_tewn_2022-Incompressible-tewn_2022_ref33/FLUNED_02_DEFAULT_N17/"
-    "/03_FLUENT/01/FLUNED_01_DEFAULT/"
-    "/04_LAMINAR_FLOW/01_LAMINAR_005/FLUNED_01_DEFAULT_N16/"
-)
+while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "${line//[[:space:]]/}" || "$line" =~ ^[[:space:]]*# ]] && continue
+    dir="${line%%|*}"
 
-
-for dir in "${directories[@]}"; do
     src="$cases_folder$dir$res_file"
     dst="$cmp_folder$dir$res_file"
 
@@ -37,4 +32,4 @@ for dir in "${directories[@]}"; do
     # Copy (overwrite) the SUMMARY.csv
     cp -f "$src" "$dst"
     echo "UPDATED: $dst" | tee -a "$log_file"
-done
+done <"$manifest_file"
