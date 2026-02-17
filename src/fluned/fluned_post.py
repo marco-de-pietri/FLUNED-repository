@@ -5,7 +5,7 @@ import tracemalloc
 
 from . import __version__
 from .fluned_case_class import flunedCase
-from .util import display_top
+from .utils import display_top
 
 
 def main():

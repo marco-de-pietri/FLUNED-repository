@@ -14,7 +14,7 @@ from ofoam_class.fluned_tool_launchers import (
 from ofoam_class.fluned_vtk_utils import write_cartesian_vtk
 from ofoam_class.ofoam_class import SimulationOF
 
-from .util import mod
+from .utils import mod
 
 
 class flunedCase:
@@ -46,10 +46,6 @@ class flunedCase:
 
         self.case = arg_dict["case"]
         # set decay constant
-
-        # default value
-        if "simulation_type" not in arg_dict:
-            arg_dict["simulation_type"] = "single-isotope"
 
         if arg_dict["simulation_type"] == "single-isotope":
             if "isotope" in arg_dict:
@@ -164,7 +160,7 @@ class flunedCase:
         else:
             self.time_treatment = arg_dict["time_treatment"].lower()
 
-        if self.cfd_type in ["fluent-h5-multi", "fluent-multi"]:
+        if self.cfd_type == "fluent-h5-multi":
             if "fluent_fluid_region_name" not in arg_dict:
                 print("ERROR: name of the fluid region to extract not")
                 print("specified! use parameter FLUENT_FLUID_REGION_NAME")

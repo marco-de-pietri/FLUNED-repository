@@ -1,10 +1,10 @@
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List
+from typing import Any
 
 
 def map_targets_to_channels(
-    xml_file: str, isotopes_index: Dict[str, int], reaction_rates_index: Dict[str, int]
-) -> Dict[str, List[Dict[str, Any]]]:
+    xml_file: str, isotopes_index: dict[str, int], reaction_rates_index: dict[str, int]
+) -> dict[str, list[dict[str, Any]]]:
     """
     Parses the XML at `xml_file` and returns a dict mapping each target atom
     to a list of channels. Each channel is a dict with:
@@ -15,7 +15,7 @@ def map_targets_to_channels(
     """
     tree = ET.parse(xml_file)
     root = tree.getroot()
-    result: Dict[str, List[Dict[str, Any]]] = {}
+    result: dict[str, list[dict[str, Any]]] = {}
 
     for nuclide in root.findall("nuclide"):
         parent = nuclide.get("name")
@@ -48,8 +48,8 @@ def map_targets_to_channels(
 
 
 def filter_channels(
-    xml_file: str, channels: Dict[str, List[Dict[str, Any]]]
-) -> Dict[str, List[Dict[str, Any]]]:
+    xml_file: str, channels: dict[str, list[dict[str, Any]]]
+) -> dict[str, list[dict[str, Any]]]:
     """
     Given a mapping of target nuclides to reaction channels, remove any
     targets for which the corresponding <nuclide> element in the XML
