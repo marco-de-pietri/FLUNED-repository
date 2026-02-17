@@ -14,7 +14,7 @@ import numpy as np
 import pyvista as pv
 
 from fluned.isotopes.isotopes import bins_from_lines, load_isotopes
-from fluned.util import open_utf8_or_gzip
+from fluned.utils import open_utf8_or_gzip
 
 from .fluned_tool_launchers import generate_vtk, launch_centroid_func_object
 from .fluned_vtk_utils import (

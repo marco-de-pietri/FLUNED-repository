@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import argparse
 
-from . import __version__
-from .fluned_case_class import flunedCase
-from .input_handler import create_input_template, read_fluned_input_file
+from .. import __version__
+from ..fluned_case_class import flunedCase
+from ..input_handler import create_input_template, read_fluned_input_file
 
 
 def main():
