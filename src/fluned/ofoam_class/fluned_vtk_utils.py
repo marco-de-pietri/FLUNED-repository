@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import os
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Literal, Tuple
 
 import meshio
 import numpy as np
 import pyvista as pv
 import vtk
+
+EulerOrder = Literal["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]
+CenterMode = Literal["origin", "mesh_center", "bounds_center"]
 
 
 def generate_external_stl(vtk_path, output_folder):
@@ -85,6 +91,138 @@ def get_vtk_volumes(file_path: str) -> np.ndarray:
     return volumes
 
 
+def _euler_rotation_matrix(
+    angles_deg: tuple[float, float, float],
+    order: EulerOrder = "xyz",
+) -> np.ndarray:
+    """Return 3x3 rotation matrix for extrinsic Euler rotations applied in given order.
+
+    Angles are in degrees.
+
+    Convention here (column vectors): applying rotations sequentially means
+    p' = R_order @ p, where for order='xyz': p' = Rz @ Ry @ Rx @ p.
+    """
+    ax, ay, az = np.deg2rad(angles_deg)
+
+    cx, sx = np.cos(ax), np.sin(ax)
+    cy, sy = np.cos(ay), np.sin(ay)
+    cz, sz = np.cos(az), np.sin(az)
+
+    Rx = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]], dtype=float)
+    Ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]], dtype=float)
+    Rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]], dtype=float)
+
+    mats = {"x": Rx, "y": Ry, "z": Rz}
+    # Apply in order: p' = R_last @ ... @ R_first @ p
+    R = np.eye(3, dtype=float)
+    for axis in order:
+        R = mats[axis] @ R
+    return R
+
+
+def _pick_center(mesh: pv.DataSet, center: CenterMode) -> np.ndarray:
+    if center == "origin":
+        return np.zeros(3, dtype=float)
+    if center == "mesh_center":
+        return np.asarray(mesh.center, dtype=float)
+    if center == "bounds_center":
+        b = mesh.bounds  # (xmin, xmax, ymin, ymax, zmin, zmax)
+        return np.array(
+            [(b[0] + b[1]) / 2, (b[2] + b[3]) / 2, (b[4] + b[5]) / 2], dtype=float
+        )
+
+
+def apply_roto_translation_to_vtk_grid(
+    input_path: str | Path,
+    output_path: str | Path,
+    rotation_deg: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    translation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+    *,
+    order: EulerOrder = "xyz",
+    center: CenterMode = "origin",
+    transform_all_input_vectors: bool = False,
+) -> pv.DataSet:
+    """Read a VTK file, apply rotation+translation, and write it back.
+
+    Supports:
+      - pv.StructuredGrid
+      - pv.RectilinearGrid
+      - pv.ImageData (UniformGrid)
+
+    Transform:
+        p' = R (p - c) + c + t
+
+    Notes:
+      - Rotating ImageData/RectilinearGrid requires converting to StructuredGrid first
+        (their implicit geometry cannot represent arbitrary rotations). :contentReference[oaicite:2]{index=2}
+      - For translation-only, we keep original types: ImageData uses .origin, and
+        RectilinearGrid uses .x/.y/.z because points aren't settable. :contentReference[oaicite:3]{index=3}
+    """
+    input_path = Path(input_path)
+    output_path = Path(output_path)
+
+    mesh = pv.read(str(input_path))
+    t = np.asarray(translation, dtype=float)
+    rot = np.asarray(rotation_deg, dtype=float)
+    do_rotate = not np.allclose(rot, 0.0)
+
+    # --- Translation-only fast path (keeps original grid class) ---
+    if not do_rotate:
+        if isinstance(mesh, pv.ImageData):
+            out = mesh.copy(deep=True)
+            out.origin = tuple(np.asarray(out.origin, dtype=float) + t)
+            out.save(str(output_path))
+            return out
+
+        if isinstance(mesh, pv.RectilinearGrid):
+            out = mesh.copy(deep=True)
+            out.x = np.asarray(out.x, dtype=float) + t[0]
+            out.y = np.asarray(out.y, dtype=float) + t[1]
+            out.z = np.asarray(out.z, dtype=float) + t[2]
+            out.save(str(output_path))
+            return out
+
+        # StructuredGrid or anything with mutable points
+        if hasattr(mesh, "points"):
+            out = mesh.copy(deep=True)
+            out.points = np.asarray(out.points, dtype=float) + t
+            out.save(str(output_path))
+            return out
+
+        raise TypeError(
+            f"Unsupported dataset type for translation-only: {type(mesh).__name__}"
+        )
+
+    # --- Rotation (and translation) path ---
+    # Convert rectilinear/uniform grids to StructuredGrid first.
+    if isinstance(mesh, (pv.ImageData, pv.RectilinearGrid)):
+        mesh = (
+            mesh.cast_to_structured_grid()
+        )  # supported by both :contentReference[oaicite:4]{index=4}
+    elif not isinstance(mesh, pv.StructuredGrid):
+        # You can broaden this if you want, but you asked specifically for these 3 grid types.
+        raise TypeError(
+            f"Rotation requested but dataset is {type(mesh).__name__}; "
+            "expected StructuredGrid, RectilinearGrid, or ImageData."
+        )
+
+    c = _pick_center(mesh, center)
+    R = _euler_rotation_matrix(rotation_deg, order=order)
+
+    # Homogeneous 4x4: p' = R p + (t + c - R c)
+    M = np.eye(4, dtype=float)
+    M[:3, :3] = R
+    M[:3, 3] = t + c - (R @ c)
+
+    out = mesh.transform(
+        M,
+        transform_all_input_vectors=transform_all_input_vectors,
+        inplace=False,
+    )
+    out.save(str(output_path))
+    return
+
+
 def write_cartesian_vtk(
     out_vtk_path: str | Path,
     dims: tuple[int, int, int],
@@ -111,7 +249,7 @@ def write_cartesian_vtk(
         Grid origin.
     dataset : np.ndarray | Sequence[np.ndarray] | None
         Cell-data array(s).
-        If None  write an empty grid.
+        If None write an empty grid.
     dataset_name : str | Sequence[str] | None
         Name(s) for the dataset(s).
         Required when `dataset` is provided.

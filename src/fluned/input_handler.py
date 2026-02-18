@@ -2,6 +2,8 @@ import copy
 import os
 import re
 
+import numpy as np
+
 from .activation_file_utils import get_isotope_reactions_dicts
 from .chain_file_utils import (
     filter_channels,
@@ -14,6 +16,11 @@ _INPUT_PARAMETERS_ISOTOPE = [
     "schmidt_number",
     "molecular_diffusion",
 ]
+
+_INPUT_PARAMETERS_REAL_LIST = [
+    "activation_rotation_degs",
+    "activation_translation_m",
+]
 _INPUT_PARAMETERS = [
     "case",
     "time_treatment",
@@ -21,6 +28,8 @@ _INPUT_PARAMETERS = [
     "activation_const",
     "activation_dataset",
     "activation_dataset_error",
+    "activation_rotation_center_mode",
+    "activation_rotation_euler_order",
     "fv_scheme",
     "isotope",
     "activation_file",
@@ -40,6 +49,10 @@ def fluned_defaults():
     return {
         "simulation_type": "single-isotope",
         "fv_scheme": "stable",
+        "activation_rotation_center_mode": "origin",
+        "activation_rotation_euler_order": "xyz",
+        "activation_rotation_degs": np.array([0.0, 0.0, 0.0]),
+        "activation_translation_m": np.array([0.0, 0.0, 0.0]),
     }
 
 
@@ -166,6 +179,10 @@ def read_fluned_input_file(path):
                     parameters_dict[args[0].lower()] = args[1]
                 elif args[0].lower().rsplit("_", 1)[0] in _INPUT_PARAMETERS_ISOTOPE:
                     parameters_dict[args[0].lower()] = args[1]
+                if args[0].lower() in _INPUT_PARAMETERS_REAL_LIST:
+                    parameters_dict[args[0].lower()] = np.array(
+                        [float(x) for x in args[1:]]
+                    )
 
         # Apply defaults (user values override defaults)
         parameters_dict = {**defaults, **parameters_dict}

@@ -11,7 +11,10 @@ from fluned.ofoam_class.fluned_tool_launchers import (
     launch_grad_func_object,
     launch_volume_func_object,
 )
-from fluned.ofoam_class.fluned_vtk_utils import write_cartesian_vtk
+from fluned.ofoam_class.fluned_vtk_utils import (
+    apply_roto_translation_to_vtk_grid,
+    write_cartesian_vtk,
+)
 from fluned.ofoam_class.ofoam_class import SimulationOF
 
 from .utils import mod
@@ -72,7 +75,6 @@ class flunedCase:
             import openmc.data  # type: ignore[import]
 
             self.isotope = arg_dict["isotope"]
-            # isotope_string = self.isotope[0].upper() + self.isotope[1:].lower()
 
             self.decay_constant = openmc.data.decay_constant(self.isotope)
 
@@ -122,8 +124,6 @@ class flunedCase:
             # NB no scaling factor is hardcoded to go from cm-3 to m-3.
             # either modify the input data or the fluned input file in the appropriate option
 
-            # print("debug - total rr :", sum(total_rr_m3))
-
             write_cartesian_vtk(
                 activation_file_name,
                 mesh_dimensions_pv,
@@ -134,6 +134,46 @@ class flunedCase:
             )
 
             self.activation_file = activation_file_path
+
+        ## common workflow for both types of simulations
+
+        # apply rototranslation to the reaction rate mesh
+        if (
+            not np.array_equal(arg_dict["activation_rotation_degs"], [0.0, 0.0, 0.0])
+        ) or (
+            not np.array_equal(arg_dict["activation_translation_m"], [0.0, 0.0, 0.0])
+        ):
+            if self.activation_file == "":
+                raise ValueError(
+                    "cannot apply rototranslation to activation dataset if \
+                    activation_file is not specified"
+                )
+
+            print("applying rototranslation to activation dataset ...")
+
+            self.activation_rotation_center_mode = arg_dict[
+                "activation_rotation_center_mode"
+            ]
+            self.activation_rotation_euler_order = arg_dict[
+                "activation_rotation_euler_order"
+            ]
+            self.activation_rotation_degs = arg_dict["activation_rotation_degs"]
+            self.activation_translation_m = arg_dict["activation_translation_m"]
+
+            input_vtk = self.activation_file
+
+            output_vtk = self.activation_file.split(".vtk")[0] + "_rototrans.vtk"
+
+            apply_roto_translation_to_vtk_grid(
+                input_vtk,
+                output_vtk,
+                self.activation_rotation_degs,
+                self.activation_translation_m,
+                order=self.activation_rotation_euler_order,
+                center=self.activation_rotation_center_mode,
+            )
+
+            self.activation_file = output_vtk
 
         if "activation_const" in arg_dict:
             self.activation_const = float(arg_dict["activation_const"])
