@@ -18,7 +18,6 @@ def openmc_fluned_coupling(
     mesh_width,
     mesh_dimension,
     mesh_lower_left,
-    openmc_source_strength,
     all_micro_xs,
     flux_in_each_mesh_voxel,
     *,
@@ -37,7 +36,6 @@ def openmc_fluned_coupling(
     input_dict["mesh_width"] = mesh_width
     input_dict["mesh_dimension"] = mesh_dimension
     input_dict["mesh_lower_left"] = mesh_lower_left
-    input_dict["openmc_strength"] = openmc_source_strength
     input_dict["fluxes"] = fluxes
     input_dict["index_nuc"] = all_micro_xs[0]._index_nuc
     input_dict["index_rx"] = all_micro_xs[0]._index_rx

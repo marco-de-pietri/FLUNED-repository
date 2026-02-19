@@ -93,7 +93,6 @@ class flunedCase:
 
             with h5py.File(reaction_rate_file_path, "r") as f:
                 neutron_fluxes = pickle.loads(f["fluxes"][...].tobytes())
-                openmc_strenght = pickle.loads(f["openmc_strength"][...].tobytes())
                 isotope_densities = pickle.loads(f["isotope_density"][...].tobytes())
                 mesh_widths_cm = pickle.loads(f["mesh_width"][...].tobytes())
                 mesh_dimensions = pickle.loads(f["mesh_dimension"][...].tobytes())
@@ -104,6 +103,9 @@ class flunedCase:
             mesh_lower_left_m = [coord * 0.01 for coord in mesh_lower_left_cm]
             mesh_widths_m = [width * 0.01 for width in mesh_widths_cm]
             mesh_dimensions_pv = [dim + 1 for dim in mesh_dimensions]
+            mesh_voxel_volume_cm3 = (
+                mesh_widths_cm[0] * mesh_widths_cm[1] * mesh_widths_cm[2]
+            )
 
             macro_xs_channels = []
 
@@ -118,11 +120,29 @@ class flunedCase:
 
                 macro_xs_channels.append(macro_xs_channel)
 
+                print(
+                    "debug: macro xs channel for {}: {}".format(
+                        channel["parent_nuclide"], macro_xs_channel
+                    )
+                )
+                print("parent nuclide: {}".format(parent))
+                print("mesh widths: {}".format(mesh_widths_m))
+                print("mesh dimensions: {}".format(mesh_dimensions_pv))
+                print("isotope densities: {}".format(isotope_densities[parent]))
+                print(
+                    "average microxs for channel {}: {}".format(
+                        channel["parent_nuclide"],
+                        np.mean(micro_xs_data[:, idxs[0], idxs[1]]),
+                    )
+                )
+                print("average flux: {}".format(np.mean(neutron_fluxes)))
+                print()
+
+            # WARNING scaling factor is hardcoded to go from cm-3 to m-3.
             total_rr_m3 = (
-                np.multiply(np.sum(macro_xs_channels, axis=0), neutron_fluxes)
-            ) * openmc_strenght
-            # NB no scaling factor is hardcoded to go from cm-3 to m-3.
-            # either modify the input data or the fluned input file in the appropriate option
+                (np.multiply(np.sum(macro_xs_channels, axis=0), neutron_fluxes))
+                / mesh_voxel_volume_cm3
+            ) * 1e6
 
             write_cartesian_vtk(
                 activation_file_name,
