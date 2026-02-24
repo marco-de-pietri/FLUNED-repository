@@ -16,6 +16,7 @@ Vc.gz
 /tests-integration/**/*.vtk
 /tests-integration/**/*.stl
 /tests-integration/**/*.cdgs
+/tests-integration/**/C*.gz
 
 
 review_fluned.md
