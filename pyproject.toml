@@ -4,11 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "FLUNED-repository"
-dynamic     = ["version"]
+dynamic = ["version"]
 description = "Tool to simulate irradiated coolant in fusion installations"
-authors = [
-  { name = "Marco De Pietri", email = "mdepietri@ind.uned.es" }
-]
+authors = [{ name = "Marco De Pietri", email = "mdepietri@ind.uned.es" }]
 requires-python = ">=3.13,<3.14"
 
 dependencies = [
@@ -20,6 +18,7 @@ dependencies = [
   "iapws>=1.5",
   "lxml>=6.0,<7.0",
   "tqdm>=4.67,<5.0",
+  "foamlib>=1.5,<2.0,",
 ]
 
 [project.optional-dependencies]
@@ -47,4 +46,4 @@ where = ["src"]
 "fluned.isotopes" = ["isotopes.json"]
 
 [tool.setuptools.dynamic]
-version     = { attr = "fluned.__version__" }
+version = { attr = "fluned.__version__" }

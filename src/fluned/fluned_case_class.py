@@ -1,7 +1,7 @@
-import os
 import pickle
 import shutil
 import subprocess
+from pathlib import Path
 
 import h5py
 import numpy as np
@@ -25,7 +25,7 @@ class flunedCase:
     FLUNED simulation class
     """
 
-    def __init__(self, fluned_path=""):
+    def __init__(self, fluned_path: str | Path = ""):
         """
         initialize flunedCase
         """
@@ -37,7 +37,7 @@ class flunedCase:
         self.activation_file = ""
         self.fv_scheme = "stable"
         self.fluned_path = fluned_path
-        self.case = os.path.split(fluned_path)[1]
+        self.case = Path(fluned_path).name
         self.num_internal_cells = 0
         self.source_sampling_resolution_cm: float | None = None
         self.source_sampling_dataset: str | None = None
@@ -47,7 +47,7 @@ class flunedCase:
         fill simulation parameters
         """
 
-        self.case = arg_dict["case"]
+        self.case = str(arg_dict["case"])
         # set decay constant
 
         if arg_dict["simulation_type"] == "single-isotope":
@@ -69,7 +69,7 @@ class flunedCase:
                 self.activation_dataset_error = arg_dict["activation_dataset_error"]
 
             if "activation_file" in arg_dict:
-                self.activation_file = os.path.normcase(arg_dict["activation_file"])
+                self.activation_file = Path(arg_dict["activation_file"])
 
         if arg_dict["simulation_type"] == "openmc-multi":
             import openmc.data  # type: ignore[import]
@@ -80,13 +80,11 @@ class flunedCase:
 
             # mapping of the reaction rates to the vtk file
 
-            reaction_rate_file_path = arg_dict["activation_file"]
-            reaction_rate_file_dir = os.path.dirname(arg_dict["activation_file"])
+            reaction_rate_file_path = Path(arg_dict["activation_file"])
+            reaction_rate_file_dir = reaction_rate_file_path.parent
 
             activation_file_name = f"reaction_rate_{self.isotope.upper()}.vtk"
-            activation_file_path = os.path.join(
-                reaction_rate_file_dir, activation_file_name
-            )
+            activation_file_path = reaction_rate_file_dir / activation_file_name
             activation_dataset = "reaction_rate_m3"
 
             self.activation_dataset = activation_dataset
@@ -163,7 +161,7 @@ class flunedCase:
         ) or (
             not np.array_equal(arg_dict["activation_translation_m"], [0.0, 0.0, 0.0])
         ):
-            if self.activation_file == "":
+            if not self.activation_file:
                 raise ValueError(
                     "cannot apply rototranslation to activation dataset if \
                     activation_file is not specified"
@@ -180,9 +178,8 @@ class flunedCase:
             self.activation_rotation_degs = arg_dict["activation_rotation_degs"]
             self.activation_translation_m = arg_dict["activation_translation_m"]
 
-            input_vtk = self.activation_file
-
-            output_vtk = self.activation_file.split(".vtk")[0] + "_rototrans.vtk"
+            input_vtk = Path(self.activation_file)
+            output_vtk = input_vtk.with_name(f"{input_vtk.stem}_rototrans.vtk")
 
             apply_roto_translation_to_vtk_grid(
                 input_vtk,
@@ -232,17 +229,12 @@ class flunedCase:
         self.schmidt_number = float(arg_dict["schmidt_number"])
         self.inlet_conc = float(arg_dict["inlet_conc"])
 
-        self.cfd_path = os.path.normcase(arg_dict["cfd_path"])
+        self.cfd_path = Path(arg_dict["cfd_path"])
 
-        if not os.path.isdir(self.cfd_path):
-            raise OSError(f"Folder not found: {self.cfd_path}")
+        if not self.cfd_path.is_dir():
+            raise FileNotFoundError(f"Folder not found: {self.cfd_path}")
 
-        self.fluned_path = os.path.join(self.cfd_path, self.case)
-
-        # try:
-        #     Path(self.fluned_path).mkdir(parents=True)
-        # except FileExistsError:
-        #     pass
+        self.fluned_path = Path(self.cfd_path) / self.case
 
         return
 
@@ -329,9 +321,8 @@ class flunedCase:
         case_folder = self.cfd_path
 
         # T=1 folder
-        one_folder = os.path.join(case_folder, "1")
-        if not os.path.exists(one_folder):
-            os.mkdir(one_folder)
+        one_folder = Path(case_folder) / "1"
+        one_folder.mkdir(exist_ok=True)
 
         return
 
@@ -365,8 +356,8 @@ class flunedCase:
         """
         # print("debug: copying phi file")
         last_time = self.cfd_simulation.last_time
-        target_file = os.path.join(self.fluned_path, "0", "phi")
-        origin_file = os.path.join(self.cfd_path, str(last_time), "phi")
+        target_file = Path(self.fluned_path) / "0" / "phi"
+        origin_file = Path(self.cfd_path) / str(last_time) / "phi"
 
         if self.cfd_simulation.volumetric_flag:
             shutil.copyfile(origin_file, target_file)
@@ -385,8 +376,8 @@ class flunedCase:
         """
 
         last_time = self.cfd_simulation.last_time
-        target_file = os.path.join(self.fluned_path, "0", "U")
-        origin_file = os.path.join(self.cfd_path, str(last_time), "U")
+        target_file = Path(self.fluned_path) / "0" / "U"
+        origin_file = Path(self.cfd_path) / str(last_time) / "U"
         shutil.copyfile(origin_file, target_file)
 
         return None
@@ -397,9 +388,9 @@ class flunedCase:
 
         last_time = self.cfd_simulation.last_time
 
-        targetFile = os.path.join(self.fluned_path, "0", "nut")
-        originFile = os.path.join(self.cfd_path, str(last_time), "nut")
-        checkFile = os.path.isfile(originFile)
+        targetFile = Path(self.fluned_path) / "0" / "nut"
+        originFile = Path(self.cfd_path) / str(last_time) / "nut"
+        checkFile = originFile.is_file()
         if checkFile:
             shutil.copyfile(originFile, targetFile)
 
@@ -408,11 +399,11 @@ class flunedCase:
     def copy_poly_mesh(self):
         """this function copy the poly Mesh files in the FLUNED folder"""
 
-        sourceFolder = os.path.join(self.cfd_path, "constant", "polyMesh")
-        targetFolder = os.path.join(self.fluned_path, "constant", "polyMesh")
+        sourceFolder = Path(self.cfd_path) / "constant" / "polyMesh"
+        targetFolder = Path(self.fluned_path) / "constant" / "polyMesh"
 
         # shutil do not allow to copy into an existing folder
-        dirCheck = os.path.isdir(targetFolder)
+        dirCheck = targetFolder.is_dir()
         if dirCheck:
             shutil.rmtree(targetFolder)
 
@@ -426,12 +417,12 @@ class flunedCase:
         """
 
         print("launching FLUNED solver ...")
-        current_folder = os.getcwd()
-        os.chdir(self.fluned_path)
         launch_calc_string = "FLUNED-solver".split()
-        with open("simulation_log", "a", encoding="utf-8") as outfile:
-            subprocess.Popen(launch_calc_string, stdout=outfile).wait()
-        os.chdir(current_folder)
+        log_path = Path(self.fluned_path) / "simulation_log"
+        with open(log_path, "a", encoding="utf-8") as outfile:
+            subprocess.Popen(
+                launch_calc_string, stdout=outfile, cwd=self.fluned_path
+            ).wait()
 
         return
 
@@ -478,9 +469,7 @@ class flunedCase:
         This function writes the summary file in the RESULTS/ folder
         """
 
-        summary_file = os.path.join(
-            self.fluned_simulation.results_folder, "SUMMARY.csv"
-        )
+        summary_file = Path(self.fluned_simulation.results_folder) / "SUMMARY.csv"
 
         results_sim = self.fluned_simulation
 
@@ -593,9 +582,7 @@ class flunedCase:
         This function writes the summary file in the RESULTS/ folder
         """
 
-        summary_file = os.path.join(
-            self.fluned_simulation.results_folder, "SUMMARY.csv"
-        )
+        summary_file = Path(self.fluned_simulation.results_folder) / "SUMMARY.csv"
 
         results_sim = self.fluned_simulation
 

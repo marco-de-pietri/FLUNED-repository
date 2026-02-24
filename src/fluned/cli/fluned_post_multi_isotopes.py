@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
-import os
+from pathlib import Path
 
 from . import __version__
 from .fluned_case_multi_isotopes_class import flunedCaseMultiIsotopes
@@ -14,7 +14,7 @@ def main():
         "-f",
         "--folder",
         type=str,
-        default=os.getcwd(),
+        default=str(Path.cwd()),
         help="folder containing the fluned simulations",
     )
     args = parser.parse_args()

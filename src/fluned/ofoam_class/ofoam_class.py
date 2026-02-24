@@ -3,15 +3,14 @@ class for the OF simulations, this can be used to parse and generate files
 """
 
 import math
-import os
-import pathlib
 import re
 import sys
-from typing import Optional
+from pathlib import Path
 
 import lxml.etree as et
 import numpy as np
 import pyvista as pv
+from foamlib import FoamCase
 
 from fluned.isotopes.isotopes import bins_from_lines, load_isotopes
 from fluned.utils import open_utf8_or_gzip
@@ -78,7 +77,7 @@ class SimulationOF:
         The complete path to the simulation folder.
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str | Path):
         """
         Constructs all the necessary attributes for the SimulationOF object.
 
@@ -87,8 +86,9 @@ class SimulationOF:
         path : str
             The complete path to the simulation folder.
         """
-        self.path = path
-        self.case = os.path.split(self.path)[-1]
+        self.path = Path(path)
+        self.case = self.path.name
+        self.foamlib_object = FoamCase(self.path)
         self.reduction_rate = []
         self.normalized_average_td = []
         self.inlet_td_conc_atoms_m3 = []
@@ -103,47 +103,52 @@ class SimulationOF:
 
     def create_case_folder(self):
         """
-        This function creates an OpenFoam Case - it calls some
-        function for the definition of the specific files
+        Create an OpenFOAM case folder structure.
         """
 
-        # case Folder
-        case_folder = self.path
-        if not os.path.exists(case_folder):
-            os.mkdir(case_folder)
+        case_path = Path(self.path)
 
-        # T=0 folder
-        zero_folder = os.path.join(case_folder, "0")
-        if not os.path.exists(zero_folder):
-            os.mkdir(zero_folder)
+        # Create required directory structure
+        for subpath in [
+            case_path,
+            case_path / "0",
+            case_path / "constant" / "polyMesh",
+            case_path / "system",
+        ]:
+            subpath.mkdir(parents=True, exist_ok=True)
 
-        # constant folder
-        const_folder = os.path.join(case_folder, "constant")
-        if not os.path.exists(const_folder):
-            os.mkdir(const_folder)
+        # Create case.foam file
+        (case_path / "case.foam").touch(exist_ok=True)
 
-        # polyMesh folder
-        poly_folder = os.path.join(case_folder, "constant", "polyMesh")
-        if not os.path.exists(poly_folder):
-            os.mkdir(poly_folder)
+    @classmethod
+    def is_valid_openfoam_case_directory(cls, folder_path: str | Path) -> bool:
+        """
+        Check if a path is a completed OpenFOAM simulation (case) directory.
+        Returns True if all of the following subdirectories exist:
+        - "0" (initial time directory)
+        - at least one other numeric directory (time > 0)
+        - "constant" (mesh & physical properties)
+        - "system" (control dictionaries)
+        """
+        folder_path = Path(folder_path)
+        if not folder_path.is_dir():
+            return False
 
-        # system folder
-        sys_folder = os.path.join(case_folder, "system")
-        if not os.path.exists(sys_folder):
-            os.mkdir(sys_folder)
+        entries = {item.name for item in folder_path.iterdir() if item.is_dir()}
 
-        # case foam file
-        case_file = os.path.join(case_folder, "case.foam")
-        pathlib.Path(case_file).touch()
+        has_initial_time = "0" in entries
+        has_later_time = any(name.isdigit() and int(name) > 0 for name in entries)
+        has_constant = "constant" in entries
+        has_system = "system" in entries
 
-        return
+        return has_initial_time and has_later_time and has_constant and has_system
 
     def post_process_openfoam_simulation(self):
         """
         this function is called when we process a finished openfoam simulation
         """
 
-        self.post_process_path = os.path.join(self.path, "postProcessing")
+        self.post_process_path = self.path / "postProcessing"
         self.last_time = self.get_last_time()
         self.volumetric_flag = self.get_volumetric_flag()
 
@@ -161,7 +166,7 @@ class SimulationOF:
         number of internal cells. It does so by reading the U file
         """
 
-        velocityFile = os.path.join(self.path, str(self.last_time), "U")
+        velocityFile = self.path / str(self.last_time) / "U"
 
         internal_block_pat = re.compile(
             r"internalField.*?(\d+).*?\(", re.MULTILINE | re.DOTALL
@@ -222,8 +227,8 @@ class SimulationOF:
 
         self.create_results_folder()
 
-        generate_vtk(self.path)
-        self.vtk_file_folder = os.path.join(self.path, "VTK")
+        generate_vtk(str(self.path))
+        self.vtk_file_folder = self.path / "VTK"
         self.get_vtk_file()
         self.vtk_dimensions, self.volume_m3 = get_vtk_dimensions(self.vtk_file_path)
 
@@ -242,7 +247,7 @@ class SimulationOF:
 
         return None
 
-    def get_vtk_file(self, custom_vtk: Optional[str] = None):
+    def get_vtk_file(self, custom_vtk: str | None = None):
         """
         this function looks for the vtk file in the VTK folder generated by the
         vtk openfoam utility and store it for generation of results
@@ -256,7 +261,7 @@ class SimulationOF:
         self.vtk_path = ""
 
         if custom_vtk is not None:
-            filename = os.path.splitext(custom_vtk)[0]
+            filename = Path(custom_vtk).stem
         else:
             filename = ""
 
@@ -264,13 +269,14 @@ class SimulationOF:
 
         vtkFilePat = re.compile(pat_string, re.IGNORECASE)
 
-        for filename in os.listdir(self.vtk_file_folder):
+        for vtk_path in self.vtk_file_folder.iterdir():
+            filename = vtk_path.name
             matchVTKfiles = vtkFilePat.findall(filename)
             if len(matchVTKfiles) == 1:
                 vtkFiles.append(filename)
 
         if len(vtkFiles) == 1:
-            self.vtk_file_path = os.path.join(self.path, "VTK", vtkFiles[0])
+            self.vtk_file_path = self.path / "VTK" / vtkFiles[0]
         else:
             print("ERROR zero or more than one vtk files")
             print("found in the VTK folder")
@@ -318,6 +324,8 @@ class SimulationOF:
         at the moment it supports only one outlet patch
         """
 
+        conc_out = []
+
         for patch in self.patches.values():
             if patch.face_type == "outlet":
                 conc_out = patch.ta_conc_atoms_m3
@@ -333,6 +341,8 @@ class SimulationOF:
         at the moment it supports only one outlet patch
         """
 
+        conc_out = []
+
         for patch in self.patches.values():
             if patch.face_type == "inlet":
                 conc_out = patch.td_conc_atoms_m3
@@ -347,6 +357,8 @@ class SimulationOF:
 
         at the moment it supports only one outlet patch
         """
+
+        conc_out = []
 
         for patch in self.patches.values():
             if patch.face_type == "outlet":
@@ -407,8 +419,8 @@ class SimulationOF:
 
         faces = []
 
-        poly_mesh_folder = os.path.join(self.path, "constant", "polyMesh")
-        boundary_file = os.path.join(poly_mesh_folder, "boundary")
+        poly_mesh_folder = self.path / "constant" / "polyMesh"
+        boundary_file = poly_mesh_folder / "boundary"
 
         try:
             inp_file = open(boundary_file, "r", encoding="utf8", errors="ignore")
@@ -446,7 +458,7 @@ class SimulationOF:
             if len(faces) != face_number:
                 raise ValueError("Error with the number of faces")
 
-        phi_file_path = os.path.join(self.path, str(self.last_time), "phi")
+        phi_file_path = self.path / str(self.last_time) / "phi"
         try:
             inp_file = open(phi_file_path, "r", encoding="utf8", errors="ignore")
         except IOError:
@@ -511,10 +523,10 @@ class SimulationOF:
         """
         time_folders = []
         # List all entries in the directory
-        entries = os.listdir(self.path)
+        entries = [item.name for item in self.path.iterdir()]
 
         for name in entries:
-            if not os.path.isdir(os.path.join(self.path, name)):
+            if not (self.path / name).is_dir():
                 continue
             try:
                 float(name)
@@ -548,7 +560,7 @@ class SimulationOF:
         constant/transportProperties file
         """
 
-        file_path = self.path + "/constant/transportProperties"
+        file_path = self.path / "constant" / "transportProperties"
         dict_path = "rhoRef"
 
         value = self.query_of_single_value(file_path, dict_path)
@@ -561,7 +573,7 @@ class SimulationOF:
         time folder
         """
 
-        file_path = self.path + "/" + str(self.last_time) + "/phi"
+        file_path = self.path / str(self.last_time) / "phi"
 
         dimension_vec = self.query_dimensions(file_path)
 
@@ -819,7 +831,7 @@ class SimulationOF:
         boundary_check = 0
         i_density = 1 / self.density_kg_m3
 
-        file_path = self.path + "/" + str(self.last_time) + "/phi"
+        file_path = self.path / str(self.last_time) / "phi"
 
         for t_dict in self.token_classifier(file_path):
             # convert dimensions vector
@@ -1231,8 +1243,8 @@ functions
     }}
 
  """
-        system_folder = os.path.join(self.path, "system")
-        control_dict_path = os.path.join(system_folder, "controlDict")
+        system_folder = self.path / "system"
+        control_dict_path = system_folder / "controlDict"
 
         with open(control_dict_path, "w", encoding="utf-8") as fw:
             if time_treatment == "steadystate":
@@ -1399,7 +1411,7 @@ snGradSchemes
 
 """
 
-        schemes_path = os.path.join(system_folder, "fvSchemes")
+        schemes_path = system_folder / "fvSchemes"
 
         with open(schemes_path, "w", encoding="utf-8") as fw:
             # select the fv scheme
@@ -1479,7 +1491,7 @@ SIMPLE
 }}
 
 """
-        solution_path = os.path.join(system_folder, "fvSolution")
+        solution_path = system_folder / "fvSolution"
 
         with open(solution_path, "w", encoding="utf-8") as fw:
             if time_treatment == "steadystate":
@@ -1503,7 +1515,7 @@ method          scotch;
 
 // *********************************************************************** //
 """
-        parallel_dict_path = os.path.join(system_folder, "decomposeParDict")
+        parallel_dict_path = system_folder / "decomposeParDict"
         with open(parallel_dict_path, "w", encoding="utf-8") as fw:
             fw.write(parallel_dict_text)
 
@@ -1542,8 +1554,8 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
 // ************************************************************************ //
 """
 
-        constant_folder = os.path.join(self.path, "constant")
-        transport_prop_path = os.path.join(constant_folder, "transportProperties")
+        constant_folder = self.path / "constant"
+        transport_prop_path = constant_folder / "transportProperties"
 
         with open(transport_prop_path, "w", encoding="utf-8") as fw:
             fw.write(
@@ -1562,8 +1574,8 @@ Sct            Sct [ 0 0 0 0 0 0 0 ] {};
         this function generate the T file at t=0
         """
 
-        zero_folder = os.path.join(self.path, "0")
-        zero_t_path = os.path.join(zero_folder, "T")
+        zero_folder = self.path / "0"
+        zero_t_path = zero_folder / "T"
 
         t_header_text = """
 FoamFile
@@ -1618,8 +1630,8 @@ boundaryField
         this function generate the Ta file at t=0
         """
 
-        zero_folder = os.path.join(self.path, "0")
-        zero_ta_path = os.path.join(zero_folder, "Ta")
+        zero_folder = self.path / "0"
+        zero_ta_path = zero_folder / "Ta"
 
         ta_header_text = """
 FoamFile
@@ -1674,8 +1686,8 @@ boundaryField
         this function generate the Tr file at t=0
         """
 
-        zero_folder = os.path.join(self.path, "0")
-        zero_tr_path = os.path.join(zero_folder, "Tr")
+        zero_folder = self.path / "0"
+        zero_tr_path = zero_folder / "Tr"
 
         tr_header_text = """
 FoamFile
@@ -1732,8 +1744,8 @@ boundaryField
         this function generate the Td file at t=0
         """
 
-        zero_folder = os.path.join(self.path, "0")
-        zero_td_path = os.path.join(zero_folder, "Td")
+        zero_folder = self.path / "0"
+        zero_td_path = zero_folder / "Td"
 
         td_header_text = """
 FoamFile
@@ -1794,12 +1806,14 @@ boundaryField
             r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
         )
 
-        v_file_path = os.path.join(self.path, "0")
-        v_files = [f for f in os.listdir(v_file_path) if re.match(r"V(c)?(\..*)?$", f)]
+        v_file_path = self.path / "0"
+        v_files = [
+            f.name for f in v_file_path.iterdir() if re.match(r"V(c)?(\..*)?$", f.name)
+        ]
         if not v_files:
             raise FileNotFoundError("No V or Vc files found")
 
-        v_file = os.path.join(v_file_path, v_files[0])
+        v_file = v_file_path / v_files[0]
 
         text = open_utf8_or_gzip(v_file)
         numInternalBlocks = internalBlockPat.findall(text)
@@ -1816,7 +1830,7 @@ boundaryField
     #         "internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
     #     )
     #
-    #     cFile = os.path.join(self.path, "0", "C")
+    #     cFile = self.path / "0" / "C"
     #     try:
     #         inpFile = open(cFile, "r", encoding="utf8", errors="ignore")
     #     except IOError:
@@ -1835,8 +1849,8 @@ boundaryField
     def read_centroids(self):
         """Read centroids from the OpenFOAM '0/C' file and store them in self.centroids (N x 3)."""
 
-        c_file = os.path.join(self.path, "0", "C")
-        if not os.path.isfile(c_file):
+        c_file = self.path / "0" / "C"
+        if not c_file.is_file():
             raise FileNotFoundError(f"Couldn't find C file at: {c_file}")
 
         with open(c_file, "r", encoding="utf8", errors="ignore") as f:
@@ -1904,7 +1918,7 @@ boundaryField
             r"internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
         )
 
-        uFile = os.path.join(self.path, "0", "U")
+        uFile = self.path / "0" / "U"
         try:
             inpFile = open(uFile, "r", encoding="utf8", errors="ignore")
         except IOError:
@@ -1931,7 +1945,7 @@ boundaryField
             r"internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
         )
 
-        gradFile = os.path.join(self.path, self.last_time, "grad(T)")
+        gradFile = self.path / self.last_time / "grad(T)"
         try:
             inpFile = open(gradFile, "r", encoding="utf8", errors="ignore")
         except IOError:
@@ -2044,8 +2058,8 @@ boundaryField
         generate the source file using the dataset reaction rate data
         """
 
-        zeroFolder = os.path.join(self.path, "0")
-        zeroSourcePath = os.path.join(zeroFolder, "Source")
+        zeroFolder = self.path / "0"
+        zeroSourcePath = zeroFolder / "Source"
 
         sHeaderText = """
         FoamFile
@@ -2095,7 +2109,7 @@ boundaryField
             fw.write(closerText)
 
         if activation_dataset_error != "":
-            zeroSourceErrorPath = os.path.join(zeroFolder, "SourceError")
+            zeroSourceErrorPath = zeroFolder / "SourceError"
 
             eHeaderText = """
         FoamFile
@@ -2142,8 +2156,8 @@ boundaryField
         2) transient the source is 0 in every cell
         """
 
-        zeroFolder = os.path.join(self.path, "0")
-        zeroSourcePath = os.path.join(zeroFolder, "TrSource")
+        zeroFolder = self.path / "0"
+        zeroSourcePath = zeroFolder / "TrSource"
 
         sHeaderText = """
 FoamFile
@@ -2271,7 +2285,7 @@ boundaryField
         lambdaPat = re.compile(r"lambda\s*lambda.*")
         schPat = re.compile(r"Sct\s*Sct.*")
 
-        cFile = os.path.join(self.path, "constant", "transportProperties")
+        cFile = self.path / "constant" / "transportProperties"
         try:
             inpFile = open(cFile, "r", encoding="utf8", errors="ignore")
         except IOError:
@@ -2318,9 +2332,9 @@ boundaryField
         is steady-state or transient.
         """
 
-        cFile = os.path.join(self.path, "system", "fvSchemes")
+        cFile = self.path / "system" / "fvSchemes"
 
-        if not os.path.isfile(cFile):
+        if not cFile.is_file():
             raise FileNotFoundError("couldn't open fvSchemes file")
 
         # Match the whole ddtSchemes dictionary
@@ -2356,7 +2370,7 @@ boundaryField
             r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
         )
 
-        tFile = os.path.join(self.path, self.last_time, "T")
+        tFile = self.path / self.last_time / "T"
 
         try:
             inpFile = open(tFile, "r", encoding="utf8", errors="ignore")
@@ -2378,11 +2392,9 @@ boundaryField
         this function creates the results folder
         """
 
-        resFolder = os.path.join(self.path, "RESULTS")
-
-        dir_check = os.path.isdir(resFolder)
-        if not dir_check:
-            os.mkdir(resFolder)
+        resFolder = self.path / "RESULTS"
+        if not resFolder.is_dir():
+            resFolder.mkdir()
 
         self.results_folder = resFolder
 
@@ -2393,9 +2405,7 @@ boundaryField
         this function write the sampled source in a vtk file
         """
 
-        out_vtk_file_path = os.path.join(
-            self.results_folder, "cartesian_sampled_source.vtk"
-        )
+        out_vtk_file_path = self.results_folder / "cartesian_sampled_source.vtk"
 
         dims = (self.x_ints + 1, self.y_ints + 1, self.z_ints + 1)
 
@@ -2430,7 +2440,7 @@ boundaryField
 
         print("writing source model file in CDGS format ...")
 
-        cdgsFile = os.path.join(self.results_folder, "cartesian_sampled_source.cdgs")
+        cdgsFile = self.results_folder / "cartesian_sampled_source.cdgs"
 
         with open(cdgsFile, "w") as fw:
             fw.write("num_meshes 1\n")
@@ -2504,13 +2514,9 @@ boundaryField
             "writing openmc source model file of the FLUNED results sampled over a cartesian grid  ..."
         )
 
-        openmc_source_file = os.path.join(
-            self.results_folder, "cartesian_sampled_source.xml"
-        )
-        openmc_source_file_name = os.path.basename(openmc_source_file)
-        openmc_source_import_commands = os.path.join(
-            self.results_folder, "openmc_commands.txt"
-        )
+        openmc_source_file = self.results_folder / "cartesian_sampled_source.xml"
+        openmc_source_file_name = openmc_source_file.name
+        openmc_source_import_commands = self.results_folder / "openmc_commands.txt"
 
         # now it is hardcoded, later I will find a better way to handle this
         mesh_id = 100
@@ -2607,18 +2613,14 @@ boundaryField
         print("writing openmc unstructured mesh source file ..")
 
         openmc_source_file_name = "um_fluned_source.xml"
-        openmc_source_file = os.path.join(self.results_folder, openmc_source_file_name)
+        openmc_source_file = self.results_folder / openmc_source_file_name
 
         h5m_basename = "um_geometry.h5m"
-        openmc_source_mesh_file = os.path.join(self.results_folder, h5m_basename)
+        openmc_source_mesh_file = self.results_folder / h5m_basename
 
-        vtk_tri_mesh_source_file = os.path.join(
-            self.results_folder, "triangularzed_t_scalar.vtk"
-        )
+        vtk_tri_mesh_source_file = self.results_folder / "triangularzed_t_scalar.vtk"
 
-        openmc_source_import_commands = os.path.join(
-            self.results_folder, "openmc_um_commands.txt"
-        )
+        openmc_source_import_commands = self.results_folder / "openmc_um_commands.txt"
 
         self.compute_triangularized_emission_rates(
             vtk_tri_mesh_source_file, scaling_factor=100.0, save_tri_mesh_vtk=True
@@ -2760,6 +2762,6 @@ boundaryField
             sys.exit()
 
         if not save_tri_mesh_vtk:
-            os.remove(tri_mesh_vtk_filepath)
+            Path(tri_mesh_vtk_filepath).unlink()
 
         return

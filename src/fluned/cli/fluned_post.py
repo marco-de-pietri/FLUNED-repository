@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import argparse
-import os
 import tracemalloc
+from pathlib import Path
 
-from . import __version__
-from .fluned_case_class import flunedCase
-from .utils import display_top
+from .. import __version__
+from ..fluned_case_class import flunedCase
+from ..utils import display_top
 
 
 def main():
@@ -42,7 +42,7 @@ def main():
     if args.debug:
         tracemalloc.start()
 
-    simulation_folder = os.getcwd()
+    simulation_folder = Path.cwd()
     fluned_case = flunedCase(fluned_path=simulation_folder)
     fluned_case.parse_fluned_simulation()
 

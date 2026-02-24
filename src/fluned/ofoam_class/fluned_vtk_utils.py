@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal, Tuple
@@ -20,16 +19,16 @@ def generate_external_stl(vtk_path, output_folder):
     write it in a stl file
     """
 
-    stl_path = os.path.join(output_folder, "external_surface.stl")
+    stl_path = Path(output_folder) / "external_surface.stl"
 
     # read the VTK mesh (handles .vtk, .vtu, .vti, etc.)
-    mesh = pv.read(vtk_path)
+    mesh = pv.read(str(vtk_path))
 
     # extract the exterior faces (drops internal cells)
     surface = mesh.extract_surface(algorithm=None).triangulate()
 
     # write STL (binary by default)
-    surface.save(stl_path)
+    surface.save(str(stl_path))
 
     return
 
@@ -327,7 +326,7 @@ def generate_triangularized_h5m_um_mesh(
     temp_vtk_path = Path(original_vtk_path).parent / "intermediate_tempfile.vtk"
 
     # initialization and removal of other arrays
-    if original_vtk_path.lower().endswith(".vtu"):
+    if original_vtk_path.suffix.lower() == ".vtu":
         reader = vtk.vtkXMLUnstructuredGridReader()
     else:  # legacy ASCII/Binary *.vtk
         reader = vtk.vtkUnstructuredGridReader()
@@ -381,7 +380,7 @@ def generate_triangularized_scalar_mesh(
     """
 
     # scale the simulation vtk from meters to cm and triangularize it
-    if vtk_in_path.lower().endswith(".vtu"):
+    if vtk_in_path.suffix.lower() == ".vtu":
         reader = vtk.vtkXMLUnstructuredGridReader()
     else:  # legacy ASCII/Binary *.vtk
         reader = vtk.vtkUnstructuredGridReader()

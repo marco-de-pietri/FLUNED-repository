@@ -1,6 +1,6 @@
-import os
 import re
 import sys
+from pathlib import Path
 
 import h5py
 import numpy as np
@@ -25,8 +25,9 @@ class fluentSimulation:
         The complete path to the simulation folder.
     """
 
-    def __init__(self, h5_path: str, region_name):
-        if os.path.isdir(h5_path):
+    def __init__(self, h5_path: str | Path, region_name: str):
+        h5_path = Path(h5_path)
+        if h5_path.is_dir():
             self.casH5file, self.datH5file = self.get_h5_files(h5_path)
         else:
             raise ValueError("folder containing the h5 file expected")
@@ -37,8 +38,8 @@ class fluentSimulation:
         self.cell_density_path = ""
         self.fluid_region_id = 0
         self.min_id_region = 0
-        self.data_h5_path = os.path.join(self.fluent_path, self.datH5file)
-        self.case_h5_path = os.path.join(self.fluent_path, self.casH5file)
+        self.data_h5_path = self.fluent_path / self.datH5file
+        self.case_h5_path = self.fluent_path / self.casH5file
 
         return
 
@@ -54,7 +55,7 @@ class fluentSimulation:
         return
 
     def convert_to_openfoam(self, target_openfoam_path):
-        self.target_openfoam_path = target_openfoam_path
+        self.target_openfoam_path = Path(target_openfoam_path)
 
         self.define_walls_multidataset_h5()
         self.write_nut_multidataset_h5()
@@ -75,7 +76,8 @@ class fluentSimulation:
         casH5FilePat = re.compile(r"\.cas.h5\Z", re.IGNORECASE)
         datH5FilePat = re.compile(r"\.dat.h5\Z", re.IGNORECASE)
 
-        for filename in os.listdir(folder):
+        for item in Path(folder).iterdir():
+            filename = item.name
             casH5file = casH5FilePat.findall(filename)
             datH5file = datH5FilePat.findall(filename)
             if len(casH5file) == 1:
@@ -348,9 +350,7 @@ class fluentSimulation:
 
         ownerPat = re.compile(r".*/faces/c0/\d+\Z", re.IGNORECASE)
 
-        ownerFilePath = os.path.join(
-            self.target_openfoam_path, "constant", "polyMesh", "owner"
-        )
+        ownerFilePath = self.target_openfoam_path / "constant" / "polyMesh" / "owner"
 
         ownerHeader = """
 FoamFile
@@ -402,8 +402,8 @@ FoamFile
 
         neighPat = re.compile(r".*/faces/c1/\d+\Z", re.IGNORECASE)
 
-        neighbourFilePath = os.path.join(
-            self.target_openfoam_path, "constant", "polyMesh", "neighbour"
+        neighbourFilePath = (
+            self.target_openfoam_path / "constant" / "polyMesh" / "neighbour"
         )
 
         neighHeader = """
@@ -445,8 +445,8 @@ FoamFile
         the self.faceList should be already arranged for the work
         """
 
-        boundaryFilePath = os.path.join(
-            self.target_openfoam_path, "constant", "polyMesh", "boundary"
+        boundaryFilePath = (
+            self.target_openfoam_path / "constant" / "polyMesh" / "boundary"
         )
         boundaryHeader = """
 FoamFile
@@ -508,9 +508,7 @@ FoamFile
         facePat = re.compile(r".*/faces/nodes/\d+/nnodes\Z", re.IGNORECASE)
         face2Pat = re.compile(r".*/faces/nodes/\d+/nodes\Z", re.IGNORECASE)
 
-        facesFilePath = os.path.join(
-            self.target_openfoam_path, "constant", "polyMesh", "faces"
-        )
+        facesFilePath = self.target_openfoam_path / "constant" / "polyMesh" / "faces"
 
         facesHeader = """
 FoamFile
@@ -581,8 +579,8 @@ FoamFile
 
             fo.write(")")
 
-        faceZonesFilePath = os.path.join(
-            self.target_openfoam_path, "constant", "polyMesh", "faceZones"
+        faceZonesFilePath = (
+            self.target_openfoam_path / "constant" / "polyMesh" / "faceZones"
         )
 
         faceZones = """
@@ -620,8 +618,8 @@ FoamFile
 
         nodesPat = re.compile(r".*/nodes/coords/\d+\Z", re.IGNORECASE)
 
-        pointsFilePath = os.path.join(
-            self.target_openfoam_path, "constant", "polyMesh", "points"
+        pointsFilePath = (
+            self.target_openfoam_path / "constant" / "polyMesh" / "points"
         )
 
         pointsHeader = """
@@ -651,8 +649,8 @@ FoamFile
 
             fo.write(")")
 
-        pointsZonesFilePath = os.path.join(
-            self.target_openfoam_path, "constant", "polyMesh", "pointZones"
+        pointsZonesFilePath = (
+            self.target_openfoam_path / "constant" / "polyMesh" / "pointZones"
         )
 
         pointZones = """
@@ -692,7 +690,7 @@ FoamFile
 
         phiPat = re.compile(".*/faces/SV_FLUX/.*", re.IGNORECASE)
 
-        phiOneFilePath = os.path.join(self.target_openfoam_path, "1", "phi")
+        phiOneFilePath = self.target_openfoam_path / "1" / "phi"
 
         phiValues = get_h5_dataset_multi(filename, phiPat)
 
@@ -782,7 +780,7 @@ dimensions      [0 3 -1 0 0 0 0];
 
         uFaceZPat = re.compile(".*/faces/SV_W/.*", re.IGNORECASE)
 
-        uOneFilePath = os.path.join(self.target_openfoam_path, "1", "U")
+        uOneFilePath = self.target_openfoam_path / "1" / "U"
 
         xCellVelocity = get_h5_dataset_multi(filename, uCellXPat)
         yCellVelocity = get_h5_dataset_multi(filename, uCellYPat)
@@ -882,7 +880,7 @@ dimensions      [0 1 -1 0 0 0 0];
         # mutCellValues = get_h5_dataset(filename,mutCellPat)
         mutCellValues = get_h5_dataset_multi(filename, mutCellPat)
 
-        nutOneFilePath = os.path.join(self.target_openfoam_path, "1", "nut")
+        nutOneFilePath = self.target_openfoam_path / "1" / "nut"
 
         ownerPat = re.compile(r".*/faces/c0/\d+\Z", re.IGNORECASE)
 
@@ -963,8 +961,8 @@ dimensions      [0 2 -1 0 0 0 0];
         """
         function to write the cell zones file in the polyMesh folder
         """
-        cell_zones_file_path = os.path.join(
-            self.target_openfoam_path, "constant", "polyMesh", "cellZones"
+        cell_zones_file_path = (
+            self.target_openfoam_path / "constant" / "polyMesh" / "cellZones"
         )
 
         cell_zones_string = """

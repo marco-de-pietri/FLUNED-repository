@@ -1,7 +1,5 @@
-import os
 import pickle
-import sys
-from typing import Union
+from pathlib import Path
 
 import h5py
 import numpy as np
@@ -10,6 +8,7 @@ from lxml import etree as et  # type: ignore[attr-defined]
 from fluned.ofoam_class.fluned_vtk_utils import generate_triangularized_h5m_um_mesh
 
 from .fluned_case_class import flunedCase
+from .ofoam_class.SimulationClass import is_valid_openfoam_case_directory
 
 
 def openmc_fluned_coupling(
@@ -80,57 +79,16 @@ class flunedCaseMultiIsotopes:
         the init function only gathers the possible folders where fluned simulations are present
         """
 
-        self.container_path = multi_cases_path
+        self.container_path = Path(multi_cases_path)
         self.fluned_cases = self.get_fluned_cases()
 
     def get_fluned_cases(self):
-        """
-        this function inspects all the folders in the
-        self.container_path and it returns the completed fluned simulations
-        """
-
-        folder_path = self.container_path
-
-        entries = [
-            os.path.join(folder_path, name)
-            for name in os.listdir(folder_path)
-            if os.path.isdir(os.path.join(folder_path, name))
+        root = self.container_path
+        return [
+            flunedCase(fluned_path=p)
+            for p in root.iterdir()
+            if p.is_dir() and is_valid_openfoam_case_directory(p)
         ]
-
-        fluned_cases = [
-            flunedCase(fluned_path=sim_path)
-            for sim_path in entries
-            if self.is_valid_openfoam_case_directory(sim_path)
-        ]
-
-        return fluned_cases
-
-    def is_valid_openfoam_case_directory(
-        self, folder_path: Union[str, os.PathLike]
-    ) -> bool:
-        """
-        Check if a path is a completed OpenFOAM simulation (case) directory.
-        Returns True if all of the following subdirectories exist:
-        - "0" (initial time directory)
-        - at least one other numeric directory (time > 0)
-        - "constant" (mesh & physical properties)
-        - "system" (control dictionaries)
-        """
-        if not os.path.isdir(folder_path):
-            return False
-
-        entries = {
-            name
-            for name in os.listdir(folder_path)
-            if os.path.isdir(os.path.join(folder_path, name))
-        }
-
-        has_initial_time = "0" in entries
-        has_later_time = any(name.isdigit() and int(name) > 0 for name in entries)
-        has_constant = "constant" in entries
-        has_system = "system" in entries
-
-        return has_initial_time and has_later_time and has_constant and has_system
 
     def post_process_cases(self):
         """
@@ -150,21 +108,19 @@ class flunedCaseMultiIsotopes:
 
         xml_source_basename = "source_mesh_file_"
         h5m_basename = "geometry.h5m"
-        h5m_file_path = os.path.join(self.container_path, h5m_basename)
+        h5m_file_path = self.container_path / h5m_basename
 
-        commands_file_path = os.path.join(
-            self.container_path, "openmc_source_commands.txt"
-        )
+        commands_file_path = self.container_path / "openmc_source_commands.txt"
 
         xml_mesh_file_name = "um_mesh_file.xml"
-        xml_mesh_file_path = os.path.join(self.container_path, xml_mesh_file_name)
+        xml_mesh_file_path = self.container_path / xml_mesh_file_name
 
         generate_triangularized_h5m_um_mesh(
             self.fluned_cases[0].fluned_simulation.vtk_file_path, h5m_file_path
         )
 
         for case in self.fluned_cases:
-            vtk_file_path_temp = os.path.join(self.container_path, "triangularized.vtk")
+            vtk_file_path_temp = self.container_path / "triangularized.vtk"
             case.fluned_simulation.compute_triangularized_emission_rates(
                 vtk_file_path_temp,
                 scaling_factor=100.0,
@@ -186,15 +142,14 @@ class flunedCaseMultiIsotopes:
             > 1
         ):
             print(
-                "ERROR not all the triangularized isotope concentrations are the same"
-            )
-            print(
                 [
                     len(case.fluned_simulation.tri_mesh_emission_rates)
                     for case in self.fluned_cases
                 ]
             )
-            sys.exit()
+            raise ValueError(
+                "ERROR not all the triangularized isotope concentrations are the same"
+            )
 
         #
         # generate xml file with the geometry mesh reference
@@ -238,7 +193,7 @@ class flunedCaseMultiIsotopes:
             isotope_vec.append(isotope)
 
             case_xml_file = xml_source_basename + isotope + ".xml"
-            case_xml_file_path = os.path.join(self.container_path, case_xml_file)
+            case_xml_file_path = self.container_path / case_xml_file
 
             case_root = et.Element("mesh_source")
 
@@ -265,8 +220,6 @@ class flunedCaseMultiIsotopes:
                     [val for val in case.fluned_simulation.tri_mesh_emission_rates],
                 )
             )  # adjust that the decay rate has been calculated after scaling the vtk file
-
-            # angle = et.SubElement(source_mesh, "angle", type="isotropic")
 
             ebins_temp = [
                 e * 1e6 for e in case.fluned_simulation.e_lines

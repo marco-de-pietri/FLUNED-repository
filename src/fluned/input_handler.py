@@ -1,6 +1,6 @@
 import copy
-import os
 import re
+from pathlib import Path
 
 import numpy as np
 
@@ -77,9 +77,9 @@ def create_input_template():
     """
 
     input_name = "input_template"
-    current_folder = os.getcwd()
+    current_folder = Path.cwd()
 
-    input_path = os.path.join(current_folder, input_name)
+    input_path = current_folder / input_name
 
     template_text = """CASE  FLUNED_01_DEFAULT_N16
 TIME_TREATMENT  steadyState          # steadyState or transient supported

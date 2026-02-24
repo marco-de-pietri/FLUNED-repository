@@ -1,5 +1,5 @@
 import copy
-import os
+from pathlib import Path
 
 
 def get_post_process_list(path, dir_prefix, face_name, col_name):
@@ -7,14 +7,15 @@ def get_post_process_list(path, dir_prefix, face_name, col_name):
     this function gets the post process flow from the simulation folder
     """
 
+    path = Path(path)
     dir_name = dir_prefix + face_name
 
-    flow_folders = [itm for itm in os.listdir(path) if itm == dir_name]
+    flow_folders = [itm.name for itm in path.iterdir() if itm.name == dir_name]
 
     if len(flow_folders) != 1:
         raise ValueError("Error with the number of flow folders")
 
-    flow_files = get_post_files(os.path.join(path, flow_folders[0]))
+    flow_files = get_post_files(path / flow_folders[0])
 
     area_m2 = extract_area_field(flow_files[0])
 
@@ -94,16 +95,15 @@ def get_post_files(path):
     this function crawl the folder to reach the data in the post process file
     """
 
+    path = Path(path)
     file_paths = []
-    folder_itms = os.listdir(path)
-    folder_itms = sorted(folder_itms, reverse=False, key=lambda x: float(x))
+    folder_itms = sorted(path.iterdir(), reverse=False, key=lambda x: float(x.name))
 
     for fld in folder_itms:
-        path_1 = os.path.join(path, fld)
-        if os.path.isdir(path_1):
-            file_itms = os.listdir(path_1)
-            complete_path = os.path.join(path_1, file_itms[0])
-            file_paths.append(complete_path)
+        if fld.is_dir():
+            file_itms = list(fld.iterdir())
+            complete_path = file_itms[0]
+            file_paths.append(str(complete_path))
 
     return file_paths
 
@@ -182,8 +182,8 @@ class PatchClass:
             The complete path to the simulation folder.
         """
 
-        self.simulation_path = path
-        self.post_process_path = os.path.join(self.simulation_path, "postProcessing")
+        self.simulation_path = Path(path)
+        self.post_process_path = self.simulation_path / "postProcessing"
         self.face_id = patch_dict["face_id"]
         self.face_elements_n = patch_dict["face_elements_n"]
         self.face_first_element = patch_dict["face_first_element"]
