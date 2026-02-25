@@ -1,9 +1,13 @@
 temporary document to track refactor
 
+done:
+
+- split simulationOF into oFoamBase (cdf) and its child class oFoamFluned (fluned)
+
 foam_case class
 
 - remove default input in the init. use handle input module
-- reorganize generate input
+- reorganize generate_case 
 
      ├╴flunedCase [23, 7]
      ├╴__init__ [30, 9]
@@ -67,11 +71,12 @@ ofoam class
 
      ├╴parse_boundary_phi_files [411, 9] both - optimizable
 
-     ├╴get_last_time [504, 9] - both pre/post replaceable with libfoam
+     ├╴get_last_time [504, 9] - both pre/post replaceable with libfoam   - REMOVED for foamlib
      ├╴get_time_folders [515, 9] both pre/post replaceable with libfoam
 
-     ├╴get_volumetric_flag [538, 9] both pre/post replaceable with libfoam
      ├╴get_density [557, 9] both pre/post replaceable with libfoam
+
+     ├╴get_volumetric_flag [538, 9] both pre/post replaceable with libfoam - REMOVED for foamlib
      ├╴get_phi_dimensions [570, 9] both pre/post replaceable with libfoam
 
      ├╴query_dimensions [582, 9] both pre/post  - block of functions that allow the conversion of  huge files (not replaceable at the moment)
@@ -116,5 +121,5 @@ ofoam class
 
      ├╴write_cdgs [2436, 9] - fluned post at the moment no modifications
      ├╴write_openmc_sm_source [2508, 9] fluned - post
-     ├╴write_openmc_um_source [2607, 9] fluned - post
+     ├╴write_openmc_um_source [2607, 9] fluned - post - improve the output
      └╴compute_triangularized_emission_rates [2709, 9] 

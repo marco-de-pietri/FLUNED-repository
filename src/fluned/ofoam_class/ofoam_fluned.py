@@ -993,7 +993,7 @@ boundaryField
             r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
         )
 
-        tFile = self.path / self.last_time / "T"
+        tFile = self.path / str(self.last_time) / "T"
 
         try:
             inpFile = open(tFile, "r", encoding="utf8", errors="ignore")

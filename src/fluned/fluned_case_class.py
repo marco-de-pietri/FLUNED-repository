@@ -310,7 +310,6 @@ class flunedCase:
         """
 
         self.cfd_simulation = oFoamBase(self.cfd_path)
-        # self.cfd_simulation.create_case_folder()
 
         return
 

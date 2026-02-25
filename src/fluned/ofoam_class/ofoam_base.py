@@ -116,7 +116,8 @@ class oFoamBase:
         """
 
         self.post_process_path = self.path / "postProcessing"
-        self.last_time = self.get_last_time()
+        self.last_time = self.foamlib_object[-1].name
+
         self.volumetric_flag = self.get_volumetric_flag()
 
         if not self.volumetric_flag:
@@ -256,55 +257,21 @@ class oFoamBase:
 
         return faces
 
-    def get_last_time(self):
-        """
-        Returns the last time folder in the simulation folder.
-        """
-
-        time_folders = self.get_time_folders()
-        time_folders_vals = [float(folder) for folder in time_folders]
-        idx = time_folders_vals.index(max(time_folders_vals))
-
-        return time_folders[idx]
-
-    def get_time_folders(self):
-        """
-        Returns a list of the time folders in the simulation folder.
-
-        Returns:
-        --------
-        list
-            A list of the time folders in the simulation folder.
-        """
-        time_folders = []
-        # List all entries in the directory
-        entries = [item.name for item in self.path.iterdir()]
-
-        for name in entries:
-            if not (self.path / name).is_dir():
-                continue
-            try:
-                float(name)
-                time_folders.append(name)
-            except ValueError:
-                continue
-        return time_folders
-
     def get_volumetric_flag(self):
         """
         this function check the phi values to check if the phis are in the units
         of volumetric or mass flux (m3/s or kg/s)
         """
 
-        dimension_vec = self.get_phi_dimensions()
+        phi_dimensions = tuple(self.foamlib_object[self.last_time]["phi"].dimensions)
 
-        if dimension_vec == [1, 0, -1, 0, 0, 0, 0]:
+        if phi_dimensions == (1, 0, -1, 0, 0, 0, 0):
             volumetric_flag = False
-        elif dimension_vec == [0, 3, -1, 0, 0, 0, 0]:
+        elif phi_dimensions == (0, 3, -1, 0, 0, 0, 0):
             volumetric_flag = True
         else:
             raise ValueError(
-                "The dimensions of phi are not recognized: ", dimension_vec
+                "The dimensions of phi are not recognized: ", phi_dimensions
             )
 
         return volumetric_flag
@@ -321,36 +288,6 @@ class oFoamBase:
         value = self.query_of_single_value(file_path, dict_path)
 
         return float(value)
-
-    def get_phi_dimensions(self):
-        """
-        this function gets the dimensions of the phi values from the last
-        time folder
-        """
-
-        file_path = self.path / str(self.last_time) / "phi"
-
-        dimension_vec = self.query_dimensions(file_path)
-
-        return dimension_vec
-
-    def query_dimensions(self, file_path):
-        """
-        this function queries the phi file to get the dimensions of the phi
-        values
-        """
-
-        dict_path = "dimensions"
-
-        dim_vector = []
-
-        for tok_dict in self.token_classifier(file_path):
-            if tok_dict["path"] == dict_path and tok_dict["type"] == "VECTOR_DATA":
-                dim_vector.append(int(tok_dict["token"]))
-            if len(dim_vector) == 7:
-                break
-
-        return dim_vector
 
     def query_of_single_value(self, file_path, dict_path, position=-2):
         """
@@ -778,7 +715,7 @@ class oFoamBase:
             r"internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
         )
 
-        gradFile = self.path / self.last_time / "grad(T)"
+        gradFile = self.path / str(self.last_time) / "grad(T)"
         try:
             inpFile = open(gradFile, "r", encoding="utf8", errors="ignore")
         except IOError:
