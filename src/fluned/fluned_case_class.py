@@ -16,6 +16,7 @@ from fluned.ofoam_class.fluned_vtk_utils import (
     write_cartesian_vtk,
 )
 from fluned.ofoam_class.ofoam_base import oFoamBase
+from fluned.ofoam_class.ofoam_fluned import oFoamFluned
 
 from .utils import mod
 
@@ -247,7 +248,7 @@ class flunedCase:
 
         self.cfd_simulation.post_process_openfoam_simulation()
 
-        self.fluned_simulation = oFoamBase(self.fluned_path)
+        self.fluned_simulation = oFoamFluned(self.fluned_path)
 
         self.fluned_simulation.create_case_folder()
 
@@ -295,7 +296,7 @@ class flunedCase:
         it initialize a oFoamBase object and parse its data
         """
 
-        self.fluned_simulation = oFoamBase(self.fluned_path)
+        self.fluned_simulation = oFoamFluned(self.fluned_path)
 
         self.fluned_simulation.post_process_openfoam_simulation()
         self.fluned_simulation.post_process_fluned_simulation()

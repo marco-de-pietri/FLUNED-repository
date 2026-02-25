@@ -45,8 +45,8 @@ ofoam class
      ├╴__init__ [80, 9]
 
 
-     ├╴create_case_folder [104, 9]
-     ├╴is_valid_openfoam_case_directory [124, 9]
+     ├╴create_case_folder [104, 9] both
+     ├╴is_valid_openfoam_case_directory [124, 9] both
 
      ├╴post_process_openfoam_simulation [146, 9] post - both
      ├╴get_number_internal_cells [163, 9] post - both
@@ -108,10 +108,10 @@ ofoam class
      ├╴assign_isotope_data [2215, 9] - totally need to reevaluate as I am already doing this in the
      isotope class
 
-     ├╴parse_constants_file [2278, 9] - replaceable with foamlib
-
+     ├╴parse_constants_file [2278, 9] - both - replaceable with foamlib
      ├╴get_time_treatment [2329, 9]
-     ├╴read_t [2361, 9]
+
+     ├╴read_t [2361, 9] fluned - post - replaceable as well
 
 
      ├╴write_cdgs [2436, 9] - fluned post at the moment no modifications
