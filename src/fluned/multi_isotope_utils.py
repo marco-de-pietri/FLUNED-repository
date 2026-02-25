@@ -1,17 +1,27 @@
+import pickle
 import xml.etree.ElementTree as ET
 from typing import Any
+
+import h5py
+
+
+def get_isotope_reactions_dicts(file_path):
+    """
+    Read depletion results and return mappings for isotopes and reactions.
+    """
+
+    with h5py.File(file_path, "r") as f:
+        nuc_idx = pickle.loads(f["index_nuc"][...].tobytes())
+        rx_idx = pickle.loads(f["index_rx"][...].tobytes())
+
+    return nuc_idx, rx_idx
 
 
 def map_targets_to_channels(
     xml_file: str, isotopes_index: dict[str, int], reaction_rates_index: dict[str, int]
 ) -> dict[str, list[dict[str, Any]]]:
     """
-    Parses the XML at `xml_file` and returns a dict mapping each target atom
-    to a list of channels. Each channel is a dict with:
-      - 'parent_nuclide': name of the nuclide
-      - 'reaction': reaction type
-      - 'channel_index': [parent_isotope_index, reaction_rate_index]
-
+    Parse `xml_file` and map each target nuclide to its parent/reaction channels.
     """
     tree = ET.parse(xml_file)
     root = tree.getroot()
@@ -51,15 +61,12 @@ def filter_channels(
     xml_file: str, channels: dict[str, list[dict[str, Any]]]
 ) -> dict[str, list[dict[str, Any]]]:
     """
-    Given a mapping of target nuclides to reaction channels, remove any
-    targets for which the corresponding <nuclide> element in the XML
-    has no <source> child.
+    Keep only targets that have a photon source in the chain XML.
     """
 
     tree = ET.parse(xml_file)
     root = tree.getroot()
 
-    # Identify nuclides with a <source> of particle 'photon'
     valid_sources = set()
     for nu in root.findall("nuclide"):
         name = nu.get("name")
@@ -68,7 +75,6 @@ def filter_channels(
                 valid_sources.add(name)
                 break
 
-    # Filter out targets without a valid source
     return {
         target: chans for target, chans in channels.items() if target in valid_sources
     }

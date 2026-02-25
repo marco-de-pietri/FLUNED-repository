@@ -225,7 +225,8 @@ class SimulationOF:
         self.read_volumes()
         self.read_t()
 
-        self.create_results_folder()
+        self.results_folder = self.path / "RESULTS"
+        self.results_folder.mkdir(exist_ok=True)
 
         generate_vtk(str(self.path))
         self.vtk_file_folder = self.path / "VTK"
@@ -901,6 +902,8 @@ class SimulationOF:
         """
         this function takes the vtk um-mesh as computed by fluned, it scales
         it to a new inlet activity, and writes the scaled results to a new vtk file
+
+        IMPORTANT: it converts concentrations to activities
         """
 
         print("writing vtk file for circuit calculation ... ")
@@ -1063,10 +1066,6 @@ class SimulationOF:
         openFOAM simulation - in later development it will apply the case
         parameters
         """
-
-        # for patch in self.patches.values():
-        #     print(patch)
-        #     print(patch.face_type)
 
         control_dict_text_transient = """
 FoamFile
@@ -1822,30 +1821,6 @@ boundaryField
 
         return
 
-    # def read_centroids(self):
-    #     """this function reads the centroids from the 0 folder"""
-    #
-    #     # common patterns
-    #     internalBlockPat = re.compile(
-    #         "internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
-    #     )
-    #
-    #     cFile = self.path / "0" / "C"
-    #     try:
-    #         inpFile = open(cFile, "r", encoding="utf8", errors="ignore")
-    #     except IOError:
-    #         raise FileNotFoundError("couldn't open  C file")
-    #     with inpFile:
-    #         text = inpFile.read()
-    #         numInternalBlocks = internalBlockPat.findall(text)
-    #         internalCentroids = numInternalBlocks[0].split("\n")[1:]
-    #         internalCentroids = [val.strip("()") for val in internalCentroids]
-    #         self.centroids = np.array(
-    #             [[float(val) for val in v.split()] for v in internalCentroids]
-    #         )
-    #
-    #     return
-
     def read_centroids(self):
         """Read centroids from the OpenFOAM '0/C' file and store them in self.centroids (N x 3)."""
 
@@ -2384,19 +2359,6 @@ boundaryField
             self.t_scalar = np.zeros(self.n_internal_cells)
             for i in range(self.n_internal_cells):
                 self.t_scalar[i] = float(internalScalar[i])
-
-        return
-
-    def create_results_folder(self):
-        """
-        this function creates the results folder
-        """
-
-        resFolder = self.path / "RESULTS"
-        if not resFolder.is_dir():
-            resFolder.mkdir()
-
-        self.results_folder = resFolder
 
         return
 

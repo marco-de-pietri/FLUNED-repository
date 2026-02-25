@@ -22,7 +22,9 @@ from .utils import mod
 
 class flunedCase:
     """
-    FLUNED simulation class
+    FLUNED simulation class - two class of jobs:
+    - orchestrate the generation of the FLUNED case files from the initial CFD simulation results
+    - orchestrate the post processing
     """
 
     def __init__(self, fluned_path: str | Path = ""):
@@ -38,7 +40,6 @@ class flunedCase:
         self.fv_scheme = "stable"
         self.fluned_path = fluned_path
         self.case = Path(fluned_path).name
-        self.num_internal_cells = 0
         self.source_sampling_resolution_cm: float | None = None
         self.source_sampling_dataset: str | None = None
 

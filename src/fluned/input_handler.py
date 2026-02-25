@@ -4,8 +4,8 @@ from pathlib import Path
 
 import numpy as np
 
-from .activation_file_utils import get_isotope_reactions_dicts
-from .chain_file_utils import (
+from .multi_isotope_utils import (
+    get_isotope_reactions_dicts,
     filter_channels,
     map_targets_to_channels,
 )
