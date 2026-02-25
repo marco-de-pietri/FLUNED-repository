@@ -15,7 +15,7 @@ from fluned.ofoam_class.fluned_vtk_utils import (
     apply_roto_translation_to_vtk_grid,
     write_cartesian_vtk,
 )
-from fluned.ofoam_class.ofoam_class import SimulationOF
+from fluned.ofoam_class.ofoam_base import oFoamBase
 
 from .utils import mod
 
@@ -247,7 +247,7 @@ class flunedCase:
 
         self.cfd_simulation.post_process_openfoam_simulation()
 
-        self.fluned_simulation = SimulationOF(self.fluned_path)
+        self.fluned_simulation = oFoamBase(self.fluned_path)
 
         self.fluned_simulation.create_case_folder()
 
@@ -292,10 +292,10 @@ class flunedCase:
     def parse_fluned_simulation(self):
         """
         this function gets the data of a completed FLUNED simulation
-        it initialize a SimulationOF object and parse its data
+        it initialize a oFoamBase object and parse its data
         """
 
-        self.fluned_simulation = SimulationOF(self.fluned_path)
+        self.fluned_simulation = oFoamBase(self.fluned_path)
 
         self.fluned_simulation.post_process_openfoam_simulation()
         self.fluned_simulation.post_process_fluned_simulation()
@@ -308,7 +308,7 @@ class flunedCase:
         fluent simulation has been processed
         """
 
-        self.cfd_simulation = SimulationOF(self.cfd_path)
+        self.cfd_simulation = oFoamBase(self.cfd_path)
         # self.cfd_simulation.create_case_folder()
 
         return

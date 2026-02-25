@@ -2,6 +2,7 @@
 class for the OF simulations, this can be used to parse and generate files
 """
 
+import gzip
 import math
 import re
 import sys
@@ -13,7 +14,6 @@ import pyvista as pv
 from foamlib import FoamCase
 
 from fluned.isotopes.isotopes import bins_from_lines, load_isotopes
-from fluned.utils import open_utf8_or_gzip
 
 from .fluned_tool_launchers import generate_vtk, launch_centroid_func_object
 from .fluned_vtk_utils import (
@@ -30,6 +30,40 @@ from .patch_class import (
     PatchClass,
     get_post_process_list,
 )
+
+
+def open_utf8_or_gzip(file_path):
+    """
+    this function tries to open a file with utf-8 encoding, if it fails it
+    tries to open it with gzip. It returns the file object
+    """
+
+    try:
+        with open(file_path, "rb") as f:
+            magic = f.read(2)
+    except OSError:
+        print("Couldn't open Volume V file")
+        sys.exit(1)
+
+    if magic == b"\x1f\x8b":
+        # The file is gzip-compressed
+        try:
+            with gzip.open(file_path, "rt", encoding="utf-8") as inpFile:
+                data = inpFile.read()
+        except Exception as e:
+            print(f"Error reading gzip file: {e}")
+            sys.exit(1)
+
+    else:
+        # The file is a regular text file
+        try:
+            with open(file_path, "r", encoding="utf-8") as inpFile:
+                data = inpFile.read()
+        except Exception as e:
+            print(f"Error reading text file: {e}")
+            sys.exit(1)
+
+    return data
 
 
 def formatValues(vector):
@@ -66,7 +100,7 @@ def check_float(s):
         return False
 
 
-class SimulationOF:
+class oFoamBase:
     """
     A class to represent a simulation using OpenFOAM.
     some functions are present to parse and generate file
@@ -79,7 +113,7 @@ class SimulationOF:
 
     def __init__(self, path: str | Path):
         """
-        Constructs all the necessary attributes for the SimulationOF object.
+        Constructs all the necessary attributes for the oFoamBase object.
 
         Parameters:
         -----------
@@ -2727,3 +2761,5 @@ boundaryField
             Path(tri_mesh_vtk_filepath).unlink()
 
         return
+
+

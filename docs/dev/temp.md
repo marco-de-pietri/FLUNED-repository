@@ -1,6 +1,43 @@
 temporary document to track refactor
 
-- general utils (move?)
+foam_case class
+
+- remove default input in the init. use handle input module
+- reorganize generate input
+
+     ├╴flunedCase [23, 7]
+     ├╴__init__ [30, 9]
+     ├╴generate_case [46, 9] refactor
+
+     ├╴generate_fluned_files [242, 9] ok
+     ├╴parse_fluned_simulation [292, 9] ok
+     ├╴initialize_cfd_class [305, 9] ok
+
+     ├╴create_case_folders_fluent [316, 9] - replaceable with a couple of lines
+
+     ├╴convert_fluent_to_openfoam [330, 9] ok
+     ├╴parse_fluent_simulation [339, 9] ok
+
+     ├╴copy_last_phi [352, 9] - definitely simplifiable, maybe can be moved to the ofoamFluned     class?
+     ├╴copy_last_u [374, 9]
+     ├╴copy_last_nut [386, 9]
+     ├╴copy_poly_mesh [400, 9]
+
+     ├╴launch_solver [415, 9] - moveable to the fluned tool launcher
+
+     ├╴launch_check_mode [430, 9] ok
+
+     ├╴generate_cartesian_radiation_source_model [440, 9] okish - could be moved to the ofoamFuned?
+
+     ├╴write_results [456, 9] ok but ugly
+     ├╴write_summary_transient [468, 9]
+     └╴write_summary_steady [581, 9]
+
+
+
+ofoam class
+
+
      ├╴formatValues [35, 5]
      ├╴check_float [58, 5]
 

@@ -8,7 +8,7 @@ from lxml import etree as et  # type: ignore[attr-defined]
 from fluned.ofoam_class.fluned_vtk_utils import generate_triangularized_h5m_um_mesh
 
 from .fluned_case_class import flunedCase
-from .ofoam_class.SimulationClass import is_valid_openfoam_case_directory
+from .ofoam_class.ofoam_base.oFoamBase import is_valid_openfoam_case_directory
 
 
 def openmc_fluned_coupling(
