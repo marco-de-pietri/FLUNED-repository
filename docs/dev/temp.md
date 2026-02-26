@@ -29,11 +29,11 @@ foam_case class
 
      ├╴launch_solver [415, 9] - moveable to the fluned tool launcher
 
-     ├╴launch_check_mode [430, 9] ok
+     ├╴launch_check_mode [430, 9] ok - check if it is still relevant
 
      ├╴generate_cartesian_radiation_source_model [440, 9] okish - could be moved to the ofoamFuned?
 
-     ├╴write_results [456, 9] ok but ugly
+     ├╴write_results [456, 9]              ok but ugly
      ├╴write_summary_transient [468, 9]
      └╴write_summary_steady [581, 9]
 
@@ -100,7 +100,7 @@ ofoam class
      ├╴generate_zero_tr [1684, 9]
      ├╴generate_zero_td [1742, 9]
 
-     ├╴read_volumes [1798, 9] both pre/post - should be totally replaced by foamlib as they are not streamed but just read and stored in memory
+     ├╴read_volumes [1798, 9] both pre/post - replaced by foamlib - DONE
      ├╴read_centroids [1849, 9]
      ├╴read_velocities [1910, 9]
      ├╴read_grad_t [1938, 9]

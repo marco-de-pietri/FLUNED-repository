@@ -339,6 +339,7 @@ def generate_triangularized_h5m_um_mesh(
     mesh.GetCellData().Initialize()  # remove all cell data
 
     # scale mesh
+    # the scaling factor is to scale the size (from m to cm), not the values
     sx, sy, sz = scale_factor, scale_factor, scale_factor
     tfm = vtk.vtkTransform()
     tfm.Scale(sx, sy, sz)

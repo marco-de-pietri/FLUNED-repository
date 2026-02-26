@@ -1,6 +1,9 @@
 import math
 import re
+import shutil
+import warnings
 from pathlib import Path
+from typing import Iterable, Sequence
 
 import lxml.etree as et
 import numpy as np
@@ -21,6 +24,12 @@ from .fluned_vtk_utils import (
 )
 from .ofoam_base import oFoamBase
 from .patch_class import get_post_process_list
+
+try:
+    import openmc  # type: ignore[import]
+    import openmc.stats  # type: ignore[import]
+except ImportError:
+    pass
 
 
 def formatValues(vector):
@@ -44,6 +53,175 @@ def formatValues(vector):
     returnString += newLine + "\n"
 
     return returnString
+
+
+def bounding_box_corners(points, padding=1.0):
+    """
+    Given a list of coordinates (each a list/tuple of equal length),
+    return the two opposite corners of the minimal axis-aligned
+    bounding box that encompasses all points, with optional padding.
+
+    Args:
+        points: List of coordinates (each a list/tuple of equal length)
+        padding: Padding to add to all sides of the bounding box.
+                Can be a single number (applied to all dimensions) or
+                a list/tuple of numbers (one per dimension).
+
+    Returns:
+        (min_corner, max_corner), where each is a tuple of length D.
+    """
+    if not points:
+        raise ValueError("points must be a non-empty list")
+
+    dim = len(points[0])
+    for p in points:
+        if len(p) != dim:
+            raise ValueError("all points must have the same dimension")
+
+    # Handle padding parameter
+    if isinstance(padding, (int, float)):
+        # Single padding value for all dimensions
+        padding_values = [padding] * dim
+    else:
+        # Padding per dimension
+        padding_values = list(padding)
+        if len(padding_values) != dim:
+            raise ValueError(
+                "padding must be a single number or have same length as point dimensions"
+            )
+
+    mins = [float("inf")] * dim
+    maxs = [float("-inf")] * dim
+
+    for p in points:
+        for i, v in enumerate(p):
+            if v < mins[i]:
+                mins[i] = v
+            if v > maxs[i]:
+                maxs[i] = v
+
+    # Calculate dimensions and apply padding as scaling factor
+    padded_mins = []
+    padded_maxs = []
+
+    for i in range(dim):
+        dimension_size = maxs[i] - mins[i]
+        padding_amount = dimension_size * padding_values[i]
+
+        # Handle edge case where dimension_size is 0 (all points identical in this dimension)
+        if dimension_size == 0:
+            padding_amount = abs(
+                padding_values[i]
+            )  # Use absolute padding for zero-width dimensions
+
+        padded_mins.append(mins[i] - padding_amount)
+        padded_maxs.append(maxs[i] + padding_amount)
+
+    return tuple(padded_mins), tuple(padded_maxs)
+
+
+def mesh_ints_from_bounds(
+    lower: Iterable[float],
+    upper: Iterable[float],
+    min_voxel_size: float | Sequence[float],
+    max_voxels_n: int | None = None,
+) -> tuple[int, ...]:
+    """
+    Compute the number of cells (intervals) per axis for a Cartesian mesh so that
+    the actual voxel size along each axis is <= the provided minimum, and (optionally)
+    the total number of voxels is capped by scaling the intervals down.
+
+    Parameters
+    ----------
+    lower : iterable of numbers
+        Lower-left (min) coordinates per dimension, e.g. (x0, y0, z0).
+    upper : iterable of numbers
+        Upper-right (max) coordinates per dimension, e.g. (x1, y1, z1).
+    min_voxel_size : number or sequence of numbers
+        Minimum voxel size. If a single number, it's applied to all dimensions.
+        If a sequence, it must have the same length as `lower`/`upper`.
+    max_voxels_n : int or None, optional
+        Maximum allowed total number of voxels (product of intervals across axes).
+        If the unconstrained mesh would exceed this cap, intervals are scaled down
+        approximately uniformly across axes (preserving aspect ratio as much as possible)
+        until the product is <= max_voxels_n.
+
+    Returns
+    -------
+    tuple of int
+        Number of intervals (cells) along each dimension.
+
+    Notes
+    -----
+    - Base counts use ceil((upper - lower) / min_size) per dimension, with a minimum of 1.
+    - If (upper <= lower) along any axis, a ValueError is raised.
+    - If max_voxels_n is set and the base total exceeds it, voxel sizes may end up
+      larger than min_voxel_size due to the global cap.
+    """
+    lo = tuple(float(v) for v in lower)
+    hi = tuple(float(v) for v in upper)
+    if len(lo) != len(hi):
+        raise ValueError("`lower` and `upper` must have the same length.")
+
+    dim = len(lo)
+
+    if isinstance(min_voxel_size, (int, float)):
+        mins = (float(min_voxel_size),) * dim
+    else:
+        mins = tuple(float(v) for v in min_voxel_size)
+        if len(mins) != dim:
+            raise ValueError(
+                "min_voxel_size must be a scalar or a sequence with the same length as lower/`upper"
+            )
+
+    base_counts: list[int] = []
+    for a, b, m in zip(lo, hi, mins, strict=True):
+        if m <= 0:
+            raise ValueError("All minimum voxel sizes must be > 0.")
+        if b <= a:
+            raise ValueError(
+                "Each upper bound must be greater than the corresponding lower bound."
+            )
+        n = max(1, math.ceil((b - a) / m))
+        base_counts.append(int(n))
+
+    # No cap requested
+    if max_voxels_n is None:
+        return tuple(base_counts)
+
+    if not isinstance(max_voxels_n, int) or max_voxels_n < 1:
+        raise ValueError("`max_voxels_n` must be an int >= 1 or None.")
+
+    def prod(xs: Sequence[int]) -> int:
+        p = 1
+        for v in xs:
+            p *= int(v)
+        return p
+
+    base_total = prod(base_counts)
+    if base_total <= max_voxels_n:
+        return tuple(base_counts)
+
+    # Uniform scale factor in "interval-count space" to hit the volume cap
+    scale = (max_voxels_n / base_total) ** (1.0 / dim)
+
+    # Start with floored scaled counts to ensure we don't overshoot too easily
+    counts = [max(1, int(math.floor(c * scale))) for c in base_counts]
+
+    # In rare cases (e.g., scale ~1 and flooring didn't reduce enough), ensure product <= cap.
+    # Decrease counts one-by-one, prioritizing the axes with the largest current counts.
+    while prod(counts) > max_voxels_n:
+        # pick axis with largest count that can still be reduced
+        k = max(
+            (i for i, v in enumerate(counts) if v > 1),
+            key=lambda i: counts[i],
+            default=None,
+        )
+        if k is None:
+            break  # cannot reduce further
+        counts[k] -= 1
+
+    return tuple(counts)
 
 
 class oFoamFluned(oFoamBase):
@@ -963,17 +1141,21 @@ boundaryField
             # this functionality works only with phton emitting isotopes at the moment
             import openmc  # type: ignore[import]
 
-            isotope_string_temp = self.isotope[0].upper() + self.isotope[1:].lower()
-            self.decay_photon_energy = openmc.data.decay_photon_energy(
-                isotope_string_temp
+            self.isotope_openmc_format = (
+                self.isotope[0].upper() + self.isotope[1:].lower()
+            )
+            # stored in electronvolt
+            self.decay_energy_distribution_ev = openmc.data.decay_photon_energy(
+                self.isotope_openmc_format
             )
 
             # openmc provides the data in electronVolt
-            self.e_lines = self.decay_photon_energy.x / 1e6
+            self.e_lines = self.decay_energy_distribution_ev.x / 1e6
 
             #  openmc provides the probability in Bq
-            self.p_lines = self.decay_photon_energy.p / openmc.data.decay_constant(
-                isotope_string_temp
+            self.p_lines = (
+                self.decay_energy_distribution_ev.p
+                / openmc.data.decay_constant(self.isotope_openmc_format)
             )
             self.particle_type = "photon"
             self.e_bins, self.p_bins = bins_from_lines(self.e_lines, self.p_lines)
@@ -1124,12 +1306,16 @@ boundaryField
             "writing openmc source model file of the FLUNED results sampled over a cartesian grid  ..."
         )
 
+        import openmc  # type: ignore[import]
+
+        openmc.config["resolve_paths"] = False
+
+        if openmc is None:
+            raise RuntimeError("openmc is required")
+
         openmc_source_file = self.results_folder / "cartesian_sampled_source.xml"
         openmc_source_file_name = openmc_source_file.name
         openmc_source_import_commands = self.results_folder / "openmc_commands.txt"
-
-        # now it is hardcoded, later I will find a better way to handle this
-        mesh_id = 100
 
         mesh_lower_left = [min(self.x_nodes), min(self.y_nodes), min(self.z_nodes)]
 
@@ -1144,7 +1330,7 @@ boundaryField
             "source",
             type="mesh",
             strength=str(self.normalized_sampled_total_emission_rate),
-            mesh=str(mesh_id),
+            mesh=str(),
         )
 
         arr = np.asarray(
@@ -1167,154 +1353,171 @@ boundaryField
                 particle=particle_type,
             )
 
-            et.SubElement(sub_source, "angle", type="isotropic")
-            energy = et.SubElement(sub_source, "energy", type="discrete")
-            params = et.SubElement(energy, "parameters")
-            params.text = " ".join(map(str, energy_parameters))
-
-        # create mesh element with id attribute
-        mesh = et.SubElement(root, "mesh", id=str(mesh_id))
-
-        # add child elements with text content
-        dimension = et.SubElement(mesh, "dimension")
-        dimension.text = "{} {} {}".format(self.x_ints, self.y_ints, self.z_ints)
-
-        lower_left = et.SubElement(mesh, "lower_left")
-        lower_left.text = "{} {} {}".format(
-            mesh_lower_left[0], mesh_lower_left[1], mesh_lower_left[2]
-        )
-
-        upper_right = et.SubElement(mesh, "upper_right")
-        upper_right.text = "{} {} {}".format(
-            mesh_upper_right[0], mesh_upper_right[1], mesh_upper_right[2]
-        )
-
-        # write to file with xml declaration
-        tree = et.ElementTree(root)
-        tree.write(
-            openmc_source_file,
-            encoding="utf-8",
-            pretty_print=True,
-            xml_declaration=True,
-        )
-
-        with open(openmc_source_import_commands, "w") as f:
-            f.write("from lxml import etree\n")
-            f.write(
-                'source_root = etree.parse("{}").getroot()\n'.format(
-                    openmc_source_file_name
-                )
-            )
-            f.write("mesh_element = source_root.find('mesh')\n")
-            f.write("source_element = source_root.find('source')\n")
-            f.write("mesh_geo = openmc.RegularMesh().from_xml_element(mesh_element)\n")
-            f.write(
-                "mesh_source = openmc.MeshSource.from_xml_element(source_element, {100:mesh_geo})\n"
-            )
-
         return
 
-    def write_openmc_um_source(self, mesh_id=100):
+    def write_openmc_um_source(self):
         """
         This function write the unstructured mesh-based radiation source file
-        based on the vtk file
+        based on the vtk file - generates a settings.xml with the mesh specification
         """
+        import openmc  # type: ignore[import]
+
+        openmc.config["resolve_paths"] = False
+
+        if openmc is None:
+            raise RuntimeError("openmc is required")
 
         print("writing openmc unstructured mesh source file ..")
 
-        openmc_source_file_name = "um_fluned_source.xml"
-        openmc_source_file = self.results_folder / openmc_source_file_name
+        openmc_source_file_name = "settings_um_fluned_source.xml"
+        self.settings_source_file = self.results_folder / openmc_source_file_name
 
         h5m_basename = "um_geometry.h5m"
-        openmc_source_mesh_file = self.results_folder / h5m_basename
+        self.mesh_source_file = self.results_folder / h5m_basename
 
-        vtk_tri_mesh_source_file = self.results_folder / "triangularzed_t_scalar.vtk"
+        vtk_tri_mesh_source_file = self.results_folder / "triangularized_t_scalar.vtk"
 
-        openmc_source_import_commands = self.results_folder / "openmc_um_commands.txt"
-
+        # compute values and store in memory
         self.compute_triangularized_emission_rates(
             vtk_tri_mesh_source_file, scaling_factor=100.0, save_tri_mesh_vtk=True
         )
 
-        # save a scaled up h5m file
-        generate_triangularized_h5m_um_mesh(self.vtk_file_path, openmc_source_mesh_file)
+        # save a scaled up h5m file (m -> cm)
+        generate_triangularized_h5m_um_mesh(self.vtk_file_path, self.mesh_source_file)
 
-        with open(openmc_source_import_commands, "w") as f:
-            f.write("from lxml import etree\n")
-            f.write("parser = etree.XMLParser(huge_tree=True)\n")
-            f.write(
-                'source_root = etree.parse("{}", parser=parser).getroot()\n'.format(
-                    openmc_source_file_name
-                )
-            )
-            f.write("mesh_element = source_root.find('mesh')\n")
-            f.write(
-                "mesh_geo = openmc.UnstructuredMesh.from_xml_element(mesh_element)\n"
-            )
-            f.write("source_element = source_root.find('source')\n")
-            f.write(
-                "source = openmc.IndependentSource.from_xml_element(source_element, {100:mesh_geo})\n"
-            )
-
-        # create root element
-        root = et.Element("source")
-
-        # create sublement with the mesh source
-        source_mesh = et.SubElement(
-            root,
-            "source",
-            type="independent",
-            particle=self.particle_type,
-            strength=f"{self.total_isotope_emission_rate:.6e}",
+        #
+        source_mesh = openmc.UnstructuredMesh(
+            filename=str(self.mesh_source_file), library="moab"
         )
 
-        space = et.SubElement(
-            source_mesh,
-            "space",
-            type="mesh",
-            mesh_id=str(mesh_id),
-            volume_normalized="False",
-        )
-        strengths = et.SubElement(space, "strengths")
-        strengths.text = " ".join(
-            map(
-                str,
-                [val for val in self.tri_mesh_emission_rates],
-            )
-        )  # adjust that the decay rate has been calculated after scaling the vtk file
-
-        # angle = et.SubElement(source_mesh, "angle", type="isotropic")
-
-        ebins_temp = [e * 1e6 for e in self.e_lines]  # convert from MeV to eV
-        energy_parameters = [*ebins_temp, *self.p_lines]
-        energy = et.SubElement(source_mesh, "energy", type="discrete")
-        params = et.SubElement(energy, "parameters")
-        params.text = " ".join(map(str, energy_parameters))
-
-        # create mesh element with id attribute
-        mesh = et.SubElement(
-            root,
-            "mesh",
-            id=str(mesh_id),
-            name="source_mesh",
-            type="unstructured",
-            library="moab",
+        source_mesh_space_dist = openmc.stats.MeshSpatial(
+            mesh=source_mesh,
+            strengths=self.tri_mesh_emission_rates,
+            volume_normalized=False,
         )
 
-        # add child elements with text content
-        filename = et.SubElement(mesh, "filename")
-        filename.text = h5m_basename
+        rad_source = openmc.IndependentSource()
+        # only support isotropic distributions
+        rad_source.angle = openmc.stats.Isotropic()
+        rad_source.energy = self.decay_energy_distribution_ev
+        rad_source.space = source_mesh_space_dist
+        rad_source.particle = "photon"
+        rad_source.strength = self.total_isotope_emission_rate
 
-        # write to file with xml declaration
-        tree = et.ElementTree(root)
-        tree.write(
-            openmc_source_file,
-            encoding="utf-8",
-            pretty_print=True,
-            xml_declaration=True,
+        settings = openmc.Settings()
+        settings.run_mode = "fixed source"
+        settings.batches = 10
+        settings.particles = int(1e5)
+        settings.photon_transport = True
+        settings.source_rejection_fraction = 1e-4
+        settings.source = rad_source
+        settings.export_to_xml(
+            path=str(self.settings_source_file),
         )
 
         return
+
+    # def write_openmc_um_source(self, mesh_id=100):
+    #     """
+    #     This function write the unstructured mesh-based radiation source file
+    #     based on the vtk file
+    #     """
+    #
+    #     print("writing openmc unstructured mesh source file ..")
+    #
+    #     openmc_source_file_name = "um_fluned_source.xml"
+    #     openmc_source_file = self.results_folder / openmc_source_file_name
+    #
+    #     h5m_basename = "um_geometry.h5m"
+    #     openmc_source_mesh_file = self.results_folder / h5m_basename
+    #
+    #     vtk_tri_mesh_source_file = self.results_folder / "triangularized_t_scalar.vtk"
+    #
+    #     openmc_source_import_commands = self.results_folder / "openmc_um_commands.txt"
+    #
+    #     self.compute_triangularized_emission_rates(
+    #         vtk_tri_mesh_source_file, scaling_factor=100.0, save_tri_mesh_vtk=True
+    #     )
+    #
+    #     # save a scaled up h5m file
+    #     generate_triangularized_h5m_um_mesh(self.vtk_file_path, openmc_source_mesh_file)
+    #
+    #     with open(openmc_source_import_commands, "w") as f:
+    #         f.write("from lxml import etree\n")
+    #         f.write("parser = etree.XMLParser(huge_tree=True)\n")
+    #         f.write(
+    #             'source_root = etree.parse("{}", parser=parser).getroot()\n'.format(
+    #                 openmc_source_file_name
+    #             )
+    #         )
+    #         f.write("mesh_element = source_root.find('mesh')\n")
+    #         f.write(
+    #             "mesh_geo = openmc.UnstructuredMesh.from_xml_element(mesh_element)\n"
+    #         )
+    #         f.write("source_element = source_root.find('source')\n")
+    #         f.write(
+    #             "source = openmc.IndependentSource.from_xml_element(source_element, {100:mesh_geo})\n"
+    #         )
+    #
+    #     # create root element
+    #     root = et.Element("source")
+    #
+    #     # create sublement with the mesh source
+    #     source_mesh = et.SubElement(
+    #         root,
+    #         "source",
+    #         type="independent",
+    #         particle=self.particle_type,
+    #         strength=f"{self.total_isotope_emission_rate:.6e}",
+    #     )
+    #
+    #     space = et.SubElement(
+    #         source_mesh,
+    #         "space",
+    #         type="mesh",
+    #         mesh_id=str(mesh_id),
+    #         volume_normalized="False",
+    #     )
+    #     strengths = et.SubElement(space, "strengths")
+    #     strengths.text = " ".join(
+    #         map(
+    #             str,
+    #             [val for val in self.tri_mesh_emission_rates],
+    #         )
+    #     )  # adjust that the decay rate has been calculated after scaling the vtk file
+    #
+    #     # angle = et.SubElement(source_mesh, "angle", type="isotropic")
+    #
+    #     ebins_temp = [e * 1e6 for e in self.e_lines]  # convert from MeV to eV
+    #     energy_parameters = [*ebins_temp, *self.p_lines]
+    #     energy = et.SubElement(source_mesh, "energy", type="discrete")
+    #     params = et.SubElement(energy, "parameters")
+    #     params.text = " ".join(map(str, energy_parameters))
+    #
+    #     # create mesh element with id attribute
+    #     mesh = et.SubElement(
+    #         root,
+    #         "mesh",
+    #         id=str(mesh_id),
+    #         name="source_mesh",
+    #         type="unstructured",
+    #         library="moab",
+    #     )
+    #
+    #     # add child elements with text content
+    #     filename = et.SubElement(mesh, "filename")
+    #     filename.text = h5m_basename
+    #
+    #     # write to file with xml declaration
+    #     tree = et.ElementTree(root)
+    #     tree.write(
+    #         openmc_source_file,
+    #         encoding="utf-8",
+    #         pretty_print=True,
+    #         xml_declaration=True,
+    #     )
+    #
+    #     return
 
     def compute_triangularized_emission_rates(
         self,
@@ -1343,6 +1546,7 @@ boundaryField
         )
 
         # the 1e6 factor is to take into account that the concentration data is taken by the scaled mesh
+        # switch from emission per m3 to per cm3
         self.tri_mesh_emission_rates = [
             conc * vol * self.decay_constant * self.tot_p_emission / (scaling_factor**3)
             for conc, vol in zip(tri_mesh_isotopes_coonc, tri_mesh_volumes)
@@ -1883,5 +2087,129 @@ boundaryField
                     schmidt_number,
                 )
             )
+
+        return
+
+    def write_empty_openmc_model(
+        self,
+        *,
+        copy_radosurce_model: bool = False,
+        meshtally_voxel_size: float = 1.0,
+        meshtally_max_voxel_n: float = 1e6,
+        padding_factor: float = 1.5,
+    ):
+        """
+        write the openmc geometry of the simulation circuit
+        """
+
+        import openmc  # type: ignore[import]
+
+        if openmc is None:
+            raise RuntimeError("openmc is required")
+
+        mat_filename = "fluned_materials.xml"
+        openmc_model_folder = self.results_folder / "openmc_model"
+        openmc_model_folder.mkdir(parents=True, exist_ok=True)
+
+        mat_full_path = openmc_model_folder / mat_filename
+        mats = openmc.Materials()
+
+        # mats.cross_sections = str(parameters["xsection_file_path"])
+
+        mats.export_to_xml(path=str(mat_full_path))
+
+        geo_filename = "acticircuitpy_geometry.xml"
+        geo_full_path = openmc_model_folder / geo_filename
+
+        openmc_cells = []
+
+        # converts vtk dimensions from m to cm and applies a padding factor
+        scale_factor = 100.0 * padding_factor
+
+        lower_left = [
+            self.vtk_dimensions[0] * scale_factor,
+            self.vtk_dimensions[2] * scale_factor,
+            self.vtk_dimensions[4] * scale_factor,
+        ]
+
+        upper_right = [
+            self.vtk_dimensions[1] * scale_factor,
+            self.vtk_dimensions[3] * scale_factor,
+            self.vtk_dimensions[5] * scale_factor,
+        ]
+
+        px0 = openmc.XPlane(x0=lower_left[0], boundary_type="vacuum")
+        px1 = openmc.XPlane(x0=upper_right[0], boundary_type="vacuum")
+        py0 = openmc.YPlane(y0=lower_left[1], boundary_type="vacuum")
+        py1 = openmc.YPlane(y0=upper_right[1], boundary_type="vacuum")
+        pz0 = openmc.ZPlane(z0=lower_left[2], boundary_type="vacuum")
+        pz1 = openmc.ZPlane(z0=upper_right[2], boundary_type="vacuum")
+
+        universe_box = +px0 & -px1 & +py0 & -py1 & +pz0 & -pz1
+
+        universe_cell = openmc.Cell(
+            name="outside",
+            fill=None,
+            region=universe_box,
+        )
+
+        openmc_cells.append(universe_cell)
+
+        geo = openmc.Geometry(openmc_cells)
+        geo.export_to_xml(path=str(geo_full_path))
+
+        tallies_filename = "acticircuitpy_tallies.xml"
+        tallies_full_path = openmc_model_folder / tallies_filename
+
+        mesh = openmc.RegularMesh()
+
+        mesh.lower_left = lower_left
+        mesh.upper_right = upper_right
+
+        mesh.dimension = mesh_ints_from_bounds(
+            lower_left,
+            upper_right,
+            meshtally_voxel_size,
+            int(meshtally_max_voxel_n),
+        )
+
+        # LARGE MESHTALLIES WILL CRASH THE WSL
+        mesh_filter = openmc.MeshFilter(mesh)
+        tally = openmc.Tally(name="flux_meshtally")
+        tally.filters = [mesh_filter]
+        tally.scores = ["flux"]
+        tallies = openmc.Tallies([tally])
+
+        tallies.export_to_xml(path=str(tallies_full_path))
+
+        if copy_radosurce_model:
+            settings_destination_path = openmc_model_folder / "radsource_settings.xml"
+            mesh_destination_path = openmc_model_folder / "radsource_mesh.h5m"
+            shutil.copy(
+                self.settings_source_file,
+                settings_destination_path,
+            )
+            shutil.copy(
+                self.mesh_source_file,
+                mesh_destination_path,
+            )
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", openmc.IDWarning)
+                settings = openmc.Settings().from_xml(settings_destination_path)
+
+        else:
+            settings_filename = "settings.xml"
+            settings_full_path = openmc_model_folder / settings_filename
+            settings = openmc.Settings()
+            settings.export_to_xml(path=str(settings_full_path))
+        #
+        model_filename = "model.xml"
+        model_full_path = openmc_model_folder / model_filename
+
+        model = openmc.Model(
+            geometry=geo, materials=mats, settings=settings, tallies=tallies
+        )
+        model.export_to_model_xml(path=str(model_full_path))
 
         return

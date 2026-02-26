@@ -66,6 +66,9 @@ def main():
         if args.openmc_um:
             fluned_case.fluned_simulation.write_openmc_um_source()
 
+        if args.openmc_sm or args.openmc_um:
+            fluned_case.fluned_simulation.write_empty_openmc_model()
+
     fluned_case.write_results(args)
 
     print("Finished!")

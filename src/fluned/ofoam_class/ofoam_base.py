@@ -595,87 +595,22 @@ class oFoamBase:
         zero folder
         """
 
-        # common patterns
-        internalBlockPat = re.compile(
-            r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
-        )
-
-        v_file_path = self.path / "0"
-        v_files = [
-            f.name for f in v_file_path.iterdir() if re.match(r"V(c)?(\..*)?$", f.name)
-        ]
-        if not v_files:
+        time_files = self.foamlib_object["0"]
+        if "V" in time_files:
+            vol_name = "V"
+        elif "Vc" in time_files:
+            vol_name = "Vc"
+        else:
             raise FileNotFoundError("No V or Vc files found")
 
-        v_file = v_file_path / v_files[0]
-
-        text = read_utf8_or_gzip(v_file)
-        numInternalBlocks = internalBlockPat.findall(text)
-        internalVolumes = numInternalBlocks[0].split("\n")[1:-1]
-        self.volumes = np.array([float(val) for val in internalVolumes])
+        self.volumes = self.foamlib_object["0"][vol_name].internal_field
 
         return
 
     def read_centroids(self):
         """Read centroids from the OpenFOAM '0/C' file and store them in self.centroids (N x 3)."""
 
-        c_file = self.path / "0" / "C"
-        if not c_file.is_file():
-            raise FileNotFoundError(f"Couldn't find C file at: {c_file}")
-
-        with open(c_file, "r", encoding="utf8", errors="ignore") as f:
-            text = f.read()
-
-        # 1) Handle: internalField uniform (x y z);
-        m_uniform = re.search(
-            r"internalField\s+uniform\s*\(\s*([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s+"
-            r"([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s+"
-            r"([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\)\s*;",
-            text,
-        )
-        if m_uniform:
-            self.centroids = np.array(
-                [
-                    [
-                        float(m_uniform.group(1)),
-                        float(m_uniform.group(2)),
-                        float(m_uniform.group(3)),
-                    ]
-                ],
-                dtype=float,
-            )
-            return
-
-        # 2) Handle: internalField nonuniform ... ( ... );
-        # Works for: nonuniform List<vector> N ( ... ) ;  and similar variants.
-        m_nonuniform = re.search(
-            r"internalField\s+nonuniform\b.*?\(\s*(.*?)\s*\)\s*;",
-            text,
-            flags=re.DOTALL,
-        )
-        if not m_nonuniform:
-            raise ValueError(
-                "Could not locate an 'internalField uniform (...)' or "
-                "'internalField nonuniform ... ( ... );' block in 0/C"
-            )
-
-        block = m_nonuniform.group(1)
-
-        # Extract all vectors like: (x y z) inside the block
-        vecs = re.findall(
-            r"\(\s*([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s+"
-            r"([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s+"
-            r"([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)\s*\)",
-            block,
-        )
-        if not vecs:
-            raise ValueError(
-                "Found internalField nonuniform block, but no '(x y z)' vectors were parsed."
-            )
-
-        self.centroids = np.array(
-            [[float(x), float(y), float(z)] for x, y, z in vecs], dtype=float
-        )
+        self.centroids = self.foamlib_object["0"].cell_centers().internal_field
 
     def read_velocities(self):
         """this function reads the velocity from the U file located in the
@@ -683,25 +618,7 @@ class oFoamBase:
 
         print("reading velocity values...")
 
-        # common patterns
-        internalBlockPat = re.compile(
-            r"internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
-        )
-
-        uFile = self.path / "0" / "U"
-        try:
-            inpFile = open(uFile, "r", encoding="utf8", errors="ignore")
-        except IOError:
-            raise FileNotFoundError("couldn't open  U file")
-        with inpFile:
-            text = inpFile.read()
-            numInternalBlocks = internalBlockPat.findall(text)
-            internalVels = numInternalBlocks[0].split("\n")[1:]
-            internalVels = [val.strip("()") for val in internalVels]
-
-            self.velocities = np.array(
-                [np.array([float(val) for val in v.split()]) for v in internalVels]
-            )
+        self.velocities = self.foamlib_object["0"]["U"].internal_field
 
         return
 
@@ -710,24 +627,7 @@ class oFoamBase:
 
         print("reading gradient values...")
 
-        # common patterns
-        internalBlockPat = re.compile(
-            r"internalField.*?\((.{1,}?)\n\\s*\)", re.MULTILINE | re.DOTALL
-        )
-
-        gradFile = self.path / str(self.last_time) / "grad(T)"
-        try:
-            inpFile = open(gradFile, "r", encoding="utf8", errors="ignore")
-        except IOError:
-            raise FileNotFoundError("couldn't open grad file")
-        with inpFile:
-            text = inpFile.read()
-            numInternalBlocks = internalBlockPat.findall(text)
-            internalVels = numInternalBlocks[0].split("\n")[1:]
-            internalVels = [val.strip("()") for val in internalVels]
-            self.gradients = np.array(
-                [np.array([float(val) for val in v.split()]) for v in internalVels]
-            )
+        self.gradients = self.foamlib_object[-1]["grad(T)"].internal_field
 
         return
 
