@@ -292,16 +292,20 @@ class oFoamFluned(oFoamBase):
 
         generate_external_stl(self.vtk_file_path, self.results_folder)
 
-        self.isotope_amounts = [vol * t for vol, t in zip(self.volumes, self.t_scalar)]
-        self.total_isotope_amount = sum(self.isotope_amounts)
+        self.isotope_amounts = [
+            vol * t for vol, t in zip(self.volumes, self.t_scalar)
+        ]  # atoms/cell
+        self.total_isotope_amount = sum(self.isotope_amounts)  # atoms
 
         self.total_average_isotope_concentration = (
             self.total_isotope_amount / self.volume_m3
         )
-        self.total_isotope_activity = self.decay_constant * self.total_isotope_amount
+        self.total_isotope_activity = (
+            self.decay_constant * self.total_isotope_amount
+        )  # decays/s
         self.total_isotope_emission_rate = (
             self.tot_p_emission * self.total_isotope_activity
-        )
+        )  # decay particle/s
 
         return None
 
@@ -578,16 +582,16 @@ class oFoamFluned(oFoamBase):
         if dataset is None or dataset == "":
             raise ValueError("dataset argument cannot be None or empty string")
 
-        sampled_cartesian_concentrations = sample_vtk(
+        sampled_cartesian_concentrations_cm3 = sample_vtk(
             self.vtk_file_path, dataset, self.cartesian_sample_coordinates_m
         )
 
         voxel_volume = self.cartesian_sampling_precision_cm**3
 
         for voxel, concentration in zip(
-            self.cartesian_voxel_list, sampled_cartesian_concentrations
+            self.cartesian_voxel_list, sampled_cartesian_concentrations_cm3
         ):
-            voxel["emission_rate_cm3"] = (
+            voxel["emission_rate_per_voxel"] = (
                 concentration
                 * voxel_volume
                 * self.decay_constant
@@ -596,7 +600,7 @@ class oFoamFluned(oFoamBase):
             )  # atoms per m3 to cm3
 
         self.raw_sampled_total_emission_rate = sum(
-            [voxel["emission_rate_cm3"] for voxel in self.cartesian_voxel_list]
+            [voxel["emission_rate_per_voxel"] for voxel in self.cartesian_voxel_list]
         )
 
         ratio_vtk_sampling = (
@@ -604,16 +608,27 @@ class oFoamFluned(oFoamBase):
         )
 
         for voxel in self.cartesian_voxel_list:
-            voxel["normalized_emission_rate_cm3"] = (
-                voxel["emission_rate_cm3"] * ratio_vtk_sampling
+            voxel["normalized_emission_rate_per_voxel"] = (
+                voxel["emission_rate_per_voxel"] * ratio_vtk_sampling
             )
 
-        self.normalized_sampled_total_emission_rate = sum(
+        normalization_check = sum(
             [
-                voxel["normalized_emission_rate_cm3"]
+                voxel["normalized_emission_rate_per_voxel"]
                 for voxel in self.cartesian_voxel_list
             ]
         )
+
+        if not math.isclose(
+            self.total_isotope_emission_rate,
+            normalization_check,
+            rel_tol=1e-03,
+            abs_tol=0.0,
+        ):
+            print("Error in emission rate sampling normalization")
+            print("total isotope emission rate: ", self.total_isotope_emission_rate)
+            print("sum of normalized emission rates: ", normalization_check)
+            raise ValueError()
 
         return
 
@@ -1098,38 +1113,48 @@ boundaryField
 
     def assign_isotope_data(self):
         """
-        using the decay constant this function understand if we are
-        considering N-16, N-17 or O-19 and assign the spectrum
-        accordingly. If it is not possible a dummy spectrum is
-        assigned
+        Using the decay constant, understand if we are considering N-16, N-17, O-19
+        or F-20 and assign the spectrum accordingly.
 
-        the logic here is that if "custom" is assigned in the isotope sections
-        of the transportProperties file, it tries to fetch the data from the
-        database with the legacy workflow, otherwise it tries to get the data
-        from the chain xml file
+        Logic:
+        - If "custom" is set in the isotope section of the transportProperties file,
+        fetch data from the local database (legacy workflow). Optionally also load
+        OpenMC photon decay distribution if OpenMC is available.
+        - Otherwise, fetch photon decay distribution from the OpenMC chain XML file.
+        (Requires OpenMC.)
         """
+        import math
 
-        N16_decay_constant = 0.09721559
-        N17_decay_constant = 0.1661825
-        O19_decay_constant = 0.02578672546
-        F20_decay_constant = 0.062093271
+        # Decay constants (1/s)
+        N16_DECAY = 0.09721559
+        N17_DECAY = 0.1661825
+        O19_DECAY = 0.02578672546
+        F20_DECAY = 0.062093271
+
+        try:
+            import openmc  # type: ignore[import]
+        except ImportError:
+            openmc = None
 
         if self.isotope == "custom":
-            if math.isclose(self.decay_constant, N16_decay_constant, rel_tol=1e-3):
+            # Identify isotope from decay constant
+            if math.isclose(self.decay_constant, N16_DECAY, rel_tol=1e-3):
                 self.isotope = "n16"
-            elif math.isclose(self.decay_constant, N17_decay_constant, rel_tol=1e-3):
+            elif math.isclose(self.decay_constant, N17_DECAY, rel_tol=1e-3):
                 self.isotope = "n17"
-            elif math.isclose(self.decay_constant, O19_decay_constant, rel_tol=1e-3):
+            elif math.isclose(self.decay_constant, O19_DECAY, rel_tol=1e-3):
                 self.isotope = "o19"
-            elif math.isclose(self.decay_constant, F20_decay_constant, rel_tol=1e-3):
+            elif math.isclose(self.decay_constant, F20_DECAY, rel_tol=1e-3):
                 self.isotope = "f20"
             else:
                 raise ValueError("ERROR, isotope not recognized")
 
             isotope_database = load_isotopes()
-            if self.isotope.lower() not in isotope_database:
+            iso_key = self.isotope  # already lowercase in this branch
+            if iso_key not in isotope_database:
                 raise ValueError("ERROR isotope not found in the database")
-            isotope_data = isotope_database[self.isotope.lower()]
+
+            isotope_data = isotope_database[iso_key]
             self.e_lines = isotope_data.e_lines
             self.p_lines = isotope_data.p_lines
             self.e_bins = isotope_data.e_bins
@@ -1137,31 +1162,43 @@ boundaryField
             self.tot_p_emission = isotope_data.tot_p_emission
             self.particle_type = isotope_data.emitting_particle
 
-        else:
-            # this functionality works only with phton emitting isotopes at the moment
-            import openmc  # type: ignore[import]
+            # Optional OpenMC distribution (photon) if available
+            if openmc is not None:
+                self.isotope_openmc_format = iso_key[:1].upper() + iso_key[1:].lower()
+                self.decay_energy_distribution_ev = openmc.data.decay_photon_energy(
+                    self.isotope_openmc_format
+                )
 
-            self.isotope_openmc_format = (
-                self.isotope[0].upper() + self.isotope[1:].lower()
-            )
-            # stored in electronvolt
+        else:
+            # This path currently supports photon-emitting isotopes via OpenMC only.
+            if openmc is None:
+                raise ImportError(
+                    "openmc is required to fetch isotope data from chain xml file"
+                )
+
+            iso = (self.isotope or "").strip()
+            if not iso:
+                raise ValueError("ERROR, isotope is empty")
+
+            self.isotope_openmc_format = iso[:1].upper() + iso[1:].lower()
+
+            # Stored in electronvolt
             self.decay_energy_distribution_ev = openmc.data.decay_photon_energy(
                 self.isotope_openmc_format
             )
 
-            # openmc provides the data in electronVolt
+            # OpenMC provides energies in eV -> convert to MeV
             self.e_lines = self.decay_energy_distribution_ev.x / 1e6
 
-            #  openmc provides the probability in Bq
+            # Convert from rate-like intensity to photons/decay (divide by decay constant, 1/s)
             self.p_lines = (
                 self.decay_energy_distribution_ev.p
                 / openmc.data.decay_constant(self.isotope_openmc_format)
             )
+
             self.particle_type = "photon"
             self.e_bins, self.p_bins = bins_from_lines(self.e_lines, self.p_lines)
             self.tot_p_emission = sum(self.p_lines)
-
-        return
 
     def read_t(self):
         """
@@ -1210,14 +1247,17 @@ boundaryField
         origin = (self.x_nodes[0], self.y_nodes[0], self.z_nodes[0])
 
         raw = np.asarray(
-            [vox["normalized_emission_rate_cm3"] for vox in self.cartesian_voxel_list],
+            [
+                vox["normalized_emission_rate_per_voxel"]
+                for vox in self.cartesian_voxel_list
+            ],
             dtype=float,
         )
         reordered = raw.reshape(
             (self.x_ints, self.y_ints, self.z_ints), order="C"
         ).ravel(order="F")
 
-        dataset_name_output = "emission_rate_cm3"
+        dataset_name_output = "emission_rate_per_voxel"
 
         write_cartesian_vtk(
             out_vtk_file_path, dims, spacing, origin, reordered, dataset_name_output
@@ -1236,19 +1276,11 @@ boundaryField
 
         with open(cdgsFile, "w") as fw:
             fw.write("num_meshes 1\n")
-            fw.write(
-                "global_source {:e}\n".format(
-                    self.normalized_sampled_total_emission_rate
-                )
-            )
+            fw.write("global_source {:e}\n".format(self.total_isotope_emission_rate))
             fw.write("mesh_id 1\n")
             fw.write("cdgs from vtk\n")
             fw.write("Cooling_time 0.0\n")
-            fw.write(
-                "total_source {:e}\n".format(
-                    self.normalized_sampled_total_emission_rate
-                )
-            )
+            fw.write("total_source {:e}\n".format(self.total_isotope_emission_rate))
             fw.write("energy_type {}\n".format("bins"))
             fw.write("energy_boundaries {:d}\n".format(len(self.e_bins)))
             # WRITE SPECTRUM BINS
@@ -1277,17 +1309,20 @@ boundaryField
             specErrorString = formatValues([0] * (len(self.p_bins)))
 
             for vox in self.cartesian_voxel_list:
-                if vox["normalized_emission_rate_cm3"] > 0:
+                if vox["normalized_emission_rate_per_voxel"] > 0:
                     fw.write(
                         voxelString1.format(
                             vox["id"],
-                            vox["normalized_emission_rate_cm3"],
+                            vox["normalized_emission_rate_per_voxel"],
                             self.cartesian_voxel_volume_cm3,
                         )
                     )
-                    fw.write(voxelString2.format(vox["normalized_emission_rate_cm3"]))
+                    fw.write(
+                        voxelString2.format(vox["normalized_emission_rate_per_voxel"])
+                    )
                     emittingSpectrum = [
-                        val * vox["normalized_emission_rate_cm3"] for val in self.p_bins
+                        val * vox["normalized_emission_rate_per_voxel"]
+                        for val in self.p_bins
                     ]
                     spectrumString = formatValues(emittingSpectrum)
                     fw.write(spectrumString)
@@ -1308,50 +1343,75 @@ boundaryField
 
         import openmc  # type: ignore[import]
 
-        openmc.config["resolve_paths"] = False
-
         if openmc is None:
-            raise RuntimeError("openmc is required")
-
-        openmc_source_file = self.results_folder / "cartesian_sampled_source.xml"
-        openmc_source_file_name = openmc_source_file.name
-        openmc_source_import_commands = self.results_folder / "openmc_commands.txt"
+            print("ERROR openmc not available in the environment")
+            print("skipping writing of the radiation source model.")
+            return
 
         mesh_lower_left = [min(self.x_nodes), min(self.y_nodes), min(self.z_nodes)]
 
         mesh_upper_right = [max(self.x_nodes), max(self.y_nodes), max(self.z_nodes)]
 
-        # create root element
-        root = et.Element("source")
+        openmc_source_file_name = "cartesian_sampled_source.xml"
+        self.settings_source_file = self.results_folder / openmc_source_file_name
+
+        source_mesh = openmc.RegularMesh()
+        source_mesh.lower_left = mesh_lower_left
+        source_mesh.upper_right = mesh_upper_right
+        source_mesh.dimension = (self.x_ints, self.y_ints, self.z_ints)
 
         # create sublement with the mesh source
-        source_mesh = et.SubElement(
-            root,
-            "source",
-            type="mesh",
-            strength=str(self.normalized_sampled_total_emission_rate),
-            mesh=str(),
+        # source_mesh = et.SubElement(
+        #     root,
+        #     "source",
+        #     type="mesh",
+        #     strength=str(self.normalized_sampled_total_emission_rate),
+        #     mesh=str(),
+        # )
+
+        # arr = np.asarray(
+        #     self.cartesian_voxel_list, dtype=object
+        # )  # keep objects untouched
+        # reordered = arr.reshape(
+        #     (self.x_ints, self.y_ints, self.z_ints), order="C"
+        # ).ravel(order="F")
+
+        # for voxel in reordered:
+        #     sub_source = et.SubElement(
+        #         source_mesh,
+        #         "source",
+        #         type="independent",
+        #         strength=str(voxel["normalized_emission_rate_per_voxel"]),
+        #         particle=particle_type,
+        #     )
+        strengths = [
+            voxel["normalized_emission_rate_per_voxel"]
+            for voxel in self.cartesian_voxel_list
+        ]
+
+        source_mesh_space_dist = openmc.stats.MeshSpatial(
+            mesh=source_mesh,
+            strengths=strengths,
+            volume_normalized=False,
         )
 
-        arr = np.asarray(
-            self.cartesian_voxel_list, dtype=object
-        )  # keep objects untouched
-        reordered = arr.reshape(
-            (self.x_ints, self.y_ints, self.z_ints), order="C"
-        ).ravel(order="F")
+        rad_source = openmc.IndependentSource()
+        rad_source.angle = openmc.stats.Isotropic()
+        rad_source.energy = self.decay_energy_distribution_ev
+        rad_source.space = source_mesh_space_dist
+        rad_source.particle = self.particle_type
+        rad_source.strength = self.total_isotope_emission_rate
 
-        ebins_temp = [e * 1e6 for e in self.e_lines]  # convert from MeV to eV
-        energy_parameters = [*ebins_temp, *self.p_lines]
-        particle_type = self.particle_type
-
-        for voxel in reordered:
-            sub_source = et.SubElement(
-                source_mesh,
-                "source",
-                type="independent",
-                strength=str(voxel["normalized_emission_rate_cm3"]),
-                particle=particle_type,
-            )
+        settings = openmc.Settings()
+        settings.run_mode = "fixed source"
+        settings.batches = 10
+        settings.particles = int(1e5)
+        settings.photon_transport = True
+        settings.source_rejection_fraction = 1e-4
+        settings.source = rad_source
+        settings.export_to_xml(
+            path=str(self.settings_source_file),
+        )
 
         return
 
@@ -1360,14 +1420,16 @@ boundaryField
         This function write the unstructured mesh-based radiation source file
         based on the vtk file - generates a settings.xml with the mesh specification
         """
+        print("writing openmc unstructured mesh source file ..")
+
         import openmc  # type: ignore[import]
 
-        openmc.config["resolve_paths"] = False
-
         if openmc is None:
-            raise RuntimeError("openmc is required")
+            print("ERROR openmc not available in the environment")
+            print("skipping writing of the radiation source model.")
+            return
 
-        print("writing openmc unstructured mesh source file ..")
+        openmc.config["resolve_paths"] = False
 
         openmc_source_file_name = "settings_um_fluned_source.xml"
         self.settings_source_file = self.results_folder / openmc_source_file_name
@@ -1397,11 +1459,10 @@ boundaryField
         )
 
         rad_source = openmc.IndependentSource()
-        # only support isotropic distributions
         rad_source.angle = openmc.stats.Isotropic()
         rad_source.energy = self.decay_energy_distribution_ev
         rad_source.space = source_mesh_space_dist
-        rad_source.particle = "photon"
+        rad_source.particle = self.particle_type
         rad_source.strength = self.total_isotope_emission_rate
 
         settings = openmc.Settings()
