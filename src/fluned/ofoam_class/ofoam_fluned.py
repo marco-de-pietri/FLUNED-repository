@@ -1352,42 +1352,25 @@ boundaryField
 
         mesh_upper_right = [max(self.x_nodes), max(self.y_nodes), max(self.z_nodes)]
 
-        openmc_source_file_name = "cartesian_sampled_source.xml"
-        self.settings_source_file = self.results_folder / openmc_source_file_name
+        openmc_source_file_name = "settings_sm_fluned_source.xml"
+        settings_source_file = self.results_folder / openmc_source_file_name
 
         source_mesh = openmc.RegularMesh()
         source_mesh.lower_left = mesh_lower_left
         source_mesh.upper_right = mesh_upper_right
         source_mesh.dimension = (self.x_ints, self.y_ints, self.z_ints)
 
-        # create sublement with the mesh source
-        # source_mesh = et.SubElement(
-        #     root,
-        #     "source",
-        #     type="mesh",
-        #     strength=str(self.normalized_sampled_total_emission_rate),
-        #     mesh=str(),
-        # )
-
-        # arr = np.asarray(
-        #     self.cartesian_voxel_list, dtype=object
-        # )  # keep objects untouched
-        # reordered = arr.reshape(
-        #     (self.x_ints, self.y_ints, self.z_ints), order="C"
-        # ).ravel(order="F")
-
-        # for voxel in reordered:
-        #     sub_source = et.SubElement(
-        #         source_mesh,
-        #         "source",
-        #         type="independent",
-        #         strength=str(voxel["normalized_emission_rate_per_voxel"]),
-        #         particle=particle_type,
-        #     )
-        strengths = [
-            voxel["normalized_emission_rate_per_voxel"]
-            for voxel in self.cartesian_voxel_list
-        ]
+        raw_strengths = np.asarray(
+            [
+                voxel["normalized_emission_rate_per_voxel"]
+                for voxel in self.cartesian_voxel_list
+            ],
+            dtype=float,
+        )
+        # RegularMesh source strengths are indexed with x varying fastest.
+        strengths = raw_strengths.reshape(
+            (self.x_ints, self.y_ints, self.z_ints), order="C"
+        ).ravel(order="F")
 
         source_mesh_space_dist = openmc.stats.MeshSpatial(
             mesh=source_mesh,
@@ -1410,10 +1393,10 @@ boundaryField
         settings.source_rejection_fraction = 1e-4
         settings.source = rad_source
         settings.export_to_xml(
-            path=str(self.settings_source_file),
+            path=str(settings_source_file),
         )
 
-        return
+        return settings_source_file
 
     def write_openmc_um_source(self):
         """
@@ -1476,7 +1459,7 @@ boundaryField
             path=str(self.settings_source_file),
         )
 
-        return
+        return self.settings_source_file
 
     # def write_openmc_um_source(self, mesh_id=100):
     #     """
@@ -2154,7 +2137,9 @@ boundaryField
     def write_empty_openmc_model(
         self,
         *,
-        copy_radosurce_model: bool = False,
+        openmc_model_folder: Path | str = "openmc_empty_model",
+        radsource_settings_file: Path | None = None,
+        copy_radsource_mesh: bool = False,
         meshtally_voxel_size: float = 1.0,
         meshtally_max_voxel_n: float = 1e6,
         padding_factor: float = 1.5,
@@ -2169,7 +2154,7 @@ boundaryField
             raise RuntimeError("openmc is required")
 
         mat_filename = "fluned_materials.xml"
-        openmc_model_folder = self.results_folder / "openmc_model"
+        openmc_model_folder = self.results_folder / openmc_model_folder
         openmc_model_folder.mkdir(parents=True, exist_ok=True)
 
         mat_full_path = openmc_model_folder / mat_filename
@@ -2179,25 +2164,34 @@ boundaryField
 
         mats.export_to_xml(path=str(mat_full_path))
 
-        geo_filename = "acticircuitpy_geometry.xml"
+        geo_filename = "fluned_geometry.xml"
         geo_full_path = openmc_model_folder / geo_filename
 
         openmc_cells = []
 
         # converts vtk dimensions from m to cm and applies a padding factor
-        scale_factor = 100.0 * padding_factor
+        scale_factor = 100.0
 
-        lower_left = [
-            self.vtk_dimensions[0] * scale_factor,
-            self.vtk_dimensions[2] * scale_factor,
-            self.vtk_dimensions[4] * scale_factor,
-        ]
+        # scaled bounds
+        x0 = self.vtk_dimensions[0] * scale_factor
+        x1 = self.vtk_dimensions[1] * scale_factor
+        y0 = self.vtk_dimensions[2] * scale_factor
+        y1 = self.vtk_dimensions[3] * scale_factor
+        z0 = self.vtk_dimensions[4] * scale_factor
+        z1 = self.vtk_dimensions[5] * scale_factor
 
-        upper_right = [
-            self.vtk_dimensions[1] * scale_factor,
-            self.vtk_dimensions[3] * scale_factor,
-            self.vtk_dimensions[5] * scale_factor,
-        ]
+        # centers
+        cx = 0.5 * (x0 + x1)
+        cy = 0.5 * (y0 + y1)
+        cz = 0.5 * (z0 + z1)
+
+        # half-sizes (extents) scaled by padding_factor
+        hx = 0.5 * (x1 - x0) * padding_factor
+        hy = 0.5 * (y1 - y0) * padding_factor
+        hz = 0.5 * (z1 - z0) * padding_factor
+
+        lower_left = [cx - hx, cy - hy, cz - hz]
+        upper_right = [cx + hx, cy + hy, cz + hz]
 
         px0 = openmc.XPlane(x0=lower_left[0], boundary_type="vacuum")
         px1 = openmc.XPlane(x0=upper_right[0], boundary_type="vacuum")
@@ -2219,7 +2213,7 @@ boundaryField
         geo = openmc.Geometry(openmc_cells)
         geo.export_to_xml(path=str(geo_full_path))
 
-        tallies_filename = "acticircuitpy_tallies.xml"
+        tallies_filename = "fluned_tallies.xml"
         tallies_full_path = openmc_model_folder / tallies_filename
 
         mesh = openmc.RegularMesh()
@@ -2234,7 +2228,7 @@ boundaryField
             int(meshtally_max_voxel_n),
         )
 
-        # LARGE MESHTALLIES WILL CRASH THE WSL
+        # LARGE MESHTALLIES WILL QUICKLY CRASH THE WSL
         mesh_filter = openmc.MeshFilter(mesh)
         tally = openmc.Tally(name="flux_meshtally")
         tally.filters = [mesh_filter]
@@ -2243,23 +2237,25 @@ boundaryField
 
         tallies.export_to_xml(path=str(tallies_full_path))
 
-        if copy_radosurce_model:
+        if radsource_settings_file is not None:
             settings_destination_path = openmc_model_folder / "radsource_settings.xml"
             mesh_destination_path = openmc_model_folder / "radsource_mesh.h5m"
             shutil.copy(
-                self.settings_source_file,
+                radsource_settings_file,
                 settings_destination_path,
             )
-            shutil.copy(
-                self.mesh_source_file,
-                mesh_destination_path,
-            )
+            if copy_radsource_mesh:
+                shutil.copy(
+                    self.mesh_source_file,
+                    mesh_destination_path,
+                )
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", openmc.IDWarning)
                 settings = openmc.Settings().from_xml(settings_destination_path)
 
         else:
+            # completely empty settings
             settings_filename = "settings.xml"
             settings_full_path = openmc_model_folder / settings_filename
             settings = openmc.Settings()

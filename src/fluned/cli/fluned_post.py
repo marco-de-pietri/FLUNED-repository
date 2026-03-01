@@ -61,13 +61,20 @@ def main():
             fluned_case.fluned_simulation.write_cdgs()
 
         if args.openmc_sm:
-            fluned_case.fluned_simulation.write_openmc_sm_source()
+            settings_file = fluned_case.fluned_simulation.write_openmc_sm_source()
+            fluned_case.fluned_simulation.write_empty_openmc_model(
+                openmc_model_folder="structured_mesh_source",
+                radsource_settings_file=settings_file,
+                copy_radsource_mesh=False,
+            )
 
         if args.openmc_um:
-            fluned_case.fluned_simulation.write_openmc_um_source()
-
-        if args.openmc_sm or args.openmc_um:
-            fluned_case.fluned_simulation.write_empty_openmc_model()
+            settings_file = fluned_case.fluned_simulation.write_openmc_um_source()
+            fluned_case.fluned_simulation.write_empty_openmc_model(
+                openmc_model_folder="unstructured_mesh_source",
+                radsource_settings_file=settings_file,
+                copy_radsource_mesh=True,
+            )
 
     fluned_case.write_results(args)
 

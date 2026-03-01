@@ -508,6 +508,7 @@ class flunedCase:
                 fw.write("\n")
                 fw.write("\n")
                 fw.write("source sampling\n")
+                assert self.source_sampling_resolution_cm is not None
                 fw.write(
                     "sampling resolution [m],{:f},\n".format(
                         self.source_sampling_resolution_cm / 100
