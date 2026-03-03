@@ -655,10 +655,10 @@ class flunedCase:
             fw.write("QUALITY\n")
             fw.write("AVG VOL [m3],{:e},\n".format(averageVolume))
             if arguments.check:
-                fw.write("AVG CELL TRNST T [s],{:f},\n".format(averageTransitTime))
-                fw.write("AVG CELL Q2,{:e},\n".format(avgMeshQualParameter2))
-                fw.write("AVG CELL GRADxLEN,{:e},\n".format(avgGradDist))
-                fw.write("AVG CELL Q3,{:e},\n".format(avgMeshQualParameter3))
+                fw.write("AVG CELL TRNST T [s],{:f},\n".format(averageTransitTime))  # type: ignore
+                fw.write("AVG CELL Q2,{:e},\n".format(avgMeshQualParameter2))  # type: ignore
+                fw.write("AVG CELL GRADxLEN,{:e},\n".format(avgGradDist))  # type: ignore
+                fw.write("AVG CELL Q3,{:e},\n".format(avgMeshQualParameter3))  # type: ignore
             if negCheck:
                 fw.write("WARNING some elements are negative")
             if arguments.cdgs:

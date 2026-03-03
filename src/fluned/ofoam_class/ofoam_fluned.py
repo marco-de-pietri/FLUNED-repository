@@ -5,7 +5,6 @@ import warnings
 from pathlib import Path
 from typing import Iterable, Sequence
 
-import lxml.etree as et
 import numpy as np
 import pyvista as pv
 
@@ -24,12 +23,6 @@ from .fluned_vtk_utils import (
 )
 from .ofoam_base import oFoamBase
 from .patch_class import get_post_process_list
-
-try:
-    import openmc  # type: ignore[import]
-    import openmc.stats  # type: ignore[import]
-except ImportError:
-    pass
 
 
 def formatValues(vector):
@@ -1432,7 +1425,7 @@ boundaryField
 
         #
         source_mesh = openmc.UnstructuredMesh(
-            filename=str(self.mesh_source_file), library="moab"
+            filename=str(h5m_basename), library="moab"
         )
 
         source_mesh_space_dist = openmc.stats.MeshSpatial(
@@ -2238,21 +2231,22 @@ boundaryField
         tallies.export_to_xml(path=str(tallies_full_path))
 
         if radsource_settings_file is not None:
-            settings_destination_path = openmc_model_folder / "radsource_settings.xml"
-            mesh_destination_path = openmc_model_folder / "radsource_mesh.h5m"
             shutil.copy(
                 radsource_settings_file,
-                settings_destination_path,
+                openmc_model_folder,
             )
             if copy_radsource_mesh:
                 shutil.copy(
                     self.mesh_source_file,
-                    mesh_destination_path,
+                    openmc_model_folder,
                 )
 
             with warnings.catch_warnings():
+                copied_settings_path = (
+                    openmc_model_folder / Path(radsource_settings_file).name
+                )
                 warnings.simplefilter("ignore", openmc.IDWarning)
-                settings = openmc.Settings().from_xml(settings_destination_path)
+                settings = openmc.Settings().from_xml(copied_settings_path)
 
         else:
             # completely empty settings

@@ -134,7 +134,14 @@ class oFoamBase:
         number of internal cells. It does so by reading the U file
         """
 
-        velocityFile = self.path / str(self.last_time) / "U"
+        if (self.path / "0" / "U").is_file():
+            velocityFile = self.path / "0" / "U"
+        elif (self.path / self.last_time / "U").is_file():
+            velocityFile = self.path / self.last_time / "U"
+        else:
+            raise FileNotFoundError(
+                "Unable to find U file in '0' or last time directory"
+            )
 
         internal_block_pat = re.compile(
             r"internalField.*?(\d+).*?\(", re.MULTILINE | re.DOTALL
