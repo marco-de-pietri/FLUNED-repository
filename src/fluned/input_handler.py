@@ -129,7 +129,7 @@ def create_input_template():
 
     vtk_file = get_single_vtk_file(current_folder)
 
-    if vtk_file:
+    if not vtk_file.is_dir():
         activation_comment = ""
         vtk_path = vtk_file.as_posix()
         vtk_dataset_name = get_activation_dataset_name(vtk_path)
