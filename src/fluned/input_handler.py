@@ -3,10 +3,11 @@ import re
 from pathlib import Path
 
 import numpy as np
+import pyvista as pv
 
 from .multi_isotope_utils import (
-    get_isotope_reactions_dicts,
     filter_channels,
+    get_isotope_reactions_dicts,
     map_targets_to_channels,
 )
 
@@ -49,6 +50,7 @@ def fluned_defaults():
     return {
         "simulation_type": "single-isotope",
         "fv_scheme": "stable",
+        "molecular_diffusion": 2e-09,
         "activation_rotation_center_mode": "origin",
         "activation_rotation_euler_order": "xyz",
         "activation_rotation_degs": np.array([0.0, 0.0, 0.0]),
@@ -71,6 +73,41 @@ def get_openmc_reaction_channels(chain_file_path, isotopes_index, reactions_inde
     return emitting_targets
 
 
+def get_activation_dataset_name(
+    vtk_file: str | Path, test_dataset_name: str | None = None
+) -> str | None:
+    """
+    Open a VTK file with PyVista and inspect cell data arrays.
+    If exactly one cell-data array exists, return (name, array).
+    Otherwise return None.
+    """
+    mesh = pv.read(str(vtk_file))
+
+    keys = list(mesh.cell_data.keys())
+    if test_dataset_name is not None:
+        if test_dataset_name in keys:
+            return test_dataset_name
+        else:
+            return None
+
+    if len(keys) != 1:
+        return None
+
+    name = keys[0]
+    return name
+
+
+def get_single_vtk_file(folder: str | Path) -> Path:
+    """
+    Return the Path of the single .vtk file in the folder.
+    If there are zero or more than one .vtk files, return Path().
+    """
+    folder_path = Path(folder)
+    vtk_files = list(folder_path.glob("*.vtk"))
+
+    return vtk_files[0].resolve() if len(vtk_files) == 1 else Path()
+
+
 def create_input_template():
     """
     this function generates an input template file
@@ -80,29 +117,39 @@ def create_input_template():
     current_folder = Path.cwd()
 
     input_path = current_folder / input_name
+    comment_string = "# "
+    dataset_name = "Value - Total"
 
-    template_text = """CASE  FLUNED_01_DEFAULT_N16
+    vtk_file = get_single_vtk_file(current_folder)
+
+    if vtk_file:
+        activation_comment = ""
+        vtk_path = vtk_file.as_posix()
+        vtk_dataset_name = get_activation_dataset_name(vtk_path)
+        if vtk_dataset_name:
+            dataset_name = vtk_dataset_name
+    else:
+        activation_comment = comment_string
+        vtk_path = current_folder.as_posix() + "/path/to/activation_file.vtk"
+
+    template_text = f"""CASE  FLUNED_01_DEFAULT
 TIME_TREATMENT  steadyState          # steadyState or transient supported
 SIMULATION_TYPE single-isotope       # single-isotope, openmc-multi supported
-# ACTIVATION_FILE  {}
-# ACTIVATION_DATASET    "Value - Total"
+{activation_comment}ACTIVATION_FILE  {vtk_path}
+{activation_comment}ACTIVATION_DATASET    "{dataset_name}"
 # ACTIVATION_CONST 1e16
 # ACTIVATION_NORMALIZATION 0         # Leave zero if no normalization is required
-# DECAY_CONSTANT 0.0257867           # O19 decay const
-# DECAY_CONSTANT 0.1661825           # N17 decay const
-DECAY_CONSTANT 0.09721559            # N16 decay const
 INLET_CONC 1e10
-MOLECULAR_DIFFUSION 2e-09
+DECAY_CONSTANT 0.09721559   #N16 decay const
 SCHMIDT_NUMBER   0.7
-CFD_PATH      "{}"
+CFD_PATH      "{current_folder.as_posix()}"
 CFD_TYPE    OpenFoam                 # OpenFoam, fluent-h5-multi types supported
 # FLUENT_FLUID_REGION_NAME     region_name
 """
 
-    with open(input_path, "w", encoding="utf-8") as fw:
-        fw.write(template_text.format(current_folder, current_folder))
+    input_path.write_text(template_text, encoding="utf-8")
 
-    return 0
+    return
 
 
 def generate_openmc_simulation_parameters(args_dict):

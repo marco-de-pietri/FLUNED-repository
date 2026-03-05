@@ -134,28 +134,53 @@ class oFoamBase:
         number of internal cells. It does so by reading the U file
         """
 
-        if (self.path / "0" / "U").is_file():
-            velocityFile = self.path / "0" / "U"
-        elif (self.path / self.last_time / "U").is_file():
-            velocityFile = self.path / self.last_time / "U"
-        else:
-            raise FileNotFoundError(
-                "Unable to find U file in '0' or last time directory"
-            )
-
         internal_block_pat = re.compile(
             r"internalField.*?(\d+).*?\(", re.MULTILINE | re.DOTALL
         )
+        cell_number_last = 0
+        cell_number_0 = 0
 
-        try:
-            with open(velocityFile, "r", encoding="utf8", errors="ignore") as inp_file:
-                text = inp_file.read()
-        except (IOError, OSError) as e:
-            raise RuntimeError(f"Unable to open velocity file '{velocityFile}': {e}")
+        if (self.path / "0" / "U").is_file():
+            velocityFile = self.path / "0" / "U"
+            try:
+                with open(
+                    velocityFile, "r", encoding="utf8", errors="ignore"
+                ) as inp_file:
+                    text = inp_file.read()
+            except (IOError, OSError) as e:
+                raise RuntimeError(
+                    f"Unable to open velocity file '{velocityFile}': {e}"
+                )
+            cell_number_0 = internal_block_pat.findall(text)[0]
+            cell_number_0 = int(cell_number_0)
 
-        cell_number = internal_block_pat.findall(text)[0]
+        if (self.path / self.last_time / "U").is_file():
+            velocityFile = self.path / self.last_time / "U"
+            try:
+                with open(
+                    velocityFile, "r", encoding="utf8", errors="ignore"
+                ) as inp_file:
+                    text = inp_file.read()
+            except (IOError, OSError) as e:
+                raise RuntimeError(
+                    f"Unable to open velocity file '{velocityFile}': {e}"
+                )
+            cell_number_last = internal_block_pat.findall(text)[0]
+            cell_number_last = int(cell_number_last)
 
-        return int(cell_number)
+        if cell_number_0 == 0 and cell_number_last == 0:
+            raise FileNotFoundError("no U file found in 0 or last time folder")
+        if (
+            cell_number_0 != 0
+            and cell_number_last != 0
+            and cell_number_0 != cell_number_last
+        ):
+            raise ValueError(
+                "number of internal cells in 0 and last time folder do not match: "
+                f"{cell_number_0} vs {cell_number_last}"
+            )
+
+        return cell_number_last if cell_number_last != 0 else cell_number_0
 
     def get_patches(self):
         """
