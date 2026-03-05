@@ -7,6 +7,7 @@ import h5py
 import numpy as np
 
 from fluned.fluent_class.fluent_simulation import fluentSimulation
+from fluned.isotopes.isotopes import load_isotopes
 from fluned.ofoam_class.fluned_tool_launchers import (
     launch_grad_func_object,
     launch_volume_func_object,
@@ -32,15 +33,7 @@ class flunedCase:
         """
         initialize flunedCase
         """
-        self.decay_constant = 0
-        self.activation_normalization = 0
-        self.activation_dataset = ""
-        self.activation_dataset_error = ""
-        self.activation_const = 0
-        self.activation_file = ""
-        self.fv_scheme = "stable"
         self.fluned_path = fluned_path
-        self.case = Path(fluned_path).name
         self.source_sampling_resolution_cm: float | None = None
         self.source_sampling_dataset: str | None = None
 
@@ -50,19 +43,31 @@ class flunedCase:
         """
 
         self.case = str(arg_dict["case"])
-        # set decay constant
 
         if arg_dict["simulation_type"] == "single-isotope":
             if "isotope" in arg_dict:
                 isotope = arg_dict["isotope"].lower().replace("-", "")
                 if isotope not in ["n16", "o19", "n17", "f20", "custom"]:
-                    raise ValueError("isotope not recognized")
+                    raise ValueError(
+                        "isotope currently not allowed - limit to n16, n17, o19, f20"
+                        "for more isotopes use openmc multi simulation"
+                    )
                 self.isotope = isotope
-            else:
-                self.isotope = "custom"
 
-            if "decay_constant" in arg_dict:
+            if "decay_constant" in arg_dict and arg_dict["decay_constant"] != 0.0:
                 self.decay_constant = float(arg_dict["decay_constant"])
+            elif self.isotope != "custom":
+                isotope_database = load_isotopes()
+                iso_key = self.isotope  # already lowercase in this branch
+                if iso_key not in isotope_database:
+                    raise ValueError("ERROR isotope not found in the database")
+                isotope_data = isotope_database[iso_key]
+                self.decay_constant = isotope_data.decay_constant
+            else:
+                raise ValueError(
+                    "neither the isotope nor the decay constant is specified, cannot \
+                    proceed"
+                )
 
             if "activation_dataset" in arg_dict:
                 self.activation_dataset = arg_dict["activation_dataset"]
@@ -71,7 +76,7 @@ class flunedCase:
                 self.activation_dataset_error = arg_dict["activation_dataset_error"]
 
             if "activation_file" in arg_dict:
-                self.activation_file = Path(arg_dict["activation_file"])
+                self.activation_file = arg_dict["activation_file"]
 
         if arg_dict["simulation_type"] == "openmc-multi":
             import openmc.data  # type: ignore[import]
@@ -194,8 +199,8 @@ class flunedCase:
 
             self.activation_file = output_vtk
 
-        if "activation_const" in arg_dict:
-            self.activation_const = float(arg_dict["activation_const"])
+        if "activation_constant" in arg_dict:
+            self.activation_constant = float(arg_dict["activation_constant"])
 
         if "activation_normalization" in arg_dict:
             self.activation_normalization = float(arg_dict["activation_normalization"])
@@ -280,7 +285,7 @@ class flunedCase:
 
         self.fluned_simulation.assign_activation_rates(
             self.activation_file,
-            self.activation_const,
+            self.activation_constant,
             self.activation_dataset,
             self.activation_dataset_error,
             self.activation_normalization,

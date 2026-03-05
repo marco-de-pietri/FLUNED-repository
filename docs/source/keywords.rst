@@ -46,7 +46,7 @@ Only for `single-isotope` mode, name of the dataset inside the VTK/VTU file to s
 **ACTIVATION_DATASET_ERROR** *(optional)*
 Only for `single-isotope` mode, name of a companion dataset holding MCNP (or other) statistical errors.
 
-**ACTIVATION_CONST**
+**ACTIVATION_CONSTANT**
 Only for `single-isotope` mode, uniform volumetric activation rate (SI units 1 s⁻¹ m⁻³). Leave commented if not required.
 
 **ACTIVATION_NORMALIZATION** *(optional)*

@@ -856,7 +856,7 @@ boundaryField
     def assign_activation_rates(
         self,
         activation_file,
-        activation_const,
+        activation_constant,
         activation_dataset,
         activation_dataset_error,
         activation_normalization,
@@ -878,16 +878,19 @@ boundaryField
         3) with a source file
         """
 
-        if activation_file == "":
-            if activation_const == 0:
+        if activation_file == "" or activation_file is None:
+            if activation_constant is None or math.isclose(
+                activation_constant, 0.0, abs_tol=1e-12
+            ):
                 # case with no rad source
                 activ_sources = [0 for _ in range(self.n_internal_cells)]
             else:
                 # case with constant value source
                 self.read_volumes()
-                activ_sources = [activation_const * vol for vol in self.volumes]
+                activ_sources = [activation_constant * vol for vol in self.volumes]
 
         else:
+            activation_file = Path(activation_file)
             # case with source file
             launch_centroid_func_object(self.path)
             self.read_volumes()
@@ -909,10 +912,10 @@ boundaryField
                 )
 
             # 2.use the activation const as a factor
-            if activation_const == 0:
+            if float(activation_constant) == 0.0:
                 factor = 1
             else:
-                factor = activation_const
+                factor = activation_constant
             activ_sources = [factor * rate for rate in sampledRates]
 
             # print("debug: total sampled reaction rate #/s pre scaling")

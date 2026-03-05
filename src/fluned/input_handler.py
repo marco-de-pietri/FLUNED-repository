@@ -26,7 +26,7 @@ _INPUT_PARAMETERS = [
     "case",
     "time_treatment",
     "simulation_type",
-    "activation_const",
+    "activation_constant",
     "activation_dataset",
     "activation_dataset_error",
     "activation_rotation_center_mode",
@@ -46,11 +46,18 @@ _INPUT_PARAMETERS = [
 
 
 def fluned_defaults():
-    # Canonical defaults for *one* case
+    # Canonical defaults
     return {
         "simulation_type": "single-isotope",
         "fv_scheme": "stable",
         "molecular_diffusion": 2e-09,
+        "decay_constant": 0.0,
+        "isotope": "custom",
+        "activation_file": "",
+        "activation_dataset": "",
+        "activation_dataset_error": "",
+        "activation_normalization": 0.0,
+        "activation_constant": 0.0,
         "activation_rotation_center_mode": "origin",
         "activation_rotation_euler_order": "xyz",
         "activation_rotation_degs": np.array([0.0, 0.0, 0.0]),
@@ -137,10 +144,10 @@ TIME_TREATMENT  steadyState          # steadyState or transient supported
 SIMULATION_TYPE single-isotope       # single-isotope, openmc-multi supported
 {activation_comment}ACTIVATION_FILE  {vtk_path}
 {activation_comment}ACTIVATION_DATASET    "{dataset_name}"
-# ACTIVATION_CONST 1e16
+# ACTIVATION_CONSTANT 1e16
 # ACTIVATION_NORMALIZATION 0         # Leave zero if no normalization is required
 INLET_CONC 1e10
-DECAY_CONSTANT 0.09721559   #N16 decay const
+ISOTOPE    <name>
 SCHMIDT_NUMBER   0.7
 CFD_PATH      "{current_folder.as_posix()}"
 CFD_TYPE    OpenFoam                 # OpenFoam, fluent-h5-multi types supported
