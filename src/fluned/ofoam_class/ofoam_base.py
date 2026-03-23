@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 import numpy as np
-from foamlib import FoamCase
+from foamlib import FoamCase, FoamFieldFile
 
 from .patch_class import PatchClass
 
@@ -134,53 +134,37 @@ class oFoamBase:
         number of internal cells. It does so by reading the U file
         """
 
-        internal_block_pat = re.compile(
-            r"internalField.*?(\d+).*?\(", re.MULTILINE | re.DOTALL
-        )
-        cell_number_last = 0
-        cell_number_0 = 0
+        u_0 = self.path / "0" / "U"
+        u_last = self.path / self.last_time / "U"
 
-        if (self.path / "0" / "U").is_file():
-            velocityFile = self.path / "0" / "U"
-            try:
-                with open(
-                    velocityFile, "r", encoding="utf8", errors="ignore"
-                ) as inp_file:
-                    text = inp_file.read()
-            except (IOError, OSError) as e:
-                raise RuntimeError(
-                    f"Unable to open velocity file '{velocityFile}': {e}"
-                )
-            cell_number_0 = internal_block_pat.findall(text)[0]
-            cell_number_0 = int(cell_number_0)
+        num_cells_0 = None
+        num_cells_last = None
 
-        if (self.path / self.last_time / "U").is_file():
-            velocityFile = self.path / self.last_time / "U"
-            try:
-                with open(
-                    velocityFile, "r", encoding="utf8", errors="ignore"
-                ) as inp_file:
-                    text = inp_file.read()
-            except (IOError, OSError) as e:
-                raise RuntimeError(
-                    f"Unable to open velocity file '{velocityFile}': {e}"
-                )
-            cell_number_last = internal_block_pat.findall(text)[0]
-            cell_number_last = int(cell_number_last)
+        if u_0.is_file():
+            internal_field = FoamFieldFile(u_0).internal_field
+            if internal_field.shape == (3,):
+                num_cells_0 = None
+            else:
+                num_cells_0 = internal_field.shape[0]
 
-        if cell_number_0 == 0 and cell_number_last == 0:
-            raise FileNotFoundError("no U file found in 0 or last time folder")
-        if (
-            cell_number_0 != 0
-            and cell_number_last != 0
-            and cell_number_0 != cell_number_last
+        if u_last.is_file():
+            internal_field = FoamFieldFile(u_last).internal_field
+            if internal_field.shape == (3,):
+                num_cells_last = None
+            else:
+                num_cells_last = internal_field.shape[0]
+
+        if num_cells_0 is None and num_cells_last is None:
+            raise ValueError("Unable to determine number of internal cells")
+
+        if (num_cells_0 is not None and num_cells_last is not None) and (
+            num_cells_0 != num_cells_last
         ):
             raise ValueError(
-                "number of internal cells in 0 and last time folder do not match: "
-                f"{cell_number_0} vs {cell_number_last}"
+                "Error number of internal cells in 0 and last time are different"
             )
 
-        return cell_number_last if cell_number_last != 0 else cell_number_0
+        return num_cells_0 if num_cells_0 is not None else num_cells_last
 
     def get_patches(self):
         """

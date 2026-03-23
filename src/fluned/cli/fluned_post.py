@@ -55,7 +55,10 @@ def main():
         fluned_case.source_sampling_dataset = args.dataset
 
         if args.cdgs or args.openmc_sm:
-            fluned_case.generate_cartesian_radiation_source_model()
+            fluned_case.fluned_simulation.run_cartesian_sampling(
+                fluned_case.source_sampling_resolution_cm,
+                fluned_case.source_sampling_dataset,
+            )
 
         if args.cdgs:
             fluned_case.fluned_simulation.write_cdgs()

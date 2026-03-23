@@ -17,21 +17,22 @@ foam_case class
      ├╴parse_fluned_simulation [292, 9] ok
      ├╴initialize_cfd_class [305, 9] ok
 
-     ├╴create_case_folders_fluent [316, 9] - replaceable with a couple of lines
+     ├╴create_case_folders_fluent [316, 9] - replaceable with a couple of lines - DONE
 
      ├╴convert_fluent_to_openfoam [330, 9] ok
      ├╴parse_fluent_simulation [339, 9] ok
 
-     ├╴copy_last_phi [352, 9] - definitely simplifiable, maybe can be moved to the ofoamFluned     class?
-     ├╴copy_last_u [374, 9]
-     ├╴copy_last_nut [386, 9]
-     ├╴copy_poly_mesh [400, 9]
+     ├╴copy_last_phi [352, 9] - ok
+     ├╴copy_last_u [374, 9] ok
+     ├╴copy_last_nut [386, 9] ok
+     ├╴copy_poly_mesh [400, 9] ok
 
      ├╴launch_solver [415, 9] - moveable to the fluned tool launcher
 
-     ├╴launch_check_mode [430, 9] ok - check if it is still relevant
+     ├╴launch_check_mode [430, 9] ok for now - check if it is still relevant  
 
-     ├╴generate_cartesian_radiation_source_model [440, 9] okish - could be moved to the ofoamFuned?
+     ├╴generate_cartesian_radiation_source_model [440, 9] okish - could be moved to the ofoamFuned -
+     DONE , moved to the oFoamFluned class
 
      ├╴write_results [456, 9]              ok but ugly
      ├╴write_summary_transient [468, 9]
@@ -53,7 +54,7 @@ ofoam class
      ├╴is_valid_openfoam_case_directory [124, 9] both
 
      ├╴post_process_openfoam_simulation [146, 9] post - both
-     ├╴get_number_internal_cells [163, 9] post - both
+     ├╴get_number_internal_cells [163, 9] post - both - DONE with foamlib
 
      ├╴post_process_fluned_simulation [185, 9] - post fluned
 
@@ -71,8 +72,8 @@ ofoam class
 
      ├╴parse_boundary_phi_files [411, 9] both - optimizable
 
-     ├╴get_last_time [504, 9] - both pre/post replaceable with libfoam   - REMOVED for foamlib
-     ├╴get_time_folders [515, 9] both pre/post replaceable with libfoam
+     ├╴get_last_time [504, 9] - both pre/post replaceable with libfoam   - REMOVED both for foamlib
+     ├╴get_time_folders [515, 9] both pre/post replaceable with libfoam 
 
      ├╴get_density [557, 9] both pre/post replaceable with libfoam
 
@@ -101,14 +102,14 @@ ofoam class
      ├╴generate_zero_td [1742, 9]
 
      ├╴read_volumes [1798, 9] both pre/post - replaced by foamlib - DONE
-     ├╴read_centroids [1849, 9]
-     ├╴read_velocities [1910, 9]
-     ├╴read_grad_t [1938, 9]
+     ├╴read_centroids [1849, 9] both pre/post - replaced by foamlib - DONE
+     ├╴read_velocities [1910, 9] both pre/post - replaced by foamlib - DONE
+     ├╴read_grad_t [1938, 9] both pre/post - replaced by foamlib - DONE
 
      ├╴assign_activation_rates [1964, 9] pre fluned - important
 
-     ├╴generate_source_file [2056, 9] pre fluned - should be totally replaced by foamlib as they are not streamed but just read and stored in memory
-     ├╴generate_tr_source_file [2150, 9]
+     ├╴generate_source_file [2056, 9] pre fluned - should bereplaced by foamlib as it is not streamed but just read and stored in memory
+     ├╴generate_tr_source_file [2150, 9] - replaceable with foamlib
 
      ├╴assign_isotope_data [2215, 9] - totally need to reevaluate as I am already doing this in the
      isotope class

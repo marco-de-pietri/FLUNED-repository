@@ -113,7 +113,7 @@ def launch_grad_func_object(
     )
 
 
-def generate_vtk(
+def launch_foam_to_vtk(
     path: Union[str, Path], *, log: bool = False, verbose: bool = False
 ) -> None:
     """Export latest timestep fields to VTK using ``foamToVTK``.
@@ -146,5 +146,5 @@ __all__: list[str] = [
     "launch_volume_func_object",
     "launch_centroid_func_object",
     "launch_grad_func_object",
-    "generate_vtk",
+    "launch_foam_to_vtk",
 ]

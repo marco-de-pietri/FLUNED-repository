@@ -10,7 +10,7 @@ import pyvista as pv
 
 from fluned.isotopes.isotopes import bins_from_lines, load_isotopes
 
-from .fluned_tool_launchers import generate_vtk, launch_centroid_func_object
+from .fluned_tool_launchers import launch_centroid_func_object, launch_foam_to_vtk
 from .fluned_vtk_utils import (
     generate_external_stl,
     generate_triangularized_h5m_um_mesh,
@@ -278,7 +278,7 @@ class oFoamFluned(oFoamBase):
         self.results_folder = self.path / "RESULTS"
         self.results_folder.mkdir(exist_ok=True)
 
-        generate_vtk(str(self.path))
+        launch_foam_to_vtk(str(self.path))
         self.vtk_file_folder = self.path / "VTK"
         self.get_vtk_file()
         self.vtk_dimensions, self.volume_m3 = get_vtk_dimensions(self.vtk_file_path)
@@ -451,6 +451,22 @@ class oFoamFluned(oFoamBase):
         ]
 
         return norm_td
+
+    def run_cartesian_sampling(
+        self,
+        source_sampling_resolution_cm: float | None = None,
+        sampling_dataset: str | None = None,
+    ):
+        """
+        this function sample the fluned results into a cartesian mesh
+        """
+
+        self.calculate_cartesian_sampling_coordinates(source_sampling_resolution_cm)
+        self.sample_source_to_cartesian_mesh(sampling_dataset)
+
+        self.write_sampled_cartesian_source_vtk()
+
+        return
 
     def scale_mesh_results(self, out_path, inlet_activity, decay_const):
         """
@@ -1204,24 +1220,26 @@ boundaryField
         print("reading scalar values...")
 
         # common patterns
-        internalBlockPat = re.compile(
-            r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
-        )
+        # internalBlockPat = re.compile(
+        #     r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
+        # )
+        #
+        # tFile = self.path / str(self.last_time) / "T"
+        #
+        # try:
+        #     inpFile = open(tFile, "r", encoding="utf8", errors="ignore")
+        # except IOError:
+        #     raise FileNotFoundError("couldn't open T file")
+        # with inpFile:
+        #     text = inpFile.read()
+        #     numInternalBlocks = internalBlockPat.findall(text)
+        #     internalScalar = numInternalBlocks[0].split("\n")[1:-1]
+        #
+        #     self.t_scalar = np.zeros(self.n_internal_cells)
+        #     for i in range(self.n_internal_cells):
+        #         self.t_scalar[i] = float(internalScalar[i])
 
-        tFile = self.path / str(self.last_time) / "T"
-
-        try:
-            inpFile = open(tFile, "r", encoding="utf8", errors="ignore")
-        except IOError:
-            raise FileNotFoundError("couldn't open T file")
-        with inpFile:
-            text = inpFile.read()
-            numInternalBlocks = internalBlockPat.findall(text)
-            internalScalar = numInternalBlocks[0].split("\n")[1:-1]
-
-            self.t_scalar = np.zeros(self.n_internal_cells)
-            for i in range(self.n_internal_cells):
-                self.t_scalar[i] = float(internalScalar[i])
+        self.t_scalar = self.foamlib_object[-1]["T"].internal_field
 
         return
 

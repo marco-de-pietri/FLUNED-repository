@@ -125,23 +125,23 @@ class flunedCase:
 
                 macro_xs_channels.append(macro_xs_channel)
 
-                print(
-                    "debug: macro xs channel for {}: {}".format(
-                        channel["parent_nuclide"], macro_xs_channel
-                    )
-                )
-                print("parent nuclide: {}".format(parent))
-                print("mesh widths: {}".format(mesh_widths_m))
-                print("mesh dimensions: {}".format(mesh_dimensions_pv))
-                print("isotope densities: {}".format(isotope_densities[parent]))
-                print(
-                    "average microxs for channel {}: {}".format(
-                        channel["parent_nuclide"],
-                        np.mean(micro_xs_data[:, idxs[0], idxs[1]]),
-                    )
-                )
-                print("average flux: {}".format(np.mean(neutron_fluxes)))
-                print()
+                # print(
+                #     "debug: macro xs channel for {}: {}".format(
+                #         channel["parent_nuclide"], macro_xs_channel
+                #     )
+                # )
+                # print("parent nuclide: {}".format(parent))
+                # print("mesh widths: {}".format(mesh_widths_m))
+                # print("mesh dimensions: {}".format(mesh_dimensions_pv))
+                # print("isotope densities: {}".format(isotope_densities[parent]))
+                # print(
+                #     "average microxs for channel {}: {}".format(
+                #         channel["parent_nuclide"],
+                #         np.mean(micro_xs_data[:, idxs[0], idxs[1]]),
+                #     )
+                # )
+                # print("average flux: {}".format(np.mean(neutron_fluxes)))
+                # print()
 
             # WARNING scaling factor is hardcoded to go from cm-3 to m-3.
             total_rr_m3 = (
