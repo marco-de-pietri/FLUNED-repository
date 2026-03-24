@@ -48,71 +48,6 @@ def formatValues(vector):
     return returnString
 
 
-def bounding_box_corners(points, padding=1.0):
-    """
-    Given a list of coordinates (each a list/tuple of equal length),
-    return the two opposite corners of the minimal axis-aligned
-    bounding box that encompasses all points, with optional padding.
-
-    Args:
-        points: List of coordinates (each a list/tuple of equal length)
-        padding: Padding to add to all sides of the bounding box.
-                Can be a single number (applied to all dimensions) or
-                a list/tuple of numbers (one per dimension).
-
-    Returns:
-        (min_corner, max_corner), where each is a tuple of length D.
-    """
-    if not points:
-        raise ValueError("points must be a non-empty list")
-
-    dim = len(points[0])
-    for p in points:
-        if len(p) != dim:
-            raise ValueError("all points must have the same dimension")
-
-    # Handle padding parameter
-    if isinstance(padding, (int, float)):
-        # Single padding value for all dimensions
-        padding_values = [padding] * dim
-    else:
-        # Padding per dimension
-        padding_values = list(padding)
-        if len(padding_values) != dim:
-            raise ValueError(
-                "padding must be a single number or have same length as point dimensions"
-            )
-
-    mins = [float("inf")] * dim
-    maxs = [float("-inf")] * dim
-
-    for p in points:
-        for i, v in enumerate(p):
-            if v < mins[i]:
-                mins[i] = v
-            if v > maxs[i]:
-                maxs[i] = v
-
-    # Calculate dimensions and apply padding as scaling factor
-    padded_mins = []
-    padded_maxs = []
-
-    for i in range(dim):
-        dimension_size = maxs[i] - mins[i]
-        padding_amount = dimension_size * padding_values[i]
-
-        # Handle edge case where dimension_size is 0 (all points identical in this dimension)
-        if dimension_size == 0:
-            padding_amount = abs(
-                padding_values[i]
-            )  # Use absolute padding for zero-width dimensions
-
-        padded_mins.append(mins[i] - padding_amount)
-        padded_maxs.append(maxs[i] + padding_amount)
-
-    return tuple(padded_mins), tuple(padded_maxs)
-
-
 def mesh_ints_from_bounds(
     lower: Iterable[float],
     upper: Iterable[float],
@@ -451,6 +386,31 @@ class oFoamFluned(oFoamBase):
         ]
 
         return norm_td
+
+    def parse_constants_file(self):
+        """Parse transportProperties and populate the decay and transport data."""
+
+        transport_properties = self.foamlib_object.transport_properties
+
+        def _get_float(key: str, default: float = 0.0) -> float:
+            value = transport_properties.get(key)
+            if value is None:
+                return default
+            if hasattr(value, "value"):
+                return float(value.value)
+            return float(value)
+
+        try:
+            isotope = transport_properties.get("isotope", "custom")
+            self.isotope = isotope if isinstance(isotope, str) else "custom"
+
+            self.molecular_diffusion = _get_float("DT")
+            self.decay_constant = _get_float("lambda")
+            self.schmidt_number = _get_float("Sct")
+        except FileNotFoundError as exc:
+            raise FileNotFoundError("couldn't open transportProperties file") from exc
+
+        return
 
     def run_cartesian_sampling(
         self,
@@ -1218,26 +1178,6 @@ boundaryField
         """
 
         print("reading scalar values...")
-
-        # common patterns
-        # internalBlockPat = re.compile(
-        #     r"internalField.*?\((.{1,}?)\)", re.MULTILINE | re.DOTALL
-        # )
-        #
-        # tFile = self.path / str(self.last_time) / "T"
-        #
-        # try:
-        #     inpFile = open(tFile, "r", encoding="utf8", errors="ignore")
-        # except IOError:
-        #     raise FileNotFoundError("couldn't open T file")
-        # with inpFile:
-        #     text = inpFile.read()
-        #     numInternalBlocks = internalBlockPat.findall(text)
-        #     internalScalar = numInternalBlocks[0].split("\n")[1:-1]
-        #
-        #     self.t_scalar = np.zeros(self.n_internal_cells)
-        #     for i in range(self.n_internal_cells):
-        #         self.t_scalar[i] = float(internalScalar[i])
 
         self.t_scalar = self.foamlib_object[-1]["T"].internal_field
 

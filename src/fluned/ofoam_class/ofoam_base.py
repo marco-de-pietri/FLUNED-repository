@@ -12,27 +12,6 @@ from foamlib import FoamCase, FoamFieldFile
 from .patch_class import PatchClass
 
 
-def read_utf8_or_gzip(file_path):
-    """
-    Read a UTF-8 text file. If it is gzip-compressed,
-    decompress it and return the decoded text.
-    """
-
-    try:
-        with open(file_path, "rb") as f:
-            magic = f.read(2)
-    except OSError as e:
-        raise ValueError(f"Cannot open file: {file_path}") from e
-
-    opener = gzip.open if magic == b"\x1f\x8b" else open
-
-    try:
-        with opener(file_path, "rt", encoding="utf-8") as f:
-            return f.read()
-    except (OSError, UnicodeDecodeError) as e:
-        raise ValueError(f"Error reading file as UTF-8 text: {file_path}") from e
-
-
 def check_float(s):
     """
     check if a string can be converted to float
@@ -326,8 +305,6 @@ class oFoamBase:
 
             if found and tok_dict["path"] != dict_path:
                 break
-
-        # print (field_vector)
 
         return field_vector[position]
 
@@ -647,83 +624,17 @@ class oFoamBase:
 
         return
 
-    def parse_constants_file(self):
-        """this function parses the constant properties to get the decay
-        variable and the others"""
-
-        # common patterns
-        dtPat = re.compile(r"DT\s*DT.*")
-        isotope_pat = re.compile("isotope.*")
-        lambdaPat = re.compile(r"lambda\s*lambda.*")
-        schPat = re.compile(r"Sct\s*Sct.*")
-
-        cFile = self.path / "constant" / "transportProperties"
-        try:
-            inpFile = open(cFile, "r", encoding="utf8", errors="ignore")
-        except IOError:
-            raise FileNotFoundError("couldn't open transportProperties file")
-        with inpFile:
-            text = inpFile.read()
-            dtLines = dtPat.findall(text)
-            lambdaLines = lambdaPat.findall(text)
-            schLines = schPat.findall(text)
-            isotopeLines = isotope_pat.findall(text)
-            if len(isotopeLines) != 0:
-                vals = isotopeLines[0].strip(" ;").split()
-                val = vals[-1]
-                self.isotope = val
-            else:
-                self.isotope = "custom"
-
-            if len(dtLines) != 0:
-                vals = dtLines[0].strip(" ;").split()
-                val = vals[-1]
-                self.molecular_diffusion = float(val)
-            else:
-                self.molecular_diffusion = 0
-
-            if len(lambdaLines) != 0:
-                vals = lambdaLines[0].strip(" ;").split()
-                val = vals[-1]
-                self.decay_constant = float(val)
-            else:
-                self.decay_constant = 0
-
-            if len(schLines) != 0:
-                vals = schLines[0].strip(" ;").split()
-                val = vals[-1]
-                self.schmidt_number = float(val)
-            else:
-                self.schmidt_number = 0
-
-        return
-
     def get_time_treatment(self):
         """
         Parse the fvSchemes file to determine whether the simulation
         is steady-state or transient.
         """
 
-        cFile = self.path / "system" / "fvSchemes"
+        default_ddt = self.foamlib_object.fv_schemes["ddtSchemes", "default"].lower()
 
-        if not cFile.is_file():
-            raise FileNotFoundError("couldn't open fvSchemes file")
-
-        # Match the whole ddtSchemes dictionary
-        ddtPat = re.compile(r"ddtSchemes\s*\{.*?\}", re.MULTILINE | re.DOTALL)
-
-        with open(cFile, "r", encoding="utf8", errors="ignore") as f:
-            text = f.read()
-
-        match = ddtPat.search(text)
-        if not match:
-            raise ValueError("ddtSchemes block not found in fvSchemes")
-
-        ddtText = match.group(0).lower()
-
-        if "euler" in ddtText:
+        if "euler" in default_ddt:
             self.time_treatment = "transient"
-        elif "steadystate" in ddtText:
+        elif "steadystate" in default_ddt:
             self.time_treatment = "steadystate"
         else:
             raise ValueError("could not recognize the time discretization scheme")

@@ -1,6 +1,5 @@
 import pickle
 import shutil
-import subprocess
 from pathlib import Path
 
 import h5py
@@ -34,8 +33,6 @@ class flunedCase:
         initialize flunedCase
         """
         self.fluned_path = fluned_path
-        self.source_sampling_resolution_cm: float | None = None
-        self.source_sampling_dataset: str | None = None
 
     def generate_case(self, arg_dict):
         """
@@ -43,6 +40,10 @@ class flunedCase:
         """
 
         self.case = str(arg_dict["case"])
+        self.source_sampling_dataset = str(arg_dict["source_sampling_dataset"])
+        self.source_sampling_resolution_cm = float(
+            arg_dict["source_sampling_resolution_cm"]
+        )
 
         if arg_dict["simulation_type"] == "single-isotope":
             if "isotope" in arg_dict:
@@ -414,21 +415,6 @@ class flunedCase:
             shutil.rmtree(targetFolder)
 
         shutil.copytree(sourceFolder, targetFolder)
-
-        return
-
-    def launch_solver(self):
-        """
-        this function launches the scalar calculation
-        """
-
-        print("launching FLUNED solver ...")
-        launch_calc_string = "FLUNED-solver".split()
-        log_path = Path(self.fluned_path) / "simulation_log"
-        with open(log_path, "a", encoding="utf-8") as outfile:
-            subprocess.Popen(
-                launch_calc_string, stdout=outfile, cwd=self.fluned_path
-            ).wait()
 
         return
 

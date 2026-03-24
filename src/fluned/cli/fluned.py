@@ -4,6 +4,7 @@ import argparse
 from .. import __version__
 from ..fluned_case_class import flunedCase
 from ..input_handler import create_input_template, read_fluned_input_file
+from ..ofoam_class.fluned_tool_launchers import launch_fluned_solver
 
 
 def main():
@@ -59,7 +60,8 @@ def main():
         fCase.generate_fluned_files()
 
         if args.launch_simulation:
-            fCase.launch_solver()
+            print("launching FLUNED solver ...")
+            launch_fluned_solver(fCase.fluned_path)
 
         print("FINISHED!")
 

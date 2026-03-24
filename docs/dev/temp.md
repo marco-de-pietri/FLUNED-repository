@@ -72,15 +72,17 @@ ofoam class
 
      ├╴parse_boundary_phi_files [411, 9] both - optimizable
 
-     ├╴get_last_time [504, 9] - both pre/post replaceable with libfoam   - REMOVED both for foamlib
-     ├╴get_time_folders [515, 9] both pre/post replaceable with libfoam 
+     ├╴get_last_time [504, 9] - both pre/post replaceable with libfoam   - REMOVED for foamlib
+     ├╴get_time_folders [515, 9] both pre/post replaceable with libfoam   - REMOVED for foamlib
 
-     ├╴get_density [557, 9] both pre/post replaceable with libfoam
+
+     ├╴get_density [557, 9] both pre/post replaceable with libfoam - at the moment the
+      implementation is quite nice already
 
      ├╴get_volumetric_flag [538, 9] both pre/post replaceable with libfoam - REMOVED for foamlib
-     ├╴get_phi_dimensions [570, 9] both pre/post replaceable with libfoam
+     ├╴get_phi_dimensions [570, 9] both pre/post - DONE removed for foamlib
 
-     ├╴query_dimensions [582, 9] both pre/post  - block of functions that allow the conversion of  huge files (not replaceable at the moment)
+     ├╴query_dimensions [582, 9] both pre/post - set of functions that allow the conversion of  huge files (not replaceable at the moment)
      ├╴query_of_single_value [600, 9] both pre/post 
      ├╴tokenizer [626, 9] both pre/post 
      ├╴token_classifier [648, 9] both pre/post 
@@ -108,16 +110,16 @@ ofoam class
 
      ├╴assign_activation_rates [1964, 9] pre fluned - important
 
-     ├╴generate_source_file [2056, 9] pre fluned - should bereplaced by foamlib as it is not streamed but just read and stored in memory
+     ├╴generate_source_file [2056, 9] pre fluned - should be replaced by foamlib as it is not streamed but just read and stored in memory
      ├╴generate_tr_source_file [2150, 9] - replaceable with foamlib
 
      ├╴assign_isotope_data [2215, 9] - totally need to reevaluate as I am already doing this in the
      isotope class
 
-     ├╴parse_constants_file [2278, 9] - both - replaceable with foamlib
-     ├╴get_time_treatment [2329, 9]
+     ├╴parse_constants_file [2278, 9] - fluned only - optimizable with foamlib - DONE
+     ├╴get_time_treatment [2329, 9] - optimized with foamlib - DONE
 
-     ├╴read_t [2361, 9] fluned - post - replaceable as well
+     ├╴read_t [2361, 9] fluned - post - DONE with foamlib
 
 
      ├╴write_cdgs [2436, 9] - fluned post at the moment no modifications

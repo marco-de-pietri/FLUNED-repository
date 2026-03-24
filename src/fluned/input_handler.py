@@ -42,6 +42,8 @@ _INPUT_PARAMETERS = [
     "schmidt_number",
     "cfd_type",
     "fluent_fluid_region_name",
+    "source_sampling_resolution_cm",
+    "source_sampling_dataset",
 ]
 
 
@@ -62,6 +64,8 @@ def fluned_defaults():
         "activation_rotation_euler_order": "xyz",
         "activation_rotation_degs": np.array([0.0, 0.0, 0.0]),
         "activation_translation_m": np.array([0.0, 0.0, 0.0]),
+        "source_sampling_resolution_cm": 0.0,
+        "source_sampling_dataset": "",
     }
 
 
