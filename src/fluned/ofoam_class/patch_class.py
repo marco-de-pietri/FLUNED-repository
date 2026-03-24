@@ -260,3 +260,54 @@ class PatchClass:
         # print (self.t_conc_atoms_m3)
 
         return None
+
+    def to_xml_patch_element(self):
+        """
+        Return an XML element for this patch with SI-style unit strings.
+
+        Structure:
+
+        <patch id="face1" boundary_type="inlet">
+            <area unit="m^2">...</area>
+            <fluid_flow unit="m^3 s^-1">...</fluid_flow>
+            <atom_flow unit="s^-1">...</atom_flow>
+            <atom_concentration unit="m^-3">...</atom_concentration>
+            <specific_activity unit="Bq m^-3">...</specific_activity>
+            <average_residence_time unit="s">...</average_residence_time>
+        </patch>
+        """
+        import xml.etree.ElementTree as ET
+
+        if self.face_type == "wall":
+            raise ValueError(
+                "XML patch export is only defined for inlet/outlet patches"
+            )
+
+        if not self.post_process_flow:
+            raise ValueError(
+                "Face post-processing data not available. "
+                "Call post_process_face() before exporting XML."
+            )
+
+        patch_elem = ET.Element(
+            "patch",
+            {
+                "id": str(self.face_id),
+                "boundary_type": str(self.face_type),
+            },
+        )
+
+        def add_child(tag, value, unit):
+            child = ET.SubElement(patch_elem, tag)
+            child.set("unit", unit)
+            child.text = f"{float(value):.5e}"
+            return child
+
+        add_child("area", self.area_m2, "m^2")
+        add_child("fluid_flow", self.post_process_flow[-1], "m^3 s^-1")
+        add_child("atom_flow", self.post_process_t_flow[-1], "s^-1")
+        add_child("atom_concentration", self.t_conc_atoms_m3[-1], "m^-3")
+        add_child("specific_activity", self.ta_conc_atoms_m3[-1], "Bq m^-3")
+        add_child("average_residence_time", self.tr_conc[-1], "s")
+
+        return patch_elem

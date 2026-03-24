@@ -2,8 +2,9 @@
 Input File Guide
 ================
 
-This page documents all keywords that can appear in a `FLUNED` input, their
-purpose, default behaviour and the range of values they accept.
+This page documents the main and advanced keywords currently accepted by a
+`FLUNED` input, their purpose, default behaviour and the range of values they
+accept.
 
 To start, a generic template can be created by running `fluned -t`.
 
@@ -38,7 +39,7 @@ Specify the type of FLUNED simulation.
 **ACTIVATION_FILE** 
 In `single-isotope` mode, it is the path to a VTK or VTU file that contains a spatial field of neutron‑activation rate (e.g. N‑16 production). 
 Leave the line commented if you prefer a constant or null source term.
-In `openmc-multi` mode, it corresponds to the relevant activation data stored in the H5 file generated with the openmc_to_fluned helper function.
+In `openmc-multi` mode, it corresponds to the activation H5 file generated with the `openmc_fluned_coupling` helper function.
 
 **ACTIVATION_DATASET** *(optional, with ACTIVATION_FILE)*
 Only for `single-isotope` mode, name of the dataset inside the VTK/VTU file to sample.  Default: `"Value - Total"`.
@@ -47,11 +48,15 @@ Only for `single-isotope` mode, name of the dataset inside the VTK/VTU file to s
 Only for `single-isotope` mode, name of a companion dataset holding MCNP (or other) statistical errors.
 
 **ACTIVATION_CONSTANT**
-Only for `single-isotope` mode, uniform volumetric activation rate (SI units 1 s⁻¹ m⁻³). Leave commented if not required.
+If `ACTIVATION_FILE` is not provided, this is interpreted as a uniform volumetric activation rate (SI units 1 s^-1 m^-3).
+If `ACTIVATION_FILE` is provided, this value is interpreted as a multiplicative factor applied to the sampled activation field before any normalization.
+Keep the value at `0` to leave sampled values unscaled.
 
 **ACTIVATION_NORMALIZATION** *(optional)*
-Multiplicative factor applied to the sampled activation map before it is written to
-the `Source` field.  Keep the default `0` to disable any scaling.
+Only used when `ACTIVATION_FILE` is provided.
+This does not act as a direct multiplier. Instead, it sets the target total sampled source strength [# s^-1] after sampling and scaling.
+FLUNED rescales the sampled activation field so that its volume-integrated value matches this number.
+Keep the default `0` to disable normalization.
 
 **DECAY_CONSTANT** *(required ≥ 1)*
 Radio‑isotope decay constant in s⁻¹. No value is required when running a multi-species simulation using data from OpenMC.
@@ -99,4 +104,42 @@ Identifies the CFD format:
 **FLUENT_FLUID_REGION_NAME** 
 Exact name of the fluid cell zone to be extracted.  Ignored for OpenFOAM inputs.
 
+Advanced Keywords
+-----------------
+
+The parser also accepts the advanced options below. They are not included in
+the default template and are mainly intended for specialized or programmatic
+workflows.
+
+**ACTIVATION_ROTATION_CENTER_MODE** *(optional)*
+Reference point used when applying a rotation to the activation mesh.
+
+* `origin`        - rotate around the global origin. Default option.
+* `mesh_center`   - rotate around the PyVista mesh center.
+* `bounds_center` - rotate around the center of the mesh bounding box.
+
+**ACTIVATION_ROTATION_EULER_ORDER** *(optional)*
+Euler rotation order used together with `ACTIVATION_ROTATION_DEGS`.
+Supported values are `xyz`, `xzy`, `yxz`, `yzx`, `zxy`, and `zyx`.
+Default: `xyz`.
+
+**ACTIVATION_ROTATION_DEGS** *(optional)*
+Three rotation angles in degrees applied to the activation mesh, for example
+`ACTIVATION_ROTATION_DEGS 0 0 90`.
+If all three values are zero, no rotation is applied.
+
+**ACTIVATION_TRANSLATION_M** *(optional)*
+Three translation components in metres applied to the activation mesh, for
+example `ACTIVATION_TRANSLATION_M 0.0 0.0 0.1`.
+
+**SOURCE_SAMPLING_RESOLUTION_CM** *(optional)*
+Sampling resolution in cm used when generating cartesian, CDGS, or OpenMC
+source exports from a `flunedCase` object.
+
+**SOURCE_SAMPLING_DATASET** *(optional)*
+Dataset name used when generating cartesian, CDGS, or OpenMC source exports
+from a `flunedCase` object.
+
+For the standard `fluned-post` CLI, the equivalent sampling controls are the
+`--precision` and `--dataset` command-line options.
 

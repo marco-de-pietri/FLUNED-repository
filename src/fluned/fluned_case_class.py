@@ -1,5 +1,6 @@
 import pickle
 import shutil
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import h5py
@@ -451,6 +452,7 @@ class flunedCase:
 
         if self.fluned_simulation.time_treatment == "steadystate":
             self.write_summary_steady(arguments)
+            self.write_summary_xml()
         else:
             self.write_summary_transient(arguments)
 
@@ -684,7 +686,7 @@ class flunedCase:
             fw.write("TOT AVG ACTIVITY[Bq/m3],{:.5e},\n".format(avg_activity))
             if inlet_activity != 0:
                 norm_avg_activity = abs(avg_activity / inlet_activity)
-                string = "INLET-NORMALIZED AVG ACTIVITY[Bq/m3],{:.5e},\n"
+                string = "INLET-NORMALIZED AVG ACTIVITY,{:.5e},\n"
                 fw.write(string.format(norm_avg_activity))
 
             if inlet_atoms != 0:
@@ -717,5 +719,99 @@ class flunedCase:
                     )
                     fw.write("AVG RES T [s],{:.5f},\n".format(abs(face.tr_conc[-1])))
                     fw.write("\n")
+
+        return
+
+    def write_summary_xml(self):
+        """
+        Write a compact XML summary file in the RESULTS/ folder
+        with selected simulation metadata, quality, and activation data.
+        """
+
+        xml_file = Path(self.fluned_simulation.results_folder) / "fluned_summary.xml"
+        results_sim = self.fluned_simulation
+
+        inlet_atoms = abs(results_sim.total_inlet_t_atoms)
+        inlet_activity = abs(results_sim.inlet_td_conc_atoms_m3[-1])
+
+        outlet_activity = results_sim.outlet_t_conc_atoms_m3[-1]
+        outlet_atoms = results_sim.total_outlet_t_atoms
+
+        tot_activity = results_sim.total_isotope_activity
+        avg_activity = results_sim.total_average_isotope_concentration
+
+        average_volume = sum(results_sim.volumes) / len(results_sim.volumes)
+
+        faces_post = sorted(results_sim.patches.values(), key=lambda x: x.face_id)
+
+        root = ET.Element("simulation_summary")
+        root.set("simulation_type", "steady_state")
+
+        ET.SubElement(root, "case_name").text = str(results_sim.case)
+        ET.SubElement(root, "number_of_elements").text = str(
+            results_sim.n_internal_cells
+        )
+        ET.SubElement(root, "isotope").text = str(results_sim.isotope.upper())
+
+        decay = ET.SubElement(root, "decay_constant", unit="s^-1")
+        decay.text = f"{results_sim.decay_constant:.6e}"
+
+        diffusion = ET.SubElement(
+            root, "molecular_diffusion_coefficient", unit="m^2 s^-1"
+        )
+        diffusion.text = f"{results_sim.molecular_diffusion:.6e}"
+
+        schmidt = ET.SubElement(root, "turbulent_schmidt_number")
+        schmidt.text = f"{results_sim.schmidt_number:.6f}"
+
+        # QUALITY section
+        quality = ET.SubElement(root, "quality")
+        avg_vol = ET.SubElement(quality, "average_cell_volume", unit="m^3")
+        avg_vol.text = f"{average_volume:.6e}"
+
+        # ACTIVATION section
+        activation = ET.SubElement(root, "activation")
+
+        ET.SubElement(
+            activation, "inlet_atoms", unit="# s^-1"
+        ).text = f"{inlet_atoms:.5e}"
+        ET.SubElement(
+            activation, "outlet_atoms", unit="# s^-1"
+        ).text = f"{outlet_atoms:.5e}"
+        ET.SubElement(
+            activation, "total_inlet_activity", unit="Bq m^-3"
+        ).text = f"{inlet_activity:.5e}"
+        ET.SubElement(
+            activation, "total_outlet_activity", unit="Bq m^-3"
+        ).text = f"{outlet_activity:.5e}"
+        ET.SubElement(
+            activation, "total_case_activity", unit="Bq"
+        ).text = f"{tot_activity:.5e}"
+        ET.SubElement(
+            activation, "total_average_activity", unit="Bq m^-3"
+        ).text = f"{avg_activity:.5e}"
+
+        if inlet_activity != 0:
+            norm_avg_activity = abs(avg_activity / inlet_activity)
+            ET.SubElement(
+                activation, "inlet_normalized_average_activity"
+            ).text = f"{norm_avg_activity:.5e}"
+
+        if inlet_atoms != 0:
+            out_in_ratio = abs(outlet_atoms / inlet_atoms)
+            ET.SubElement(
+                activation, "outlet_to_inlet_ratio"
+            ).text = f"{out_in_ratio:.5e}"
+
+        # PATCH section
+        patches = ET.SubElement(root, "patches")
+
+        for patch in faces_post:
+            if patch.face_type != "wall":
+                patches.append(patch.to_xml_patch_element())
+
+        tree = ET.ElementTree(root)
+        ET.indent(tree, space="  ", level=0)
+        tree.write(xml_file, encoding="utf-8", xml_declaration=True)
 
         return

@@ -15,7 +15,7 @@ The transfer of data from an openmc simulation to fluned is done by saving the r
 The data is packaged by the helper function `openmc_fluned_coupling` in module ``fluned.fluned_case_multi_isotopes_class`` (source file: ``FLUNED-Repository/src/fluned/fluned_case_multi_isotopes_class.py``).
 This function can be copied or imported and called in the openmc input script file after running the function `openmc.deplete.get_microxs_and_flux` function of the deplete module.
 
-As the `fluned_repo-install.sh` script installs the cli tools in their own environment through the uv
+As the `fluned-repo-install.sh` script installs the cli tools in their own environment through the uv
 package manager, to use the multiple-isotopes workflow the user needs also to install the python
 part of the package in the same environment of openmc.
 
@@ -118,7 +118,6 @@ An example of this process is shown in the code block below.
         mesh.width,
         mesh.dimension,
         mesh.lower_left,
-        strength,
         all_micro_xs,
         flux_in_each_mesh_voxel,
     )
@@ -137,4 +136,3 @@ The geometry of the computational model is the tetrahedralized Unstructured Mesh
 The computational model is composed by a series of xml files, one for each radioisotope and one for the mesh geometry. 
 These files can be imported and combined in a OpenMC simulations to define the openmc.settings.source object.
 The code to import these is generated automatically by the post-processor and it is saved in the file ``openmc_source_commands.txt``.
-

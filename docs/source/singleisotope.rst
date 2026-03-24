@@ -42,3 +42,6 @@ using the standard OpenFOAM commands.
 
     fluned-post
 
+This writes a text summary to ``RESULTS/SUMMARY.csv``.
+For steady-state cases it also writes a machine-readable summary to
+``RESULTS/fluned_summary.xml``.
