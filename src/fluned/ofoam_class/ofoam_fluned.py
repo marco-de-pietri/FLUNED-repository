@@ -1392,7 +1392,7 @@ boundaryField
         source_mesh_space_dist = openmc.stats.MeshSpatial(
             mesh=source_mesh,
             strengths=self.tri_mesh_emission_rates,
-            volume_normalized=False,
+            volume_normalized=True,
         )
 
         rad_source = openmc.IndependentSource()
@@ -1415,108 +1415,6 @@ boundaryField
 
         return self.settings_source_file
 
-    # def write_openmc_um_source(self, mesh_id=100):
-    #     """
-    #     This function write the unstructured mesh-based radiation source file
-    #     based on the vtk file
-    #     """
-    #
-    #     print("writing openmc unstructured mesh source file ..")
-    #
-    #     openmc_source_file_name = "um_fluned_source.xml"
-    #     openmc_source_file = self.results_folder / openmc_source_file_name
-    #
-    #     h5m_basename = "um_geometry.h5m"
-    #     openmc_source_mesh_file = self.results_folder / h5m_basename
-    #
-    #     vtk_tri_mesh_source_file = self.results_folder / "triangularized_t_scalar.vtk"
-    #
-    #     openmc_source_import_commands = self.results_folder / "openmc_um_commands.txt"
-    #
-    #     self.compute_triangularized_emission_rates(
-    #         vtk_tri_mesh_source_file, scaling_factor=100.0, save_tri_mesh_vtk=True
-    #     )
-    #
-    #     # save a scaled up h5m file
-    #     generate_triangularized_h5m_um_mesh(self.vtk_file_path, openmc_source_mesh_file)
-    #
-    #     with open(openmc_source_import_commands, "w") as f:
-    #         f.write("from lxml import etree\n")
-    #         f.write("parser = etree.XMLParser(huge_tree=True)\n")
-    #         f.write(
-    #             'source_root = etree.parse("{}", parser=parser).getroot()\n'.format(
-    #                 openmc_source_file_name
-    #             )
-    #         )
-    #         f.write("mesh_element = source_root.find('mesh')\n")
-    #         f.write(
-    #             "mesh_geo = openmc.UnstructuredMesh.from_xml_element(mesh_element)\n"
-    #         )
-    #         f.write("source_element = source_root.find('source')\n")
-    #         f.write(
-    #             "source = openmc.IndependentSource.from_xml_element(source_element, {100:mesh_geo})\n"
-    #         )
-    #
-    #     # create root element
-    #     root = et.Element("source")
-    #
-    #     # create sublement with the mesh source
-    #     source_mesh = et.SubElement(
-    #         root,
-    #         "source",
-    #         type="independent",
-    #         particle=self.particle_type,
-    #         strength=f"{self.total_isotope_emission_rate:.6e}",
-    #     )
-    #
-    #     space = et.SubElement(
-    #         source_mesh,
-    #         "space",
-    #         type="mesh",
-    #         mesh_id=str(mesh_id),
-    #         volume_normalized="False",
-    #     )
-    #     strengths = et.SubElement(space, "strengths")
-    #     strengths.text = " ".join(
-    #         map(
-    #             str,
-    #             [val for val in self.tri_mesh_emission_rates],
-    #         )
-    #     )  # adjust that the decay rate has been calculated after scaling the vtk file
-    #
-    #     # angle = et.SubElement(source_mesh, "angle", type="isotropic")
-    #
-    #     ebins_temp = [e * 1e6 for e in self.e_lines]  # convert from MeV to eV
-    #     energy_parameters = [*ebins_temp, *self.p_lines]
-    #     energy = et.SubElement(source_mesh, "energy", type="discrete")
-    #     params = et.SubElement(energy, "parameters")
-    #     params.text = " ".join(map(str, energy_parameters))
-    #
-    #     # create mesh element with id attribute
-    #     mesh = et.SubElement(
-    #         root,
-    #         "mesh",
-    #         id=str(mesh_id),
-    #         name="source_mesh",
-    #         type="unstructured",
-    #         library="moab",
-    #     )
-    #
-    #     # add child elements with text content
-    #     filename = et.SubElement(mesh, "filename")
-    #     filename.text = h5m_basename
-    #
-    #     # write to file with xml declaration
-    #     tree = et.ElementTree(root)
-    #     tree.write(
-    #         openmc_source_file,
-    #         encoding="utf-8",
-    #         pretty_print=True,
-    #         xml_declaration=True,
-    #     )
-    #
-    #     return
-
     def compute_triangularized_emission_rates(
         self,
         tri_mesh_vtk_filepath,
@@ -1532,7 +1430,6 @@ boundaryField
 
         # a scaling factor is applied to generate the mesh for the source with the
         # units in cm for subsequent simulation
-
         generate_triangularized_scalar_mesh(
             self.vtk_file_path, tri_mesh_vtk_filepath, scaling_factor, cell_data_array
         )
@@ -1565,7 +1462,7 @@ boundaryField
                 sum(self.tri_mesh_emission_rates),
             )
             print(
-                "total emission rate from the vtk file: ",
+                "total emission rate from the original vtk file: ",
                 self.total_isotope_emission_rate,
             )
 
