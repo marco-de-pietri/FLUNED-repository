@@ -2,7 +2,6 @@
 oFoamBase class which is base class for the class manipulating the openfoam simulations
 """
 
-import gzip
 import re
 from pathlib import Path
 
@@ -107,7 +106,7 @@ class oFoamBase:
         self.patches = self.get_patches()
         self.n_internal_cells = self.get_number_internal_cells()
 
-    def get_number_internal_cells(self):
+    def get_number_internal_cells(self) -> int:
         """
         this function create an attribute to the class that specifies the
         number of internal cells. It does so by reading the U file
@@ -116,34 +115,34 @@ class oFoamBase:
         u_0 = self.path / "0" / "U"
         u_last = self.path / self.last_time / "U"
 
-        num_cells_0 = None
-        num_cells_last = None
+        num_cells_0 = 0
+        num_cells_last = 0
 
         if u_0.is_file():
             internal_field = FoamFieldFile(u_0).internal_field
             if internal_field.shape == (3,):
-                num_cells_0 = None
+                num_cells_0 = 0
             else:
                 num_cells_0 = internal_field.shape[0]
 
         if u_last.is_file():
             internal_field = FoamFieldFile(u_last).internal_field
             if internal_field.shape == (3,):
-                num_cells_last = None
+                num_cells_last = 0
             else:
                 num_cells_last = internal_field.shape[0]
 
-        if num_cells_0 is None and num_cells_last is None:
+        if num_cells_0 == 0 and num_cells_last == 0:
             raise ValueError("Unable to determine number of internal cells")
 
-        if (num_cells_0 is not None and num_cells_last is not None) and (
+        if (num_cells_0 != 0 and num_cells_last != 0) and (
             num_cells_0 != num_cells_last
         ):
             raise ValueError(
                 "Error number of internal cells in 0 and last time are different"
             )
 
-        return num_cells_0 if num_cells_0 is not None else num_cells_last
+        return int(num_cells_0) if num_cells_0 != 0 else int(num_cells_last)
 
     def get_patches(self):
         """
@@ -612,15 +611,6 @@ class oFoamBase:
         print("reading velocity values...")
 
         self.velocities = self.foamlib_object["0"]["U"].internal_field
-
-        return
-
-    def read_grad_t(self):
-        """this function reads the T gradient"""
-
-        print("reading gradient values...")
-
-        self.gradients = self.foamlib_object[-1]["grad(T)"].internal_field
 
         return
 

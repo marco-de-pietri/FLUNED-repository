@@ -5,7 +5,7 @@ import h5py
 import numpy as np
 from lxml import etree as et  # type: ignore[attr-defined]
 
-from fluned.ofoam_class.fluned_vtk_utils import generate_triangularized_h5m_um_mesh
+from fluned.ofoam_class.fluned_mesh_utils import generate_triangularized_h5m_um_mesh
 from fluned.ofoam_class.ofoam_base.oFoamBase import is_valid_openfoam_case_directory
 
 from .fluned_case_class import flunedCase

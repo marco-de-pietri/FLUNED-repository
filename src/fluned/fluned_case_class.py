@@ -8,13 +8,13 @@ import numpy as np
 
 from fluned.fluent_class.fluent_simulation import fluentSimulation
 from fluned.isotopes.isotopes import load_isotopes
+from fluned.ofoam_class.fluned_mesh_utils import (
+    apply_roto_translation_to_vtk_grid,
+    write_cartesian_vtk,
+)
 from fluned.ofoam_class.fluned_tool_launchers import (
     launch_grad_func_object,
     launch_volume_func_object,
-)
-from fluned.ofoam_class.fluned_vtk_utils import (
-    apply_roto_translation_to_vtk_grid,
-    write_cartesian_vtk,
 )
 from fluned.ofoam_class.ofoam_base import oFoamBase
 from fluned.ofoam_class.ofoam_fluned import oFoamFluned
@@ -47,6 +47,7 @@ class flunedCase:
         )
 
         if arg_dict["simulation_type"] == "single-isotope":
+            # set isotope and decay constant in single-isotope simulations
             if "isotope" in arg_dict:
                 isotope = arg_dict["isotope"].lower().replace("-", "")
                 if isotope not in ["n16", "o19", "n17", "f20", "custom"]:
@@ -213,33 +214,39 @@ class flunedCase:
             else:
                 raise ValueError("fv_scheme must be 'stable' or 'accurate'")
 
-        if "cfd_type" not in arg_dict:
+        # set cfd type
+        cfd_type = arg_dict.get("cfd_type")
+        if cfd_type is None:
             raise ValueError("ERROR: cfd type not specified in input file")
-        else:
-            self.cfd_type = arg_dict["cfd_type"].lower()
+        self.cfd_type = cfd_type.lower()
 
-        if "time_treatment" not in arg_dict:
-            raise ValueError("ERROR: type of time treatment not specified")
-        elif arg_dict["time_treatment"].lower() not in ["steadystate", "transient"]:
-            err_string = "ERROR: time treatment must be 'steadyState' or 'transient'"
-            raise ValueError(err_string)
-        else:
-            self.time_treatment = arg_dict["time_treatment"].lower()
-
+        # set fluent fluid region name
         if self.cfd_type == "fluent-h5-multi":
-            if "fluent_fluid_region_name" not in arg_dict:
-                print("ERROR: name of the fluid region to extract not")
-                print("specified! use parameter FLUENT_FLUID_REGION_NAME")
-                raise ValueError()
-            else:
-                self.fluent_fluid_region_name = arg_dict["fluent_fluid_region_name"]
+            region = arg_dict.get("fluent_fluid_region_name")
+            if region is None:
+                raise ValueError(
+                    "ERROR: name of the fluid region to extract not specified! "
+                    "Use parameter FLUENT_FLUID_REGION_NAME"
+                )
+            self.fluent_fluid_region_name = region
 
+        # set time treatment
+        time_treatment = arg_dict.get("time_treatment")
+        if time_treatment is None:
+            raise ValueError("ERROR: type of time treatment not specified")
+        if time_treatment.lower() not in {"steadystate", "transient"}:
+            raise ValueError(
+                "ERROR: time treatment must be 'steadyState' or 'transient'"
+            )
+        self.time_treatment = time_treatment.lower()
+
+        # set transport parameters
         self.molecular_diffusion = float(arg_dict["molecular_diffusion"])
         self.schmidt_number = float(arg_dict["schmidt_number"])
         self.inlet_conc = float(arg_dict["inlet_conc"])
 
+        # set cfd and fluned paths
         self.cfd_path = Path(arg_dict["cfd_path"])
-
         if not self.cfd_path.is_dir():
             raise FileNotFoundError(f"Folder not found: {self.cfd_path}")
 
@@ -429,22 +436,6 @@ class flunedCase:
 
         return
 
-    def generate_cartesian_radiation_source_model(self):
-        """
-        this function sample the fluned results into a cartesian mesh
-        """
-
-        self.fluned_simulation.calculate_cartesian_sampling_coordinates(
-            self.source_sampling_resolution_cm
-        )
-        self.fluned_simulation.sample_source_to_cartesian_mesh(
-            self.source_sampling_dataset
-        )
-
-        self.fluned_simulation.write_sampled_cartesian_source_vtk()
-
-        return
-
     def write_results(self, arguments):
         """
         this function generate the final results
@@ -454,121 +445,19 @@ class flunedCase:
             self.write_summary_steady(arguments)
             self.write_summary_xml()
         else:
-            self.write_summary_transient(arguments)
+            self.write_summary_transient()
 
         return None
 
-    def write_summary_transient(self, arguments):
+    def write_summary_transient(self):
         """
         This function writes the summary file in the RESULTS/ folder
         """
 
-        summary_file = Path(self.fluned_simulation.results_folder) / "SUMMARY.csv"
-
-        results_sim = self.fluned_simulation
-
-        inlet_atoms = abs(results_sim.total_inlet_t_atoms)
-        inlet_activity = abs(results_sim.inlet_td_conc_atoms_m3[-1])
-
-        outlet_activity = results_sim.outlet_t_conc_atoms_m3[-1]
-        outlet_atoms = results_sim.total_outlet_t_atoms
-
-        tot_activity = results_sim.total_isotope_activity
-        avg_activity = results_sim.total_average_isotope_concentration
-
-        averageVolume = sum(results_sim.volumes) / len(results_sim.volumes)
-
-        faces_post = sorted(results_sim.patches.values(), key=lambda x: x.face_id)
-
-        negCheck = any(n < 0 for n in results_sim.t_scalar)
-
-        with open(summary_file, "w") as fw:
-            fw.write("FLUNED SIMULATION SUMMARY\n")
-            fw.write("CASE,{},\n".format(results_sim.case))
-            fw.write("TRANSIENT SIMULATION\n")
-            fw.write("N ELEMENTS,{},\n".format(results_sim.n_internal_cells))
-            fw.write("ISOTOPE,{},\n".format(results_sim.isotope.upper()))
-            fw.write("DECAY CONSTANT,{:e},\n".format(results_sim.decay_constant))
-            fw.write("MOL DIFFUSION,{:e},\n".format(results_sim.molecular_diffusion))
-            fw.write("TURB SCHMIDT N,{:f},\n".format(results_sim.schmidt_number))
-            fw.write("\n")
-            fw.write("\n")
-            fw.write("QUALITY\n")
-            fw.write("AVG VOL [m3],{:e},\n".format(averageVolume))
-            if negCheck:
-                fw.write("WARNING some elements are negative")
-            if arguments.cdgs:
-                fw.write("\n")
-                fw.write("\n")
-                fw.write("source sampling\n")
-                assert self.source_sampling_resolution_cm is not None
-                fw.write(
-                    "sampling resolution [m],{:f},\n".format(
-                        self.source_sampling_resolution_cm / 100
-                    )
-                )
-                fw.write(
-                    "sampled voxels [#],{:d},\n".format(
-                        results_sim.x_ints * results_sim.y_ints * results_sim.z_ints
-                    )
-                )
-                fw.write(
-                    "vtk emission rate [#/s],{:e},\n".format(
-                        results_sim.total_isotope_emission_rate
-                    )
-                )
-                sampstring = "sampled emission rate (unscaled) [#/s],{:e},\n"
-                fw.write(sampstring.format(results_sim.raw_sampled_total_emission_rate))
-            fw.write("\n")
-            fw.write("\n")
-            fw.write("ACTIVATION\n")
-            fw.write("INLET ATOMS FINAL [#/s],{:.5e},\n".format(inlet_atoms))
-            fw.write("OUTLET ATOMS FINAL [#/s],{:.5e},\n".format(outlet_atoms))
-            fw.write("TOT IN ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(inlet_activity))
-            fw.write("TOT OUT ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(outlet_activity))
-            fw.write("TOT CASE ACTIVITY FINAL [Bq],{:.5e},\n".format(tot_activity))
-            fw.write("TOT AVG ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(avg_activity))
-            if inlet_activity != 0:
-                norm_avg_activity = abs(avg_activity / inlet_activity)
-                string = "INLET-NORMALIZED AVG ACTIVITY FINAL [Bq/m3],{:.5e},\n"
-                fw.write(string.format(norm_avg_activity))
-
-            if inlet_atoms != 0:
-                reduction_rate = abs(outlet_atoms / inlet_atoms)
-                fw.write("OUT/IN RATIO FINAL,{:.5e},\n".format(reduction_rate))
-
-            fw.write("\n")
-            fw.write("\n")
-
-            fw.write("FACES\n")
-
-            for face in faces_post:
-                if face.face_type != "wall":
-                    fw.write(face.face_id)
-                    fw.write("\n")
-                    fw.write("TYPE,{},\n".format(face.face_type))
-                    fw.write("AREA [m2],{:.5e},\n".format(face.area_m2))
-                    fw.write(
-                        "FLUID FLOW FINAL [m3/s],{:.5e},\n".format(
-                            face.post_process_flow[-1]
-                        )
-                    )
-                    fw.write(
-                        "ATOM FLOW FINAL [#/s],{:.5e},\n".format(
-                            face.post_process_t_flow[-1]
-                        )
-                    )
-                    fw.write(
-                        "ATOM CONC FINAL [#/m3],{:.5e},\n".format(
-                            face.t_conc_atoms_m3[-1]
-                        )
-                    )
-                    fw.write(
-                        "SPECIFIC ACTIVITY FINAL [Bq/m3],{:.5e},\n".format(
-                            abs(face.t_conc_atoms_m3[-1]) * results_sim.decay_constant
-                        )
-                    )
-                    fw.write("\n")
+        print(
+            "WARNING: summary writing for transient simulations is not implemented yet - contact \
+            developer for more info"
+        )
 
         return
 
@@ -582,9 +471,9 @@ class flunedCase:
         results_sim = self.fluned_simulation
 
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
-        inlet_activity = abs(results_sim.inlet_td_conc_atoms_m3[-1])
+        inlet_activity = abs(results_sim.inlet_td_atoms_m3[-1])
 
-        outlet_activity = results_sim.outlet_t_conc_atoms_m3[-1]
+        outlet_activity = results_sim.outlet_t_atoms_m3[-1]
         outlet_atoms = results_sim.total_outlet_t_atoms
 
         tot_activity = results_sim.total_isotope_activity
@@ -595,42 +484,23 @@ class flunedCase:
         faces_post = sorted(results_sim.patches.values(), key=lambda x: x.face_id)
 
         if arguments.check:
-            lbda = self.decay_constant
-            ln2 = np.log(2)
-
-            totS = sum(results_sim.t_scalar)
+            decay_const = self.decay_constant
+            tot_scalar = sum(results_sim.t_scalar)
 
             # parameter 2 based on transit times
-
-            transitTimes = [
+            transit_times = [
                 (vol ** (1 / 3)) / mod(v)
                 for vol, v in zip(results_sim.volumes, results_sim.velocities)
             ]
+            average_transit_time = sum(transit_times) / len(transit_times)
 
-            averageTransitTime = sum(transitTimes) / len(transitTimes)
-
-            qualityPar2 = [
-                t * c * lbda / (ln2 * totS)
-                for t, c in zip(transitTimes, results_sim.t_scalar)
+            mesh_quality_parameter_2 = [
+                t * c * decay_const / (np.log(2) * tot_scalar)
+                for t, c in zip(transit_times, results_sim.t_scalar)
             ]
-
-            avgMeshQualParameter2 = sum(qualityPar2) / len(qualityPar2)
-
-            # parameter 3 based on scalar gradient
-
-            gradients = [mod(g) for g in results_sim.gradients]
-
-            gradientDist = [
-                g * (vol ** (1 / 3)) for vol, g in zip(results_sim.volumes, gradients)
-            ]
-
-            avgGradDist = sum(gradientDist) / len(gradientDist)
-
-            qualityPar3 = [
-                gd * c / totS for gd, c in zip(gradientDist, results_sim.t_scalar)
-            ]
-
-            avgMeshQualParameter3 = sum(qualityPar3) / len(qualityPar3)
+            average_mesh_quality_parameter_2 = sum(mesh_quality_parameter_2) / len(
+                mesh_quality_parameter_2
+            )
 
         negCheck = any(n < 0 for n in results_sim.t_scalar)
 
@@ -648,10 +518,8 @@ class flunedCase:
             fw.write("QUALITY\n")
             fw.write("AVG VOL [m3],{:e},\n".format(averageVolume))
             if arguments.check:
-                fw.write("AVG CELL TRNST T [s],{:f},\n".format(averageTransitTime))  # type: ignore
-                fw.write("AVG CELL Q2,{:e},\n".format(avgMeshQualParameter2))  # type: ignore
-                fw.write("AVG CELL GRADxLEN,{:e},\n".format(avgGradDist))  # type: ignore
-                fw.write("AVG CELL Q3,{:e},\n".format(avgMeshQualParameter3))  # type: ignore
+                fw.write("AVG CELL TRNST T [s],{:f},\n".format(average_transit_time))  # type: ignore
+                fw.write("AVG CELL Q2,{:e},\n".format(average_mesh_quality_parameter_2))  # type: ignore
             if negCheck:
                 fw.write("WARNING some elements are negative")
             if arguments.cdgs:
@@ -732,9 +600,9 @@ class flunedCase:
         results_sim = self.fluned_simulation
 
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
-        inlet_activity = abs(results_sim.inlet_td_conc_atoms_m3[-1])
+        inlet_activity = abs(results_sim.inlet_td_atoms_m3[-1])
 
-        outlet_activity = results_sim.outlet_t_conc_atoms_m3[-1]
+        outlet_activity = results_sim.outlet_t_atoms_m3[-1]
         outlet_atoms = results_sim.total_outlet_t_atoms
 
         tot_activity = results_sim.total_isotope_activity

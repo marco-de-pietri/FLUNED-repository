@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal, Tuple
+from typing import Iterable, Literal, Tuple
 
 import meshio
 import numpy as np
@@ -11,6 +12,135 @@ import vtk
 
 EulerOrder = Literal["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]
 CenterMode = Literal["origin", "mesh_center", "bounds_center"]
+
+
+def mesh_ints_from_bounds(
+    lower: Iterable[float],
+    upper: Iterable[float],
+    min_voxel_size: float | Sequence[float],
+    max_voxels_n: int | None = None,
+) -> tuple[int, ...]:
+    """
+    Compute the number of cells (intervals) per axis for a Cartesian mesh so that
+    the actual voxel size along each axis is <= the provided minimum, and (optionally)
+    the total number of voxels is capped by scaling the intervals down.
+
+    Parameters
+    ----------
+    lower : iterable of numbers
+        Lower-left (min) coordinates per dimension, e.g. (x0, y0, z0).
+    upper : iterable of numbers
+        Upper-right (max) coordinates per dimension, e.g. (x1, y1, z1).
+    min_voxel_size : number or sequence of numbers
+        Minimum voxel size. If a single number, it's applied to all dimensions.
+        If a sequence, it must have the same length as `lower`/`upper`.
+    max_voxels_n : int or None, optional
+        Maximum allowed total number of voxels (product of intervals across axes).
+        If the unconstrained mesh would exceed this cap, intervals are scaled down
+        approximately uniformly across axes (preserving aspect ratio as much as possible)
+        until the product is <= max_voxels_n.
+
+    Returns
+    -------
+    tuple of int
+        Number of intervals (cells) along each dimension.
+
+    Notes
+    -----
+    - Base counts use ceil((upper - lower) / min_size) per dimension, with a minimum of 1.
+    - If (upper <= lower) along any axis, a ValueError is raised.
+    - If max_voxels_n is set and the base total exceeds it, voxel sizes may end up
+      larger than min_voxel_size due to the global cap.
+
+    Examples
+    --------
+    Basic 3D grid with uniform minimum voxel size:
+
+    >>> mesh_ints_from_bounds((0, 0, 0), (1, 1, 1), 0.25)
+    (4, 4, 4)
+
+    Per-axis voxel sizes:
+
+    >>> mesh_ints_from_bounds((0, 0), (2, 1), (0.5, 0.25))
+    (4, 4)
+
+    With a cap on total voxels (product of intervals). The unconstrained
+    grid would be (10, 10, 10) = 1000 cells, but is scaled down:
+
+    >>> mesh_ints_from_bounds((0, 0, 0), (1, 1, 1), 0.1, max_voxels_n=125)
+    (5, 5, 5)
+
+    Degenerate or invalid bounds raise an error:
+
+    >>> mesh_ints_from_bounds((0, 0), (1, 0), 0.1)
+    Traceback (most recent call last):
+        ...
+    ValueError: Each upper bound must be greater than the corresponding lower bound.
+    """
+    lo = tuple(float(v) for v in lower)
+    hi = tuple(float(v) for v in upper)
+    if len(lo) != len(hi):
+        raise ValueError("`lower` and `upper` must have the same length.")
+
+    dim = len(lo)
+
+    if isinstance(min_voxel_size, (int, float)):
+        mins = (float(min_voxel_size),) * dim
+    else:
+        mins = tuple(float(v) for v in min_voxel_size)
+        if len(mins) != dim:
+            raise ValueError(
+                "min_voxel_size must be a scalar or a sequence with the same length as lower/`upper"
+            )
+
+    base_counts: list[int] = []
+    for a, b, m in zip(lo, hi, mins, strict=True):
+        if m <= 0:
+            raise ValueError("All minimum voxel sizes must be > 0.")
+        if b <= a:
+            raise ValueError(
+                "Each upper bound must be greater than the corresponding lower bound."
+            )
+        n = max(1, math.ceil((b - a) / m))
+        base_counts.append(int(n))
+
+    # No cap requested
+    if max_voxels_n is None:
+        return tuple(base_counts)
+
+    if not isinstance(max_voxels_n, int) or max_voxels_n < 1:
+        raise ValueError("`max_voxels_n` must be an int >= 1 or None.")
+
+    def prod(xs: Sequence[int]) -> int:
+        p = 1
+        for v in xs:
+            p *= int(v)
+        return p
+
+    base_total = prod(base_counts)
+    if base_total <= max_voxels_n:
+        return tuple(base_counts)
+
+    # Uniform scale factor in "interval-count space" to hit the volume cap
+    scale = (max_voxels_n / base_total) ** (1.0 / dim)
+
+    # Start with floored scaled counts to ensure we don't overshoot too easily
+    counts = [max(1, int(math.floor(c * scale))) for c in base_counts]
+
+    # In rare cases (e.g., scale ~1 and flooring didn't reduce enough), ensure product <= cap.
+    # Decrease counts one-by-one, prioritizing the axes with the largest current counts.
+    while prod(counts) > max_voxels_n:
+        # pick axis with largest count that can still be reduced
+        k = max(
+            (i for i, v in enumerate(counts) if v > 1),
+            key=lambda i: counts[i],
+            default=None,
+        )
+        if k is None:
+            break  # cannot reduce further
+        counts[k] -= 1
+
+    return tuple(counts)
 
 
 def generate_external_stl(vtk_path, output_folder):

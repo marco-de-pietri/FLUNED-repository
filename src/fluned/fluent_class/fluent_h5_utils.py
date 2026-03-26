@@ -7,37 +7,6 @@ def get_dataset_keys(f):
     return ks
 
 
-def lookup_h5_regex(file, regPat):
-    """
-    this function just returns the matching path
-    """
-
-    allMatches = []
-    with h5py.File(file, "r") as fi:
-        paths = get_dataset_keys(fi)
-
-        for path in paths:
-            matches = regPat.findall(path)
-            if len(matches) == 1:
-                allMatches.append(path)
-
-        if len(allMatches) != 1:
-            print("ERROR with regex search:")
-            print(regPat)
-            print("matches found: ", len(allMatches))
-            for val in allMatches:
-                print(val)
-
-            print("fuction name: lookup_h5_regex")
-
-            raise ValueError("Error with regex search in h5 file")
-
-        else:
-            matchPath = allMatches[0]
-
-    return matchPath
-
-
 def get_h5_path_dataset(file, regPat):
     """
     this function open the h5 file, it searches for

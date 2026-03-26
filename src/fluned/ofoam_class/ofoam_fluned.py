@@ -1,167 +1,38 @@
 import math
-import re
 import shutil
 import warnings
 from pathlib import Path
-from typing import Iterable, Sequence
 
 import numpy as np
 import pyvista as pv
 
 from fluned.isotopes.isotopes import bins_from_lines, load_isotopes
 
-from .fluned_tool_launchers import launch_centroid_func_object, launch_foam_to_vtk
-from .fluned_vtk_utils import (
+from .fluned_mesh_utils import (
     generate_external_stl,
     generate_triangularized_h5m_um_mesh,
     generate_triangularized_scalar_mesh,
     get_vtk_celldata_array,
     get_vtk_dimensions,
     get_vtk_volumes,
+    mesh_ints_from_bounds,
     sample_vtk,
     write_cartesian_vtk,
 )
+from .fluned_tool_launchers import launch_centroid_func_object, launch_foam_to_vtk
 from .ofoam_base import oFoamBase
 from .patch_class import get_post_process_list
-
-
-def formatValues(vector):
-    maxLen = 70
-    returnString = ""
-    newLine = ""
-
-    for item in vector:
-        newNumber = "{:.7e}".format(item)
-        if returnString == "" and newLine == "":
-            newLine = newNumber
-            continue
-
-        if len(newLine + " " + newNumber) > maxLen:
-            returnString += newLine + "\n"
-            newLine = newNumber
-
-        else:
-            newLine = newLine + " " + newNumber
-
-    returnString += newLine + "\n"
-
-    return returnString
-
-
-def mesh_ints_from_bounds(
-    lower: Iterable[float],
-    upper: Iterable[float],
-    min_voxel_size: float | Sequence[float],
-    max_voxels_n: int | None = None,
-) -> tuple[int, ...]:
-    """
-    Compute the number of cells (intervals) per axis for a Cartesian mesh so that
-    the actual voxel size along each axis is <= the provided minimum, and (optionally)
-    the total number of voxels is capped by scaling the intervals down.
-
-    Parameters
-    ----------
-    lower : iterable of numbers
-        Lower-left (min) coordinates per dimension, e.g. (x0, y0, z0).
-    upper : iterable of numbers
-        Upper-right (max) coordinates per dimension, e.g. (x1, y1, z1).
-    min_voxel_size : number or sequence of numbers
-        Minimum voxel size. If a single number, it's applied to all dimensions.
-        If a sequence, it must have the same length as `lower`/`upper`.
-    max_voxels_n : int or None, optional
-        Maximum allowed total number of voxels (product of intervals across axes).
-        If the unconstrained mesh would exceed this cap, intervals are scaled down
-        approximately uniformly across axes (preserving aspect ratio as much as possible)
-        until the product is <= max_voxels_n.
-
-    Returns
-    -------
-    tuple of int
-        Number of intervals (cells) along each dimension.
-
-    Notes
-    -----
-    - Base counts use ceil((upper - lower) / min_size) per dimension, with a minimum of 1.
-    - If (upper <= lower) along any axis, a ValueError is raised.
-    - If max_voxels_n is set and the base total exceeds it, voxel sizes may end up
-      larger than min_voxel_size due to the global cap.
-    """
-    lo = tuple(float(v) for v in lower)
-    hi = tuple(float(v) for v in upper)
-    if len(lo) != len(hi):
-        raise ValueError("`lower` and `upper` must have the same length.")
-
-    dim = len(lo)
-
-    if isinstance(min_voxel_size, (int, float)):
-        mins = (float(min_voxel_size),) * dim
-    else:
-        mins = tuple(float(v) for v in min_voxel_size)
-        if len(mins) != dim:
-            raise ValueError(
-                "min_voxel_size must be a scalar or a sequence with the same length as lower/`upper"
-            )
-
-    base_counts: list[int] = []
-    for a, b, m in zip(lo, hi, mins, strict=True):
-        if m <= 0:
-            raise ValueError("All minimum voxel sizes must be > 0.")
-        if b <= a:
-            raise ValueError(
-                "Each upper bound must be greater than the corresponding lower bound."
-            )
-        n = max(1, math.ceil((b - a) / m))
-        base_counts.append(int(n))
-
-    # No cap requested
-    if max_voxels_n is None:
-        return tuple(base_counts)
-
-    if not isinstance(max_voxels_n, int) or max_voxels_n < 1:
-        raise ValueError("`max_voxels_n` must be an int >= 1 or None.")
-
-    def prod(xs: Sequence[int]) -> int:
-        p = 1
-        for v in xs:
-            p *= int(v)
-        return p
-
-    base_total = prod(base_counts)
-    if base_total <= max_voxels_n:
-        return tuple(base_counts)
-
-    # Uniform scale factor in "interval-count space" to hit the volume cap
-    scale = (max_voxels_n / base_total) ** (1.0 / dim)
-
-    # Start with floored scaled counts to ensure we don't overshoot too easily
-    counts = [max(1, int(math.floor(c * scale))) for c in base_counts]
-
-    # In rare cases (e.g., scale ~1 and flooring didn't reduce enough), ensure product <= cap.
-    # Decrease counts one-by-one, prioritizing the axes with the largest current counts.
-    while prod(counts) > max_voxels_n:
-        # pick axis with largest count that can still be reduced
-        k = max(
-            (i for i, v in enumerate(counts) if v > 1),
-            key=lambda i: counts[i],
-            default=None,
-        )
-        if k is None:
-            break  # cannot reduce further
-        counts[k] -= 1
-
-    return tuple(counts)
 
 
 class oFoamFluned(oFoamBase):
     def __init__(self, path: str | Path):
         super().__init__(path)
-        self.reduction_rate = []
+        self.reduction_rate_td = []
         self.normalized_average_td = []
-        self.inlet_td_conc_atoms_m3 = []
-        self.outlet_rr_conc_atoms_m3 = []
-        self.average_rr_conc_atoms_m3 = []
-        self.post_process_td_average = []
-        self.average_ta = []
+        self.inlet_td_atoms_m3 = []
+        self.outlet_ta_atoms_m3 = []
+        self.average_td_atoms_m3 = []
+        self.average_ta_atoms_m3 = []
         self.volume_m3 = 0
         self.vtk_file_path = ""
         self.scaled_vtk_file_path = ""
@@ -174,35 +45,26 @@ class oFoamFluned(oFoamBase):
         for face in self.patches.values():
             face.post_process_face()
 
-        self.post_process_td_average, _, _ = get_post_process_list(
-            self.post_process_path, "volTdSum", "", "volAverage(Td)"
-        )
-        self.average_ta, _, _ = get_post_process_list(
-            self.post_process_path, "volTaSum", "", "volAverage(Ta)"
-        )
-
+        # compute total inlet/outlet atom
         self.total_inlet_t_atoms = self.get_total_inlet_t_atoms()
         self.total_outlet_t_atoms = self.get_total_outlet_t_atoms()
 
-        self.inlet_td_conc_atoms_m3 = self.get_inlet_td_conc_atoms_m3()
-        self.outlet_t_conc_atoms_m3 = self.get_outlet_t_conc_atoms_m3()
-        # print ("self.inlet_td_conc_atoms_m3")
-        # print (f"{self.inlet_td_conc_atoms_m3[-1]:.2e}")
-
-        self.reduction_rate = self.get_reduction_rate()
-        # print ("self.reduction_rate")
-        # print (self.reduction_rate)
-
+        # compute inlet td concentration and inlet td normalized quantities
+        self.inlet_td_atoms_m3 = self.get_inlet_td_atoms_m3()
+        self.reduction_rate_td = self.get_reduction_rate_td()
         self.normalized_average_td = self.get_normalized_average_td()
-        # print ("self.normalized_average_td")
-        # print (self.normalized_average_td)
 
-        self.outlet_rr_conc_atoms_m3 = self.get_outlet_rr_conc_atoms_m3()
-        # print ("self.outlet_rr_conc_atoms_m3")
-        # print (f"{self.outlet_rr_conc_atoms_m3[-1]:.2e}")
+        # compute outlet concentrations
+        self.outlet_t_atoms_m3 = self.get_outlet_t_conc_atoms_m3()
+        self.outlet_ta_atoms_m3 = self.get_outlet_ta_conc_atoms_m3()
 
-        # print ("self.average_ta")
-        # print (f"{self.average_ta[-1]:.2e}")
+        # compute average concentrations
+        self.average_td_atoms_m3, _, _ = get_post_process_list(
+            self.post_process_path, "volTdSum", "", "volAverage(Td)"
+        )
+        self.average_ta_atoms_m3, _, _ = get_post_process_list(
+            self.post_process_path, "volTaSum", "", "volAverage(Ta)"
+        )
 
         self.parse_constants_file()
         self.assign_isotope_data()
@@ -210,16 +72,19 @@ class oFoamFluned(oFoamBase):
         self.read_volumes()
         self.read_t()
 
+        # generate RESULTS folder if not present
         self.results_folder = self.path / "RESULTS"
         self.results_folder.mkdir(exist_ok=True)
 
+        # generate and process vtk file
         launch_foam_to_vtk(str(self.path))
-        self.vtk_file_folder = self.path / "VTK"
-        self.get_vtk_file()
+        self.vtk_file_path = self.get_vtk_file(self.path / "VTK")
         self.vtk_dimensions, self.volume_m3 = get_vtk_dimensions(self.vtk_file_path)
 
+        # generate stl file with the external surface
         generate_external_stl(self.vtk_file_path, self.results_folder)
 
+        # compute total t quantity, activity and emission rate
         self.isotope_amounts = [
             vol * t for vol, t in zip(self.volumes, self.t_scalar)
         ]  # atoms/cell
@@ -227,7 +92,7 @@ class oFoamFluned(oFoamBase):
 
         self.total_average_isotope_concentration = (
             self.total_isotope_amount / self.volume_m3
-        )
+        )  # atoms/m3
         self.total_isotope_activity = (
             self.decay_constant * self.total_isotope_amount
         )  # decays/s
@@ -237,45 +102,21 @@ class oFoamFluned(oFoamBase):
 
         return None
 
-    def get_vtk_file(self, custom_vtk: str | None = None):
-        """
-        this function looks for the vtk file in the VTK folder generated by the
-        vtk openfoam utility and store it for generation of results
-
-        custom values can be provided for special workflow where the vtk
-        simulation file is rototranslated before generating the radiation source
-        """
-
-        vtkFiles = []
-
-        self.vtk_path = ""
-
-        if custom_vtk is not None:
-            filename = Path(custom_vtk).stem
+    def get_vtk_file(self, search_folder: Path, custom_vtk: str | None = None) -> Path:
+        if custom_vtk:
+            target = Path(custom_vtk).stem.lower()
+            matches = [
+                p for p in search_folder.rglob("*.vtk") if p.stem.lower() == target
+            ]
         else:
-            filename = ""
+            matches = list(search_folder.rglob("*.vtk"))
 
-        pat_string = r"{}\.vtk\Z".format(filename)
+        if len(matches) != 1:
+            raise ValueError(f"Expected exactly one vtk file, found: {matches}")
 
-        vtkFilePat = re.compile(pat_string, re.IGNORECASE)
+        return matches[0]
 
-        for vtk_path in self.vtk_file_folder.iterdir():
-            filename = vtk_path.name
-            matchVTKfiles = vtkFilePat.findall(filename)
-            if len(matchVTKfiles) == 1:
-                vtkFiles.append(filename)
-
-        if len(vtkFiles) == 1:
-            self.vtk_file_path = self.path / "VTK" / vtkFiles[0]
-        else:
-            print("ERROR zero or more than one vtk files")
-            print("found in the VTK folder")
-            print("found vtk files: ", vtkFiles)
-            raise ValueError()
-
-        return
-
-    def get_reduction_rate(self):
+    def get_reduction_rate_td(self):
         """
         this function calculates the reduction rate of the isotope in the cfd
         it sums all the outlet Td sum values - therefore multiple inlets or
@@ -295,7 +136,7 @@ class oFoamFluned(oFoamBase):
 
         return red_ratio
 
-    def get_outlet_rr_conc_atoms_m3(self):
+    def get_outlet_ta_conc_atoms_m3(self):
         """
         this function returns the concentration of the outlet patch for the
         Ta field, meaning for the part generated only by the irradiation and
@@ -312,7 +153,7 @@ class oFoamFluned(oFoamBase):
 
         return conc_out
 
-    def get_inlet_td_conc_atoms_m3(self):
+    def get_inlet_td_atoms_m3(self):
         """
         this function returns the concentration of the inlet patch for the
         Td field, meaning for the part due to the inlet flow
@@ -382,7 +223,7 @@ class oFoamFluned(oFoamBase):
 
         norm_td = [
             x / y if y != 0 else 0
-            for x, y in zip(self.post_process_td_average, self.inlet_td_conc_atoms_m3)
+            for x, y in zip(self.average_td_atoms_m3, self.inlet_td_atoms_m3)
         ]
 
         return norm_td
@@ -453,7 +294,7 @@ class oFoamFluned(oFoamBase):
         del mesh.point_data["Ta"]
         del mesh.point_data["Td"]
 
-        decay_array = inlet_activity * decay_array / self.inlet_td_conc_atoms_m3[-1]
+        decay_array = inlet_activity * decay_array / self.inlet_td_atoms_m3[-1]
         rr_array = decay_const * rr_array
 
         mesh.cell_data["average_vol_activity_bq_m3_decay"] = decay_array
@@ -915,10 +756,10 @@ boundaryField
 
                 activ_sources = [rate * normalization_factor for rate in activ_sources]
 
-                nVec = [rate * vol for rate, vol in zip(activ_sources, self.volumes)]
+                new_vec = [rate * vol for rate, vol in zip(activ_sources, self.volumes)]
 
                 print("new total sampled atoms/s")
-                print(sum(nVec))
+                print(sum(new_vec))
 
         self.reaction_rates = activ_sources
 
@@ -1224,6 +1065,28 @@ boundaryField
         this function write the sample CDGS file
         """
 
+        def _format_values_cdgs(vector):
+            maxLen = 70
+            returnString = ""
+            newLine = ""
+
+            for item in vector:
+                newNumber = "{:.7e}".format(item)
+                if returnString == "" and newLine == "":
+                    newLine = newNumber
+                    continue
+
+                if len(newLine + " " + newNumber) > maxLen:
+                    returnString += newLine + "\n"
+                    newLine = newNumber
+
+                else:
+                    newLine = newLine + " " + newNumber
+
+            returnString += newLine + "\n"
+
+            return returnString
+
         print("writing source model file in CDGS format ...")
 
         cdgsFile = self.results_folder / "cartesian_sampled_source.cdgs"
@@ -1238,7 +1101,7 @@ boundaryField
             fw.write("energy_type {}\n".format("bins"))
             fw.write("energy_boundaries {:d}\n".format(len(self.e_bins)))
             # WRITE SPECTRUM BINS
-            specString = formatValues(self.e_bins)
+            specString = _format_values_cdgs(self.e_bins)
             fw.write(specString)
 
             fw.write("mesh_type rec\n")
@@ -1250,17 +1113,17 @@ boundaryField
             fw.write("0.000000e+00  0.000000e+00  0.000000e+00\n")
             fw.write("1.000000e+00  0.000000e+00  0.000000e+00\n")
             fw.write("0.000000e+00  1.000000e+00  0.000000e+00\n")
-            xString = formatValues(self.x_nodes)
+            xString = _format_values_cdgs(self.x_nodes)
             fw.write(xString)
-            yString = formatValues(self.y_nodes)
+            yString = _format_values_cdgs(self.y_nodes)
             fw.write(yString)
-            zString = formatValues(self.z_nodes)
+            zString = _format_values_cdgs(self.z_nodes)
             fw.write(zString)
             fw.write("source_data\n")
 
             voxelString1 = "{:d} {:.5e} {:.5e} 1\n"
             voxelString2 = "0 1.0 {:.5e}\n"
-            specErrorString = formatValues([0] * (len(self.p_bins)))
+            specErrorString = _format_values_cdgs([0] * (len(self.p_bins)))
 
             for vox in self.cartesian_voxel_list:
                 if vox["normalized_emission_rate_per_voxel"] > 0:
@@ -1278,7 +1141,7 @@ boundaryField
                         val * vox["normalized_emission_rate_per_voxel"]
                         for val in self.p_bins
                     ]
-                    spectrumString = formatValues(emittingSpectrum)
+                    spectrumString = _format_values_cdgs(emittingSpectrum)
                     fw.write(spectrumString)
                     fw.write(specErrorString)
 

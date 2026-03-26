@@ -195,7 +195,6 @@ class PatchClass:
         self.post_process_ta_flow = []
         self.post_process_td_flow = []
         self.post_process_tr_flow = []
-        self.t_conc_atoms_m = []
         self.ta_conc_atoms_m3 = []
         self.td_conc_atoms_m3 = []
         self.tr_conc = []
