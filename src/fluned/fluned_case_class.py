@@ -72,11 +72,8 @@ class flunedCase:
                     proceed"
                 )
 
-            if "activation_dataset" in arg_dict:
-                self.activation_dataset = arg_dict["activation_dataset"]
-
-            if "activation_dataset_error" in arg_dict:
-                self.activation_dataset_error = arg_dict["activation_dataset_error"]
+            self.activation_dataset = arg_dict["activation_dataset"]
+            self.activation_dataset_error = arg_dict["activation_dataset_error"]
 
             if "activation_file" in arg_dict:
                 self.activation_file = arg_dict["activation_file"]
@@ -98,6 +95,7 @@ class flunedCase:
             activation_dataset = "reaction_rate_m3"
 
             self.activation_dataset = activation_dataset
+            self.activation_dataset_error = arg_dict["activation_dataset_error"]
 
             with h5py.File(reaction_rate_file_path, "r") as f:
                 neutron_fluxes = pickle.loads(f["fluxes"][...].tobytes())
@@ -455,8 +453,9 @@ class flunedCase:
         """
 
         print(
-            "WARNING: summary writing for transient simulations is not implemented yet - contact \
-            developer for more info"
+            "WARNING: summary writing for transient simulations is not implemented"
+            "due to ongoing refactoring"
+            "contact the developer for more info"
         )
 
         return
@@ -477,7 +476,7 @@ class flunedCase:
         outlet_atoms = results_sim.total_outlet_t_atoms
 
         tot_activity = results_sim.total_isotope_activity
-        avg_activity = results_sim.total_average_isotope_concentration
+        avg_activity = results_sim.total_average_isotope_activity
 
         averageVolume = sum(results_sim.volumes) / len(results_sim.volumes)
 
@@ -511,6 +510,7 @@ class flunedCase:
             fw.write("N ELEMENTS,{},\n".format(results_sim.n_internal_cells))
             fw.write("ISOTOPE,{},\n".format(results_sim.isotope.upper()))
             fw.write("DECAY CONSTANT,{:e},\n".format(results_sim.decay_constant))
+            fw.write("CASE VOLUME [m3],{:e},\n".format(results_sim.volume_m3))
             fw.write("MOL DIFFUSION,{:e},\n".format(results_sim.molecular_diffusion))
             fw.write("TURB SCHMIDT N,{:f},\n".format(results_sim.schmidt_number))
             fw.write("\n")
@@ -567,26 +567,7 @@ class flunedCase:
 
             for face in faces_post:
                 if face.face_type != "wall":
-                    fw.write(face.face_id)
-                    fw.write("\n")
-                    fw.write("TYPE,{},\n".format(face.face_type))
-                    fw.write("AREA [m2],{:.5e},\n".format(face.area_m2))
-                    fw.write(
-                        "FLUID FLOW [m3/s],{:.5e},\n".format(face.post_process_flow[-1])
-                    )
-                    fw.write(
-                        "ATOM FLOW [#/s],{:.5e},\n".format(face.post_process_t_flow[-1])
-                    )
-                    fw.write(
-                        "ATOM CONC [#/m3],{:.5e},\n".format(face.t_conc_atoms_m3[-1])
-                    )
-                    fw.write(
-                        "SPECIFIC ACTIVITY [Bq/m3],{:.5e},\n".format(
-                            abs(face.t_conc_atoms_m3[-1]) * results_sim.decay_constant
-                        )
-                    )
-                    fw.write("AVG RES T [s],{:.5f},\n".format(abs(face.tr_conc[-1])))
-                    fw.write("\n")
+                    fw.write(face.to_csv_patch_element())
 
         return
 
@@ -602,11 +583,11 @@ class flunedCase:
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
         inlet_activity = abs(results_sim.inlet_td_atoms_m3[-1])
 
-        outlet_activity = results_sim.outlet_t_atoms_m3[-1]
         outlet_atoms = results_sim.total_outlet_t_atoms
+        outlet_activity = results_sim.outlet_t_atoms_m3[-1]
 
         tot_activity = results_sim.total_isotope_activity
-        avg_activity = results_sim.total_average_isotope_concentration
+        avg_activity = results_sim.total_average_isotope_activity
 
         average_volume = sum(results_sim.volumes) / len(results_sim.volumes)
 
@@ -620,6 +601,9 @@ class flunedCase:
             results_sim.n_internal_cells
         )
         ET.SubElement(root, "isotope").text = str(results_sim.isotope.upper())
+
+        volume = ET.SubElement(root, "mesh_volume", unit="m^3")
+        volume.text = f"{results_sim.volume_m3:.6e}"
 
         decay = ET.SubElement(root, "decay_constant", unit="s^-1")
         decay.text = f"{results_sim.decay_constant:.6e}"

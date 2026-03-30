@@ -27,12 +27,14 @@ from .patch_class import get_post_process_list
 class oFoamFluned(oFoamBase):
     def __init__(self, path: str | Path):
         super().__init__(path)
-        self.reduction_rate_td = []
-        self.normalized_average_td = []
+        # td arrays
         self.inlet_td_atoms_m3 = []
-        self.outlet_ta_atoms_m3 = []
+        self.normalized_average_td = []
         self.average_td_atoms_m3 = []
+        self.reduction_rate_td = []
+        # ta arrays
         self.average_ta_atoms_m3 = []
+        self.outlet_ta_atoms_m3 = []
         self.volume_m3 = 0
         self.vtk_file_path = ""
         self.scaled_vtk_file_path = ""
@@ -42,12 +44,25 @@ class oFoamFluned(oFoamBase):
         """
         this function is called when we process a finished FLUNED simulation
         """
+
+        # read simulation files
+        self.parse_constants_file()
+        self.assign_isotope_data()
+        self.get_time_treatment()
+        self.read_volumes()
+        self.read_t()
+
+        # read simulation files - patches
         for face in self.patches.values():
             face.post_process_face()
 
         # compute total inlet/outlet atom
-        self.total_inlet_t_atoms = self.get_total_inlet_t_atoms()
-        self.total_outlet_t_atoms = self.get_total_outlet_t_atoms()
+        self.total_inlet_t_atoms = (
+            self.get_total_inlet_t_activity() / self.decay_constant
+        )
+        self.total_outlet_t_atoms = (
+            self.get_total_outlet_t_activity() / self.decay_constant
+        )
 
         # compute inlet td concentration and inlet td normalized quantities
         self.inlet_td_atoms_m3 = self.get_inlet_td_atoms_m3()
@@ -66,12 +81,6 @@ class oFoamFluned(oFoamBase):
             self.post_process_path, "volTaSum", "", "volAverage(Ta)"
         )
 
-        self.parse_constants_file()
-        self.assign_isotope_data()
-        self.get_time_treatment()
-        self.read_volumes()
-        self.read_t()
-
         # generate RESULTS folder if not present
         self.results_folder = self.path / "RESULTS"
         self.results_folder.mkdir(exist_ok=True)
@@ -85,19 +94,16 @@ class oFoamFluned(oFoamBase):
         generate_external_stl(self.vtk_file_path, self.results_folder)
 
         # compute total t quantity, activity and emission rate
-        self.isotope_amounts = [
+        self.isotope_activity = [
             vol * t for vol, t in zip(self.volumes, self.t_scalar)
-        ]  # atoms/cell
-        self.total_isotope_amount = sum(self.isotope_amounts)  # atoms
+        ]  # bq/cell
+        self.total_isotope_activity = sum(self.isotope_activity)  # bq
 
-        self.total_average_isotope_concentration = (
-            self.total_isotope_amount / self.volume_m3
-        )  # atoms/m3
-        self.total_isotope_activity = (
-            self.decay_constant * self.total_isotope_amount
-        )  # decays/s
+        self.total_average_isotope_activity = (
+            self.total_isotope_activity / self.volume_m3
+        )  # bq/m3
         self.total_isotope_emission_rate = (
-            self.tot_p_emission * self.total_isotope_activity
+            self.total_isotope_activity * self.tot_p_emission
         )  # decay particle/s
 
         return None
@@ -148,7 +154,7 @@ class oFoamFluned(oFoamBase):
 
         for patch in self.patches.values():
             if patch.face_type == "outlet":
-                conc_out = patch.ta_conc_atoms_m3
+                conc_out = patch.ta_conc_bq_m3
                 break
 
         return conc_out
@@ -165,7 +171,7 @@ class oFoamFluned(oFoamBase):
 
         for patch in self.patches.values():
             if patch.face_type == "inlet":
-                conc_out = patch.td_conc_atoms_m3
+                conc_out = patch.td_conc_bq_m3
                 break
 
         return conc_out
@@ -182,38 +188,38 @@ class oFoamFluned(oFoamBase):
 
         for patch in self.patches.values():
             if patch.face_type == "outlet":
-                conc_out = patch.t_conc_atoms_m3
+                conc_out = patch.t_conc_bq_m3
                 break
 
         return conc_out
 
-    def get_total_inlet_t_atoms(self):
+    def get_total_inlet_t_activity(self):
         """
-        this function returns the total amount of atoms
-        enetering the mesh through the inlets
+        this function returns the total amount of Bequerels
+        entering the mesh through the inlets
         """
 
-        atoms_in = 0
+        bq_in = 0
 
         for patch in self.patches.values():
             if patch.face_type == "inlet":
-                atoms_in += patch.post_process_t_flow[-1]
+                bq_in += patch.post_process_t_flow[-1]
 
-        return atoms_in
+        return bq_in
 
-    def get_total_outlet_t_atoms(self):
+    def get_total_outlet_t_activity(self):
         """
-        this function returns the total amount of atoms
-        exiting the mesh through the inlets
+        this function returns the total amount of Bequerels
+        exiting the mesh through the outlets
         """
 
-        atoms_out = 0
+        bq_out = 0
 
         for patch in self.patches.values():
             if patch.face_type == "outlet":
-                atoms_out += patch.post_process_t_flow[-1]
+                bq_out += patch.post_process_t_flow[-1]
 
-        return atoms_out
+        return bq_out
 
     def get_normalized_average_td(self):
         """
@@ -1299,15 +1305,15 @@ boundaryField
 
         # extract the data from the triangularized mesh
         tri_mesh_volumes = get_vtk_volumes(tri_mesh_vtk_filepath)
-        tri_mesh_isotopes_coonc = get_vtk_celldata_array(
+        tri_mesh_isotopes_activity_bq_m3 = get_vtk_celldata_array(
             tri_mesh_vtk_filepath, cell_data_array
         )
 
         # the 1e6 factor is to take into account that the concentration data is taken by the scaled mesh
         # switch from emission per m3 to per cm3
         self.tri_mesh_emission_rates = [
-            conc * vol * self.decay_constant * self.tot_p_emission / (scaling_factor**3)
-            for conc, vol in zip(tri_mesh_isotopes_coonc, tri_mesh_volumes)
+            act * vol * self.tot_p_emission / (scaling_factor**3)
+            for act, vol in zip(tri_mesh_isotopes_activity_bq_m3, tri_mesh_volumes)
         ]
 
         tot_triangularized = sum(self.tri_mesh_emission_rates)
