@@ -3,6 +3,7 @@
   <case_name>FLUNED_01_DEFAULT_N16</case_name>
   <number_of_elements>111443</number_of_elements>
   <isotope>N16</isotope>
+  <mesh_volume unit="m^3">2.538703e-03</mesh_volume>
   <decay_constant unit="s^-1">9.721559e-02</decay_constant>
   <molecular_diffusion_coefficient unit="m^2 s^-1">2.000000e-09</molecular_diffusion_coefficient>
   <turbulent_schmidt_number>0.700000</turbulent_schmidt_number>
@@ -10,11 +11,11 @@
     <average_cell_volume unit="m^3">2.277976e-08</average_cell_volume>
   </quality>
   <activation>
-    <inlet_atoms unit="# s^-1">1.75000e+06</inlet_atoms>
-    <outlet_atoms unit="# s^-1">7.20687e+05</outlet_atoms>
+    <inlet_atoms unit="# s^-1">1.80012e+07</inlet_atoms>
+    <outlet_atoms unit="# s^-1">7.41328e+06</outlet_atoms>
     <total_inlet_activity unit="Bq m^-3">1.00000e+10</total_inlet_activity>
     <total_outlet_activity unit="Bq m^-3">4.11821e+09</total_outlet_activity>
-    <total_case_activity unit="Bq">1.02932e+06</total_case_activity>
+    <total_case_activity unit="Bq">1.05880e+07</total_case_activity>
     <total_average_activity unit="Bq m^-3">4.17063e+09</total_average_activity>
     <inlet_normalized_average_activity>4.17063e-01</inlet_normalized_average_activity>
     <outlet_to_inlet_ratio>4.11821e-01</outlet_to_inlet_ratio>
@@ -23,17 +24,13 @@
     <patch id="face1" boundary_type="inlet">
       <area unit="m^2">9.24244e-05</area>
       <fluid_flow unit="m^3 s^-1">-1.75000e-04</fluid_flow>
-      <atom_flow unit="s^-1">-1.75000e+06</atom_flow>
-      <atom_concentration unit="m^-3">1.00000e+10</atom_concentration>
-      <specific_activity unit="Bq m^-3">-0.00000e+00</specific_activity>
+      <specific_activity unit="Bq m^-3">1.00000e+10</specific_activity>
       <average_residence_time unit="s">-0.00000e+00</average_residence_time>
     </patch>
     <patch id="face2" boundary_type="outlet">
       <area unit="m^2">9.24991e-05</area>
       <fluid_flow unit="m^3 s^-1">1.75000e-04</fluid_flow>
-      <atom_flow unit="s^-1">7.20687e+05</atom_flow>
-      <atom_concentration unit="m^-3">4.11821e+09</atom_concentration>
-      <specific_activity unit="Bq m^-3">0.00000e+00</specific_activity>
+      <specific_activity unit="Bq m^-3">4.11821e+09</specific_activity>
       <average_residence_time unit="s">1.45065e+01</average_residence_time>
     </patch>
   </patches>

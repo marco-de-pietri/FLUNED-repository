@@ -81,6 +81,7 @@ class flunedCaseMultiIsotopes:
 
         self.container_path = Path(multi_cases_path)
         self.fluned_cases = self.get_fluned_cases()
+        self.multi_isotopes_results = {}
 
     def get_fluned_cases(self):
         root = self.container_path
@@ -96,7 +97,15 @@ class flunedCaseMultiIsotopes:
         """
 
         for sim in self.fluned_cases:
+            summary = {}
             sim.parse_fluned_simulation()
+            summary["reduction_rate"] = sim.fluned_simulation.reduction_rate_td[-1]
+            summary["outlet_activity"] = sim.fluned_simulation.outlet_ta_bq_m3[-1]
+            summary["outlet_concentration"] = (
+                summary["outlet_activity"] / sim.fluned_simulation.decay_constant
+            )
+            summary["residence_time"] = sim.fluned_simulation.outlet_tr[-1]
+            self.multi_isotopes_results[sim.fluned_simulation.isotope] = summary
 
         return
 

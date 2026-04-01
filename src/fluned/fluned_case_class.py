@@ -470,9 +470,9 @@ class flunedCase:
         results_sim = self.fluned_simulation
 
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
-        inlet_activity = abs(results_sim.inlet_td_atoms_m3[-1])
+        inlet_activity = abs(results_sim.inlet_td_bq_m3[-1])
 
-        outlet_activity = results_sim.outlet_t_atoms_m3[-1]
+        outlet_activity = results_sim.outlet_t_bq_m3[-1]
         outlet_atoms = results_sim.total_outlet_t_atoms
 
         tot_activity = results_sim.total_isotope_activity
@@ -581,10 +581,10 @@ class flunedCase:
         results_sim = self.fluned_simulation
 
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
-        inlet_activity = abs(results_sim.inlet_td_atoms_m3[-1])
+        inlet_activity = abs(results_sim.inlet_td_bq_m3[-1])
 
         outlet_atoms = results_sim.total_outlet_t_atoms
-        outlet_activity = results_sim.outlet_t_atoms_m3[-1]
+        outlet_activity = results_sim.outlet_t_bq_m3[-1]
 
         tot_activity = results_sim.total_isotope_activity
         avg_activity = results_sim.total_average_isotope_activity
