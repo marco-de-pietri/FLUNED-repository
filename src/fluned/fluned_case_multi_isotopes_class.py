@@ -6,7 +6,7 @@ import numpy as np
 from lxml import etree as et  # type: ignore[attr-defined]
 
 from fluned.ofoam_class.fluned_mesh_utils import generate_triangularized_h5m_um_mesh
-from fluned.ofoam_class.ofoam_base.oFoamBase import is_valid_openfoam_case_directory
+from fluned.ofoam_class.ofoam_base import oFoamBase
 
 from .fluned_case_class import flunedCase
 
@@ -88,7 +88,7 @@ class flunedCaseMultiIsotopes:
         return [
             flunedCase(fluned_path=p)
             for p in root.iterdir()
-            if p.is_dir() and is_valid_openfoam_case_directory(p)
+            if p.is_dir() and oFoamBase.is_valid_openfoam_case_directory(p)
         ]
 
     def post_process_cases(self):

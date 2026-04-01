@@ -89,7 +89,10 @@ class oFoamFluned(oFoamBase):
         self.results_folder.mkdir(exist_ok=True)
 
         # generate and process vtk file
-        launch_foam_to_vtk(str(self.path))
+        if (self.path / "VTK").is_dir():
+            self.vtk_file_path = self.get_vtk_file(self.path / "VTK")
+        else:
+            launch_foam_to_vtk(str(self.path))
         self.vtk_file_path = self.get_vtk_file(self.path / "VTK")
         self.vtk_dimensions, self.volume_m3 = get_vtk_dimensions(self.vtk_file_path)
 

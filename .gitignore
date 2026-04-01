@@ -12,6 +12,7 @@ __pycache__/
 *.scdoc
 Vc.gz
 *.swp
+.codex
 .venv/
 .venv/**
 /tests-integration/**/*.vtk
