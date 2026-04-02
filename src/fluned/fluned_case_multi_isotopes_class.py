@@ -81,7 +81,8 @@ class flunedCaseMultiIsotopes:
 
         self.container_path = Path(multi_cases_path)
         self.fluned_cases = self.get_fluned_cases()
-        self.multi_isotopes_results = {}
+        self.isotopes_results = {}
+        self.flow_parameters = {}
 
     def get_fluned_cases(self):
         root = self.container_path
@@ -100,12 +101,17 @@ class flunedCaseMultiIsotopes:
             summary = {}
             sim.parse_fluned_simulation()
             summary["reduction_rate"] = sim.fluned_simulation.reduction_rate_td[-1]
-            summary["outlet_activity"] = sim.fluned_simulation.outlet_ta_bq_m3[-1]
-            summary["outlet_concentration"] = (
-                summary["outlet_activity"] / sim.fluned_simulation.decay_constant
+            summary["outlet_activity_bq_m3"] = sim.fluned_simulation.outlet_ta_bq_m3[-1]
+            summary["outlet_conc_atoms_m3"] = (
+                sim.fluned_simulation.outlet_ta_bq_m3[-1]
+                / sim.fluned_simulation.decay_constant
             )
-            summary["residence_time"] = sim.fluned_simulation.outlet_tr[-1]
-            self.multi_isotopes_results[sim.fluned_simulation.isotope] = summary
+            self.isotopes_results[sim.fluned_simulation.isotope] = summary
+
+        first = self.fluned_cases[0]
+        self.flow_parameters["volume_m3"] = first.fluned_simulation.volume_m3
+        self.flow_parameters["residence_time"] = first.fluned_simulation.outlet_tr[-1]
+        self.flow_parameters["vtk_file_path"] = first.fluned_simulation.vtk_file_path
 
         return
 
