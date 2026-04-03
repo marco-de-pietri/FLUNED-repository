@@ -100,13 +100,24 @@ class flunedCaseMultiIsotopes:
         for sim in self.fluned_cases:
             summary = {}
             sim.parse_fluned_simulation()
+            isotope = sim.fluned_simulation.isotope
+            # GNDS format
+            isotope = isotope.replace("-", "")  # remove dash if present
+            isotope = isotope[0].upper() + isotope[1:].lower()
+
             summary["reduction_rate"] = sim.fluned_simulation.reduction_rate_td[-1]
-            summary["outlet_activity_bq_m3"] = sim.fluned_simulation.outlet_ta_bq_m3[-1]
+            summary["inlet_activity_td_bq_m3"] = sim.fluned_simulation.inlet_td_bq_m3[
+                -1
+            ]
+            summary["normalized_average_decay_rate"] = (
+                sim.fluned_simulation.normalized_average_td[-1]
+            )
             summary["outlet_conc_atoms_m3"] = (
                 sim.fluned_simulation.outlet_ta_bq_m3[-1]
                 / sim.fluned_simulation.decay_constant
             )
-            self.isotopes_results[sim.fluned_simulation.isotope] = summary
+            summary["activity_vtk"] = sim.fluned_simulation.vtk_file_path
+            self.isotopes_results[isotope] = summary
 
         first = self.fluned_cases[0]
         self.flow_parameters["volume_m3"] = first.fluned_simulation.volume_m3

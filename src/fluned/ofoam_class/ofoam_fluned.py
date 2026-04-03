@@ -52,6 +52,14 @@ class oFoamFluned(oFoamBase):
         self.read_volumes()
         self.read_t()
 
+        # fetch average concentrations
+        self.average_td_bq_m3, _, _ = get_post_process_list(
+            self.post_process_path, "volTdSum", "", "volAverage(Td)"
+        )
+        self.average_ta_bq_m3, _, _ = get_post_process_list(
+            self.post_process_path, "volTaSum", "", "volAverage(Ta)"
+        )
+
         # read simulation files - patches
         for face in self.patches.values():
             face.post_process_face()
@@ -72,14 +80,6 @@ class oFoamFluned(oFoamBase):
         # fetch outlet concentrations
         self.outlet_t_bq_m3 = self.get_outlet_t_bq_m3()
         self.outlet_ta_bq_m3 = self.get_outlet_ta_bq_m3()
-
-        # fetch average concentrations
-        self.average_td_bq_m3, _, _ = get_post_process_list(
-            self.post_process_path, "volTdSum", "", "volAverage(Td)"
-        )
-        self.average_ta_bq_m3, _, _ = get_post_process_list(
-            self.post_process_path, "volTaSum", "", "volAverage(Ta)"
-        )
 
         # fetch average residence time at the oulets
         self.outlet_tr = self.get_outlet_tr()
