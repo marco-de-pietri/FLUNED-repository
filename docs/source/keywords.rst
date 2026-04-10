@@ -25,7 +25,7 @@ Chooses the time integration strategy for the scalar transport solver.
 
 * `steadyState` – runs a pseudo‑steady calculation until convergence.
 * `transient`   – using the steady-state velocity field of the input CFD simulation, 
-  it calculates the temporal evolution of a the radioisotope concentration field given the 
+  it calculates the temporal evolution of the radioisotope specific-activity field given the 
   chosen boundary conditions
   
 **SIMULATION_TYPE** *(required)*
@@ -66,9 +66,8 @@ Isotope string tag, if not specified a `custom` tag is applied and the decay con
 No value is required when running a multi-species simulation using data from OpenMC.
 
 **INLET_CONC** *(required)*
-Radio‑isotope concentration imposed at all inlet patches \[ m⁻³].
-Currently, when running a multi-species simulation using data from OpenMC, the same concentration will applied to all the isotopes. 
-This will be improved in future releases.
+It sets the
+radio‑isotope specific activity imposed at all inlet patches \[Bq m⁻³].
 
 **MOLECULAR_DIFFUSION** *(required)*
 Molecular diffusion coefficient *D* for the species in m² s⁻¹.
@@ -142,4 +141,3 @@ from a `flunedCase` object.
 
 For the standard `fluned-post` CLI, the equivalent sampling controls are the
 `--precision` and `--dataset` command-line options.
-

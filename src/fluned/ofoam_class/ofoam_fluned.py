@@ -297,39 +297,39 @@ class oFoamFluned(oFoamBase):
 
         return
 
-    def scale_mesh_results(self, out_path, inlet_activity, decay_const):
-        """
-        this function takes the vtk um-mesh as computed by fluned, it scales
-        it to a new inlet activity, and writes the scaled results to a new vtk file
-        """
-
-        print("writing vtk file for circuit calculation ... ")
-
-        self.scaled_vtk_file_path = out_path
-
-        mesh = pv.read(self.vtk_file_path)
-
-        decay_array = mesh.cell_data["Td"]
-        rr_array = mesh.cell_data["Ta"]
-
-        del mesh.cell_data["Td"]
-        del mesh.cell_data["Ta"]
-        del mesh.cell_data["T"]
-        # del mesh.cell_data['CellID']
-        del mesh.point_data["T"]
-        del mesh.point_data["Ta"]
-        del mesh.point_data["Td"]
-
-        decay_array = inlet_activity * decay_array / self.inlet_td_bq_m3[-1]
-        rr_array = decay_const * rr_array
-
-        mesh.cell_data["average_vol_activity_bq_m3_decay"] = decay_array
-        mesh.cell_data["average_vol_activity_bq_m3_rr"] = rr_array
-        mesh.cell_data["average_vol_activity_bq_m3"] = rr_array + decay_array
-
-        mesh.save(out_path)
-
-        return
+    # def scale_mesh_results(self, out_path, inlet_activity, decay_const):
+    #     """
+    #     this function takes the vtk um-mesh as computed by fluned, it scales
+    #     it to a new inlet activity, and writes the scaled results to a new vtk file
+    #     """
+    #
+    #     print("writing vtk file for circuit calculation ... ")
+    #
+    #     self.scaled_vtk_file_path = out_path
+    #
+    #     mesh = pv.read(self.vtk_file_path)
+    #
+    #     decay_array = mesh.cell_data["Td"]
+    #     rr_array = mesh.cell_data["Ta"]
+    #
+    #     del mesh.cell_data["Td"]
+    #     del mesh.cell_data["Ta"]
+    #     del mesh.cell_data["T"]
+    #     # del mesh.cell_data['CellID']
+    #     del mesh.point_data["T"]
+    #     del mesh.point_data["Ta"]
+    #     del mesh.point_data["Td"]
+    #
+    #     decay_array = inlet_activity * decay_array / self.inlet_td_bq_m3[-1]
+    #     rr_array = decay_const * rr_array
+    #
+    #     mesh.cell_data["average_vol_activity_bq_m3_decay"] = decay_array
+    #     mesh.cell_data["average_vol_activity_bq_m3_rr"] = rr_array
+    #     mesh.cell_data["average_vol_activity_bq_m3"] = rr_array + decay_array
+    #
+    #     mesh.save(out_path)
+    #
+    #     return
 
     def calculate_cartesian_sampling_coordinates(self, sampling_res_cm: float | None):
         """
@@ -407,7 +407,7 @@ class oFoamFluned(oFoamBase):
         """
         this function takes the cartesian sampling coordinates computed before and
         use them to:
-        1. sample the concentrations from the fluned simulation um mesh
+        1. sample the actvity from the fluned simulation um mesh
         2. calculate the total sampled values
         3. the sampled emission rates are adjusted so the total emission remains the same
 
@@ -428,11 +428,7 @@ class oFoamFluned(oFoamBase):
             self.cartesian_voxel_list, sampled_cartesian_concentrations_cm3
         ):
             voxel["emission_rate_per_voxel"] = (
-                concentration
-                * voxel_volume
-                * self.decay_constant
-                * self.tot_p_emission
-                * 1e-06
+                concentration * voxel_volume * self.tot_p_emission * 1e-06
             )  # atoms per m3 to cm3
 
         self.raw_sampled_total_emission_rate = sum(

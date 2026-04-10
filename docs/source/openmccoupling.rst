@@ -8,7 +8,7 @@ However, exact spatial correspondence is not required as reaction rates are comp
 This type of simulation requires the accessibility of the openmc modules in the python environment where the fluned pre- and post-processors are installed.
 
 With this data, the fluned pre-processor generates a FLUNED case for each radioisotope emitting photons that are generated in the flowing fluid.
-The calculation assumptions used in single-isotope calculations still hold: only one-step reactions are considered, the parent isotope concentration is kept constant, and the radioisotope concentration is treated as a passive scalar.
+The calculation assumptions used in single-isotope calculations still hold: only one-step reactions are considered, the parent isotope concentration is kept constant, and the radioisotope specific activity is treated as a passive scalar.
 The relevant radioisotopes are determined using the chain file used by the openmc.deplete module.
 
 The transfer of data from an openmc simulation to fluned is done by saving the relevant data into an H5 file whose path is passed as the **ACTIVATION_FILE** parameter in the fluned pre-processor input.
