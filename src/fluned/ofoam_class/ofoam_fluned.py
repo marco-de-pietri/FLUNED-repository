@@ -4,6 +4,7 @@ import warnings
 from pathlib import Path
 
 import numpy as np
+from foamlib import FoamFile
 
 from fluned.isotopes.isotopes import bins_from_lines, load_isotopes
 
@@ -1442,15 +1443,15 @@ boundaryField
     """
         vol_calc_text = """
         volumeCalc
-        {{
+        {
             type            writeCellVolumes;
             libs            ("libfieldFunctionObjects.so");
             select      all;
 
             writeFields     false;
-            writeControl {};
+            writeControl outputTime;
 
-        }}
+        }
 
     """
 
@@ -1465,7 +1466,6 @@ boundaryField
 
             operation sum;
             select  patch;
-            name        $patch;
 
             writeFields     false;
             writeControl {};
@@ -1485,10 +1485,10 @@ boundaryField
 
             operation sum;
             select  patch;
-            name        $patch;
 
             writeFields     false;
             writeControl {};
+            writeInterval 1;
 
         }}
 
@@ -1507,6 +1507,7 @@ boundaryField
 
             writeFields     false;
             writeControl {};
+            writeInterval 1;
 
 
         }}
@@ -1518,14 +1519,15 @@ boundaryField
         with open(control_dict_path, "w", encoding="utf-8") as fw:
             if time_treatment == "steadystate":
                 fw.write(control_dict_text)
-                write_control = "outputTime"
+                # write_control = "outputTime"
+                write_control = "timeStep"
             elif time_treatment == "transient":
                 fw.write(control_dict_text_transient)
                 write_control = "timeStep"
             else:
                 raise ValueError("time_treatment argument not recognized")
 
-            fw.write(vol_calc_text.format(write_control))
+            fw.write(vol_calc_text)
 
             fw.write(vol_tx_sum_text.format("volTSum", "T", write_control))
             fw.write(vol_tx_sum_text.format("volTaSum", "Ta", write_control))
@@ -1770,25 +1772,28 @@ boundaryField
             elif time_treatment == "transient":
                 fw.write(fv_solution_text.format(0, 0, 0, 0))
 
-        parallel_dict_text = """
-    FoamFile
-    {
-        format      ascii;
-        class       dictionary;
-        object      decomposeParDict;
-    }
-
-    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-    numberOfSubdomains 4;
-
-    method          scotch;
-
-    // *********************************************************************** //
-    """
         parallel_dict_path = system_folder / "decomposeParDict"
-        with open(parallel_dict_path, "w", encoding="utf-8") as fw:
-            fw.write(parallel_dict_text)
+        #     parallel_dict_text = """
+        # FoamFile
+        # {
+        #     format      ascii;
+        #     class       dictionary;
+        #     object      decomposeParDict;
+        # }
+        #
+        # // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+        #
+        # numberOfSubdomains 4;
+        #
+        # method          scotch;
+        #
+        # // *********************************************************************** //
+        # """
+        #     with open(parallel_dict_path, "w", encoding="utf-8") as fw:
+        #         fw.write(parallel_dict_text)
+        decompose = FoamFile(Path(parallel_dict_path))
+        decompose["numberOfSubdomains"] = 4
+        decompose["method"] = "scotch"
 
         return
 

@@ -442,6 +442,7 @@ class flunedCase:
         if self.fluned_simulation.time_treatment == "steadystate":
             self.write_summary_steady(arguments)
             self.write_summary_xml()
+            self.write_patch_concentration_plots()
         else:
             self.write_summary_transient()
 
@@ -457,6 +458,69 @@ class flunedCase:
             "due to ongoing refactoring"
             "contact the developer for more info"
         )
+
+        return
+
+    def write_patch_concentration_plots(self, patches=None, extension="png"):
+        """
+        Write one matplotlib concentration plot per quantity and non-wall
+        patch in RESULTS/.
+
+        Each quantity is written to a separate file named
+        ``<patch_name>_<quantity>.<extension>``.
+        """
+        import os
+
+        results_sim = self.fluned_simulation
+        plot_patches = results_sim.patches if patches is None else patches
+        results_folder = Path(results_sim.results_folder)
+        results_folder.mkdir(exist_ok=True)
+        matplotlib_cache_dir = results_folder / ".matplotlib"
+        matplotlib_cache_dir.mkdir(exist_ok=True)
+        os.environ.setdefault("MPLCONFIGDIR", str(matplotlib_cache_dir))
+
+        try:
+            import matplotlib
+
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+        except ImportError as exc:
+            raise ImportError(
+                "matplotlib is required to generate patch concentration plots"
+            ) from exc
+
+        plot_extension = extension.lstrip(".")
+        plot_series = (
+            ("t_conc_atoms_m3", "T concentration"),
+            ("ta_conc_atoms_m3", "Ta concentration"),
+            ("td_conc_atoms_m3", "Td concentration"),
+        )
+
+        for patch_name, patch in sorted(plot_patches.items()):
+            if patch.face_type == "wall":
+                continue
+
+            if not getattr(patch, "post_process_time", None):
+                continue
+
+            for attr_name, label in plot_series:
+                fig, ax = plt.subplots()
+                ax.plot(
+                    patch.post_process_time,
+                    getattr(patch, attr_name),
+                    label=label,
+                )
+                ax.set_xlabel("Time [s]")
+                ax.set_ylabel("Concentration [#/m^3]")
+                ax.set_title(f"{patch_name} {label}")
+                ax.grid(True, alpha=0.3)
+                ax.legend()
+                fig.tight_layout()
+                fig.savefig(
+                    results_folder / f"{patch_name}_{attr_name}.{plot_extension}",
+                    dpi=200,
+                )
+                plt.close(fig)
 
         return
 
