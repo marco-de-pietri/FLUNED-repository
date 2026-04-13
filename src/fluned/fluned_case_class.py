@@ -470,9 +470,9 @@ class flunedCase:
         results_sim = self.fluned_simulation
 
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
-        inlet_activity = abs(results_sim.inlet_td_bq_m3[-1])
+        inlet_conc = abs(results_sim.inlet_td_atoms_m3[-1])
 
-        outlet_activity = results_sim.outlet_t_bq_m3[-1]
+        outlet_conc = results_sim.outlet_t_atoms_m3[-1]
         outlet_atoms = results_sim.total_outlet_t_atoms
 
         tot_activity = results_sim.total_isotope_activity
@@ -548,12 +548,12 @@ class flunedCase:
             fw.write("ACTIVATION\n")
             fw.write("INLET ATOMS [#/s],{:.5e},\n".format(inlet_atoms))
             fw.write("OUTLET ATOMS [#/s],{:.5e},\n".format(outlet_atoms))
-            fw.write("TOT IN ACTIVITY [Bq/m3],{:.5e},\n".format(inlet_activity))
-            fw.write("TOT OUT ACTIVITY[Bq/m3],{:.5e},\n".format(outlet_activity))
+            fw.write("TOT IN CONC [#/m3],{:.5e},\n".format(inlet_conc))
+            fw.write("TOT OUT CONC [#/m3],{:.5e},\n".format(outlet_conc))
             fw.write("TOT CASE ACTIVITY[Bq],{:.5e},\n".format(tot_activity))
             fw.write("TOT AVG ACTIVITY[Bq/m3],{:.5e},\n".format(avg_activity))
-            if inlet_activity != 0:
-                norm_avg_activity = abs(avg_activity / inlet_activity)
+            if inlet_conc != 0:
+                norm_avg_activity = abs(avg_activity / inlet_conc)
                 string = "INLET-NORMALIZED AVG ACTIVITY,{:.5e},\n"
                 fw.write(string.format(norm_avg_activity))
 
@@ -581,10 +581,10 @@ class flunedCase:
         results_sim = self.fluned_simulation
 
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
-        inlet_activity = abs(results_sim.inlet_td_bq_m3[-1])
+        inlet_conc = abs(results_sim.inlet_td_atoms_m3[-1])
 
         outlet_atoms = results_sim.total_outlet_t_atoms
-        outlet_activity = results_sim.outlet_t_bq_m3[-1]
+        outlet_conc = results_sim.outlet_t_atoms_m3[-1]
 
         tot_activity = results_sim.total_isotope_activity
         avg_activity = results_sim.total_average_isotope_activity
@@ -631,11 +631,11 @@ class flunedCase:
             activation, "outlet_atoms", unit="# s^-1"
         ).text = f"{outlet_atoms:.5e}"
         ET.SubElement(
-            activation, "total_inlet_activity", unit="Bq m^-3"
-        ).text = f"{inlet_activity:.5e}"
+            activation, "total_inlet_conc", unit="# m^-3"
+        ).text = f"{inlet_conc:.5e}"
         ET.SubElement(
-            activation, "total_outlet_activity", unit="Bq m^-3"
-        ).text = f"{outlet_activity:.5e}"
+            activation, "total_outlet_conc", unit="# m^-3"
+        ).text = f"{outlet_conc:.5e}"
         ET.SubElement(
             activation, "total_case_activity", unit="Bq"
         ).text = f"{tot_activity:.5e}"
@@ -643,8 +643,8 @@ class flunedCase:
             activation, "total_average_activity", unit="Bq m^-3"
         ).text = f"{avg_activity:.5e}"
 
-        if inlet_activity != 0:
-            norm_avg_activity = abs(avg_activity / inlet_activity)
+        if inlet_conc != 0:
+            norm_avg_activity = abs(avg_activity / inlet_conc)
             ET.SubElement(
                 activation, "inlet_normalized_average_activity"
             ).text = f"{norm_avg_activity:.5e}"

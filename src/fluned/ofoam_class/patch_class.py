@@ -219,15 +219,15 @@ class PatchClass:
             self.post_process_path, "volTrFlow-", self.face_id, "sum(Tr)"
         )
 
-        self.t_conc_bq_m3 = [
+        self.t_conc_atoms_m3 = [
             x / y if y != 0 else 0
             for x, y in zip(self.post_process_t_flow, self.post_process_flow)
         ]
-        self.ta_conc_bq_m3 = [
+        self.ta_conc_atoms_m3 = [
             x / y if y != 0 else 0
             for x, y in zip(self.post_process_ta_flow, self.post_process_flow)
         ]
-        self.td_conc_bq_m3 = [
+        self.td_conc_atoms_m3 = [
             x / y if y != 0 else 0
             for x, y in zip(self.post_process_td_flow, self.post_process_flow)
         ]
@@ -243,7 +243,7 @@ class PatchClass:
             raise ValueError("Error with the flow sign")
         elif self.post_process_flow[-1] == 0 and self.face_type != "wall":
             raise ValueError("Error with the flow sign")
-        if self.t_conc_bq_m3[-1] < 0:
+        if self.t_conc_atoms_m3[-1] < 0:
             raise ValueError("Error with the concentration sign")
 
         # print (self.post_process_t_flow)
@@ -260,7 +260,7 @@ class PatchClass:
         <patch id="face1" boundary_type="inlet">
             <area unit="m^2">...</area>
             <fluid_flow unit="m^3 s^-1">...</fluid_flow>
-            <specific_activity unit="Bq m^-3">...</specific_activity>
+            <concentration unit="# m^-3">...</concentration>
             <average_residence_time unit="s">...</average_residence_time>
         </patch>
         """
@@ -293,7 +293,7 @@ class PatchClass:
 
         add_child("area", self.area_m2, "m^2")
         add_child("fluid_flow", self.post_process_flow[-1], "m^3 s^-1")
-        add_child("specific_activity", self.t_conc_bq_m3[-1], "Bq m^-3")
+        add_child("concentration", self.t_conc_atoms_m3[-1], "# m^-3")
         add_child("average_residence_time", self.tr_conc[-1], "s")
 
         return patch_elem
@@ -309,8 +309,8 @@ class PatchClass:
         patch_string += "FLUID FLOW [m^3/s],{:.5e},\n".format(
             self.post_process_flow[-1]
         )
-        patch_string += "SPECIFIC ACTIVITY [Bq/m^3],{:.5e},\n".format(
-            self.t_conc_bq_m3[-1]
+        patch_string += "CONCENTRATION [#/m^3],{:.5e},\n".format(
+            self.t_conc_atoms_m3[-1]
         )
         patch_string += "AVG RES T [s],{:.5f},\n".format(self.tr_conc[-1])
 

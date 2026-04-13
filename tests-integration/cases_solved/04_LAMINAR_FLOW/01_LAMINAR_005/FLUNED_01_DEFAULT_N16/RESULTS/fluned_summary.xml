@@ -11,26 +11,26 @@
     <average_cell_volume unit="m^3">1.076638e-09</average_cell_volume>
   </quality>
   <activation>
-    <inlet_atoms unit="# s^-1">4.12714e+05</inlet_atoms>
-    <outlet_atoms unit="# s^-1">8.54462e+04</outlet_atoms>
-    <total_inlet_activity unit="Bq m^-3">1.00000e+10</total_inlet_activity>
-    <total_outlet_activity unit="Bq m^-3">2.07035e+09</total_outlet_activity>
-    <total_case_activity unit="Bq">3.27267e+05</total_case_activity>
-    <total_average_activity unit="Bq m^-3">4.32902e+09</total_average_activity>
-    <inlet_normalized_average_activity>4.32902e-01</inlet_normalized_average_activity>
+    <inlet_atoms unit="# s^-1">4.01222e+04</inlet_atoms>
+    <outlet_atoms unit="# s^-1">8.30671e+03</outlet_atoms>
+    <total_inlet_conc unit="# m^-3">1.00000e+10</total_inlet_conc>
+    <total_outlet_conc unit="# m^-3">2.07035e+09</total_outlet_conc>
+    <total_case_activity unit="Bq">3.18155e+04</total_case_activity>
+    <total_average_activity unit="Bq m^-3">4.20848e+08</total_average_activity>
+    <inlet_normalized_average_activity>4.20848e-02</inlet_normalized_average_activity>
     <outlet_to_inlet_ratio>2.07035e-01</outlet_to_inlet_ratio>
   </activation>
   <patches>
     <patch id="face1" boundary_type="inlet">
       <area unit="m^2">7.57334e-05</area>
       <fluid_flow unit="m^3 s^-1">-4.01222e-06</fluid_flow>
-      <specific_activity unit="Bq m^-3">1.00000e+10</specific_activity>
+      <concentration unit="# m^-3">1.00000e+10</concentration>
       <average_residence_time unit="s">-0.00000e+00</average_residence_time>
     </patch>
     <patch id="face2" boundary_type="outlet">
       <area unit="m^2">7.55303e-05</area>
       <fluid_flow unit="m^3 s^-1">4.01222e-06</fluid_flow>
-      <specific_activity unit="Bq m^-3">2.07035e+09</specific_activity>
+      <concentration unit="# m^-3">2.07035e+09</concentration>
       <average_residence_time unit="s">1.88401e+01</average_residence_time>
     </patch>
   </patches>

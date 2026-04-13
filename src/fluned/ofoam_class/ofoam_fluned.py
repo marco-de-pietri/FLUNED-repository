@@ -4,7 +4,6 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-import pyvista as pv
 
 from fluned.isotopes.isotopes import bins_from_lines, load_isotopes
 
@@ -28,13 +27,13 @@ class oFoamFluned(oFoamBase):
     def __init__(self, path: str | Path):
         super().__init__(path)
         # td arrays
-        self.inlet_td_bq_m3 = []
+        self.inlet_td_atoms_m3 = []
         self.normalized_average_td = []
-        self.average_td_bq_m3 = []
+        self.average_td_atoms_m3 = []
         self.reduction_rate_td = []
         # ta arrays
-        self.average_ta_bq_m3 = []
-        self.outlet_ta_bq_m3 = []
+        self.average_ta_atoms_m3 = []
+        self.outlet_ta_atoms_m3 = []
         self.volume_m3 = 0
         self.vtk_file_path = ""
         self.scaled_vtk_file_path = ""
@@ -53,10 +52,10 @@ class oFoamFluned(oFoamBase):
         self.read_t()
 
         # fetch average concentrations
-        self.average_td_bq_m3, _, _ = get_post_process_list(
+        self.average_td_atoms_m3, _, _ = get_post_process_list(
             self.post_process_path, "volTdSum", "", "volAverage(Td)"
         )
-        self.average_ta_bq_m3, _, _ = get_post_process_list(
+        self.average_ta_atoms_m3, _, _ = get_post_process_list(
             self.post_process_path, "volTaSum", "", "volAverage(Ta)"
         )
 
@@ -65,21 +64,17 @@ class oFoamFluned(oFoamBase):
             face.post_process_face()
 
         # compute total inlet/outlet atom flow atoms/s
-        self.total_inlet_t_atoms = (
-            self.get_total_inlet_t_activity() / self.decay_constant
-        )
-        self.total_outlet_t_atoms = (
-            self.get_total_outlet_t_activity() / self.decay_constant
-        )
+        self.total_inlet_t_atoms = self.get_total_inlet_t_atoms()
+        self.total_outlet_t_atoms = self.get_total_outlet_t_atoms()
 
         # fetch inlet td concentration and inlet td normalized quantities
-        self.inlet_td_bq_m3 = self.get_inlet_bq_m3()
+        self.inlet_td_atoms_m3 = self.get_inlet_atoms_m3()
         self.reduction_rate_td = self.get_reduction_rate_td()
         self.normalized_average_td = self.get_normalized_average_td()
 
         # fetch outlet concentrations
-        self.outlet_t_bq_m3 = self.get_outlet_t_bq_m3()
-        self.outlet_ta_bq_m3 = self.get_outlet_ta_bq_m3()
+        self.outlet_t_atoms_m3 = self.get_outlet_t_atoms_m3()
+        self.outlet_ta_atoms_m3 = self.get_outlet_ta_atoms_m3()
 
         # fetch average residence time at the oulets
         self.outlet_tr = self.get_outlet_tr()
@@ -100,10 +95,13 @@ class oFoamFluned(oFoamBase):
         generate_external_stl(self.vtk_file_path, self.results_folder)
 
         # compute total t quantity, activity and emission rate
-        self.isotope_activity = [
+        self.isotope_amounts = [
             vol * t for vol, t in zip(self.volumes, self.t_scalar)
+        ]  # atoms/cell
+        self.isotope_activities = [
+            ats * self.decay_constant for ats in self.isotope_amounts
         ]  # bq/cell
-        self.total_isotope_activity = sum(self.isotope_activity)  # bq
+        self.total_isotope_activity = sum(self.isotope_activities)  # bq
 
         self.total_average_isotope_activity = (
             self.total_isotope_activity / self.volume_m3
@@ -148,7 +146,7 @@ class oFoamFluned(oFoamBase):
 
         return red_ratio
 
-    def get_outlet_ta_bq_m3(self):
+    def get_outlet_ta_atoms_m3(self):
         """
         this function returns the concentration of the outlet patch for the
         Ta field, meaning for the part generated only by the irradiation and
@@ -160,12 +158,12 @@ class oFoamFluned(oFoamBase):
 
         for patch in self.patches.values():
             if patch.face_type == "outlet":
-                conc_out = patch.ta_conc_bq_m3
+                conc_out = patch.ta_conc_atoms_m3
                 break
 
         return conc_out
 
-    def get_inlet_bq_m3(self):
+    def get_inlet_atoms_m3(self):
         """
         this function returns the concentration of the inlet patch for the
         Td field, meaning for the part due to the inlet flow
@@ -177,12 +175,12 @@ class oFoamFluned(oFoamBase):
 
         for patch in self.patches.values():
             if patch.face_type == "inlet":
-                conc_out = patch.td_conc_bq_m3
+                conc_out = patch.td_conc_atoms_m3
                 break
 
         return conc_out
 
-    def get_outlet_t_bq_m3(self):
+    def get_outlet_t_atoms_m3(self):
         """
         this function returns the concentration of the outlet patch for the
         T field
@@ -194,7 +192,7 @@ class oFoamFluned(oFoamBase):
 
         for patch in self.patches.values():
             if patch.face_type == "outlet":
-                conc_out = patch.t_conc_bq_m3
+                conc_out = patch.t_conc_atoms_m3
                 break
 
         return conc_out
@@ -215,33 +213,33 @@ class oFoamFluned(oFoamBase):
 
         return conc_out
 
-    def get_total_inlet_t_activity(self):
+    def get_total_inlet_t_atoms(self):
         """
-        this function returns the total amount of Bequerels
+        this function returns the total amount of atoms
         entering the mesh through the inlets
         """
 
-        bq_in = 0
+        atoms_in = 0
 
         for patch in self.patches.values():
             if patch.face_type == "inlet":
-                bq_in += patch.post_process_t_flow[-1]
+                atoms_in += patch.post_process_t_flow[-1]
 
-        return bq_in
+        return atoms_in
 
-    def get_total_outlet_t_activity(self):
+    def get_total_outlet_t_atoms(self):
         """
-        this function returns the total amount of Bequerels
+        this function returns the total amount of atoms
         exiting the mesh through the outlets
         """
 
-        bq_out = 0
+        atoms_out = 0
 
         for patch in self.patches.values():
             if patch.face_type == "outlet":
-                bq_out += patch.post_process_t_flow[-1]
+                atoms_out += patch.post_process_t_flow[-1]
 
-        return bq_out
+        return atoms_out
 
     def get_normalized_average_td(self):
         """
@@ -251,7 +249,7 @@ class oFoamFluned(oFoamBase):
 
         norm_td = [
             x / y if y != 0 else 0
-            for x, y in zip(self.average_td_bq_m3, self.inlet_td_bq_m3)
+            for x, y in zip(self.average_td_atoms_m3, self.inlet_td_atoms_m3)
         ]
 
         return norm_td
@@ -296,40 +294,6 @@ class oFoamFluned(oFoamBase):
         self.write_sampled_cartesian_source_vtk()
 
         return
-
-    # def scale_mesh_results(self, out_path, inlet_activity, decay_const):
-    #     """
-    #     this function takes the vtk um-mesh as computed by fluned, it scales
-    #     it to a new inlet activity, and writes the scaled results to a new vtk file
-    #     """
-    #
-    #     print("writing vtk file for circuit calculation ... ")
-    #
-    #     self.scaled_vtk_file_path = out_path
-    #
-    #     mesh = pv.read(self.vtk_file_path)
-    #
-    #     decay_array = mesh.cell_data["Td"]
-    #     rr_array = mesh.cell_data["Ta"]
-    #
-    #     del mesh.cell_data["Td"]
-    #     del mesh.cell_data["Ta"]
-    #     del mesh.cell_data["T"]
-    #     # del mesh.cell_data['CellID']
-    #     del mesh.point_data["T"]
-    #     del mesh.point_data["Ta"]
-    #     del mesh.point_data["Td"]
-    #
-    #     decay_array = inlet_activity * decay_array / self.inlet_td_bq_m3[-1]
-    #     rr_array = decay_const * rr_array
-    #
-    #     mesh.cell_data["average_vol_activity_bq_m3_decay"] = decay_array
-    #     mesh.cell_data["average_vol_activity_bq_m3_rr"] = rr_array
-    #     mesh.cell_data["average_vol_activity_bq_m3"] = rr_array + decay_array
-    #
-    #     mesh.save(out_path)
-    #
-    #     return
 
     def calculate_cartesian_sampling_coordinates(self, sampling_res_cm: float | None):
         """
@@ -428,7 +392,11 @@ class oFoamFluned(oFoamBase):
             self.cartesian_voxel_list, sampled_cartesian_concentrations_cm3
         ):
             voxel["emission_rate_per_voxel"] = (
-                concentration * voxel_volume * self.tot_p_emission * 1e-06
+                concentration
+                * voxel_volume
+                * self.decay_constant
+                * self.tot_p_emission
+                * 1e-06
             )  # atoms per m3 to cm3
 
         self.raw_sampled_total_emission_rate = sum(
@@ -717,6 +685,7 @@ boundaryField
         3) with a source file
         """
 
+        # case with no activation file
         if activation_file == "" or activation_file is None:
             if activation_constant is None or math.isclose(
                 activation_constant, 0.0, abs_tol=1e-12
@@ -728,6 +697,7 @@ boundaryField
                 self.read_volumes()
                 activ_sources = [activation_constant * vol for vol in self.volumes]
 
+        # case with activation file
         else:
             activation_file = Path(activation_file)
             # case with source file
@@ -1321,15 +1291,15 @@ boundaryField
 
         # extract the data from the triangularized mesh
         tri_mesh_volumes = get_vtk_volumes(tri_mesh_vtk_filepath)
-        tri_mesh_isotopes_activity_bq_m3 = get_vtk_celldata_array(
+        tri_mesh_isotopes_activity_atoms_m3 = get_vtk_celldata_array(
             tri_mesh_vtk_filepath, cell_data_array
         )
 
         # the 1e6 factor is to take into account that the concentration data is taken by the scaled mesh
         # switch from emission per m3 to per cm3
         self.tri_mesh_emission_rates = [
-            act * vol * self.tot_p_emission / (scaling_factor**3)
-            for act, vol in zip(tri_mesh_isotopes_activity_bq_m3, tri_mesh_volumes)
+            conc * vol * self.tot_p_emission * self.decay_constant / (scaling_factor**3)
+            for conc, vol in zip(tri_mesh_isotopes_activity_atoms_m3, tri_mesh_volumes)
         ]
 
         tot_triangularized = sum(self.tri_mesh_emission_rates)

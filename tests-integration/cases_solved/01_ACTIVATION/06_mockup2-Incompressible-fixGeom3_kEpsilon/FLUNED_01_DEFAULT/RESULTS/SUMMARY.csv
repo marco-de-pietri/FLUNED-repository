@@ -16,17 +16,17 @@ AVG VOL [m3],2.253949e-09,
 source sampling
 sampling resolution [m],0.010000,
 sampled voxels [#],1536,
-vtk emission rate [#/s],1.446861e+06,
+vtk emission rate [#/s],1.406575e+05,
 sampled emission rate (unscaled) [#/s],1.199199e+05,
 
 
 ACTIVATION
 INLET ATOMS [#/s],0.00000e+00,
-OUTLET ATOMS [#/s],1.75588e+07,
-TOT IN ACTIVITY [Bq/m3],0.00000e+00,
-TOT OUT ACTIVITY[Bq/m3],9.96929e+09,
-TOT CASE ACTIVITY[Bq],1.93023e+06,
-TOT AVG ACTIVITY[Bq/m3],5.95120e+09,
+OUTLET ATOMS [#/s],1.70698e+06,
+TOT IN CONC [#/m3],0.00000e+00,
+TOT OUT CONC [#/m3],9.96929e+09,
+TOT CASE ACTIVITY[Bq],1.87649e+05,
+TOT AVG ACTIVITY[Bq/m3],5.78550e+08,
 
 
 FACES
@@ -35,12 +35,12 @@ FACE ID,face14,
 TYPE,inlet,
 AREA [m^2],1.50617e-04,
 FLUID FLOW [m^3/s],-1.71224e-04,
-SPECIFIC ACTIVITY [Bq/m^3],-0.00000e+00,
+CONCENTRATION [#/m^3],-0.00000e+00,
 AVG RES T [s],-0.00000,
 
 FACE ID,face27,
 TYPE,outlet,
 AREA [m^2],1.50628e-04,
 FLUID FLOW [m^3/s],1.71224e-04,
-SPECIFIC ACTIVITY [Bq/m^3],9.96929e+09,
+CONCENTRATION [#/m^3],9.96929e+09,
 AVG RES T [s],1.89388,

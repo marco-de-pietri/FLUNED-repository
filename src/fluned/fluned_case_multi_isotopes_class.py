@@ -106,14 +106,14 @@ class flunedCaseMultiIsotopes:
             isotope = isotope[0].upper() + isotope[1:].lower()
 
             summary["reduction_rate"] = sim.fluned_simulation.reduction_rate_td[-1]
-            summary["inlet_activity_td_bq_m3"] = sim.fluned_simulation.inlet_td_bq_m3[
+            summary["inlet_activity_td_bq_m3"] = sim.fluned_simulation.inlet_td_atoms_m3[
                 -1
             ]
             summary["normalized_average_decay_rate"] = (
                 sim.fluned_simulation.normalized_average_td[-1]
             )
             summary["outlet_conc_atoms_m3"] = (
-                sim.fluned_simulation.outlet_ta_bq_m3[-1]
+                sim.fluned_simulation.outlet_ta_atoms_m3[-1]
                 / sim.fluned_simulation.decay_constant
             )
             summary["activity_vtk"] = sim.fluned_simulation.vtk_file_path

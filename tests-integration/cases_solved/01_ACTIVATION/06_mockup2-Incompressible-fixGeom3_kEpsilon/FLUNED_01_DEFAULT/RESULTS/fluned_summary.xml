@@ -12,23 +12,23 @@
   </quality>
   <activation>
     <inlet_atoms unit="# s^-1">0.00000e+00</inlet_atoms>
-    <outlet_atoms unit="# s^-1">1.75588e+07</outlet_atoms>
-    <total_inlet_activity unit="Bq m^-3">0.00000e+00</total_inlet_activity>
-    <total_outlet_activity unit="Bq m^-3">9.96929e+09</total_outlet_activity>
-    <total_case_activity unit="Bq">1.93023e+06</total_case_activity>
-    <total_average_activity unit="Bq m^-3">5.95120e+09</total_average_activity>
+    <outlet_atoms unit="# s^-1">1.70698e+06</outlet_atoms>
+    <total_inlet_conc unit="# m^-3">0.00000e+00</total_inlet_conc>
+    <total_outlet_conc unit="# m^-3">9.96929e+09</total_outlet_conc>
+    <total_case_activity unit="Bq">1.87649e+05</total_case_activity>
+    <total_average_activity unit="Bq m^-3">5.78550e+08</total_average_activity>
   </activation>
   <patches>
     <patch id="face14" boundary_type="inlet">
       <area unit="m^2">1.50617e-04</area>
       <fluid_flow unit="m^3 s^-1">-1.71224e-04</fluid_flow>
-      <specific_activity unit="Bq m^-3">-0.00000e+00</specific_activity>
+      <concentration unit="# m^-3">-0.00000e+00</concentration>
       <average_residence_time unit="s">-0.00000e+00</average_residence_time>
     </patch>
     <patch id="face27" boundary_type="outlet">
       <area unit="m^2">1.50628e-04</area>
       <fluid_flow unit="m^3 s^-1">1.71224e-04</fluid_flow>
-      <specific_activity unit="Bq m^-3">9.96929e+09</specific_activity>
+      <concentration unit="# m^-3">9.96929e+09</concentration>
       <average_residence_time unit="s">1.89388e+00</average_residence_time>
     </patch>
   </patches>

@@ -67,7 +67,7 @@ No value is required when running a multi-species simulation using data from Ope
 
 **INLET_CONC** *(required)*
 It sets the
-radio‑isotope specific activity imposed at all inlet patches \[Bq m⁻³].
+radio‑isotope concentration imposed at all inlet patches \[# m⁻³].
 
 **MOLECULAR_DIFFUSION** *(required)*
 Molecular diffusion coefficient *D* for the species in m² s⁻¹.

@@ -29,11 +29,17 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     continue
   fi
 
+  if [[ ! -f "$src_xml" ]]; then
+    echo "MISSING SOURCE: $src_xml" | tee -a "$log_file"
+    continue
+  fi
+
   # Ensure destination directory exists
   mkdir -p "$(dirname "$dst")"
 
   # Copy (overwrite) the reference summary files
   cp -f "$src" "$dst"
-  cp -f "$src_xml" "$dst_xml"
   echo "UPDATED: $dst" | tee -a "$log_file"
+  cp -f "$src_xml" "$dst_xml"
+  echo "UPDATED: $dst_xml" | tee -a "$log_file"
 done <"$manifest_file"
