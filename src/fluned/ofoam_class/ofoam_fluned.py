@@ -1,4 +1,5 @@
 import math
+import re
 import shutil
 import warnings
 from pathlib import Path
@@ -114,13 +115,17 @@ class oFoamFluned(oFoamBase):
         return None
 
     def get_vtk_file(self, search_folder: Path, custom_vtk: str | None = None) -> Path:
+        pattern = re.compile(r".*_\d+$")  # matches *_<number>
+
         if custom_vtk:
             target = Path(custom_vtk).stem.lower()
             matches = [
-                p for p in search_folder.rglob("*.vtk") if p.stem.lower() == target
+                p
+                for p in search_folder.rglob("*.vtk")
+                if p.stem.lower() == target and pattern.match(p.stem)
             ]
         else:
-            matches = list(search_folder.rglob("*.vtk"))
+            matches = [p for p in search_folder.rglob("*.vtk") if pattern.match(p.stem)]
 
         if len(matches) != 1:
             raise ValueError(f"Expected exactly one vtk file, found: {matches}")

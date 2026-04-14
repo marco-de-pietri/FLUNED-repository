@@ -535,9 +535,11 @@ class flunedCase:
 
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
         inlet_conc = abs(results_sim.inlet_td_atoms_m3[-1])
+        inlet_act = inlet_conc * results_sim.decay_constant
 
         outlet_conc = results_sim.outlet_t_atoms_m3[-1]
         outlet_atoms = results_sim.total_outlet_t_atoms
+        outlet_act = outlet_conc * results_sim.decay_constant
 
         tot_activity = results_sim.total_isotope_activity
         avg_activity = results_sim.total_average_isotope_activity
@@ -547,7 +549,7 @@ class flunedCase:
         faces_post = sorted(results_sim.patches.values(), key=lambda x: x.face_id)
 
         if arguments.check:
-            decay_const = self.decay_constant
+            decay_const = results_sim.decay_constant
             tot_scalar = sum(results_sim.t_scalar)
 
             # parameter 2 based on transit times
@@ -613,7 +615,9 @@ class flunedCase:
             fw.write("INLET ATOMS [#/s],{:.5e},\n".format(inlet_atoms))
             fw.write("OUTLET ATOMS [#/s],{:.5e},\n".format(outlet_atoms))
             fw.write("TOT IN CONC [#/m3],{:.5e},\n".format(inlet_conc))
+            fw.write("TOT IN ACT [Bq/m3],{:.5e},\n".format(inlet_act))
             fw.write("TOT OUT CONC [#/m3],{:.5e},\n".format(outlet_conc))
+            fw.write("TOT OUT ACT [Bq/m3],{:.5e},\n".format(outlet_act))
             fw.write("TOT CASE ACTIVITY[Bq],{:.5e},\n".format(tot_activity))
             fw.write("TOT AVG ACTIVITY[Bq/m3],{:.5e},\n".format(avg_activity))
             if inlet_conc != 0:
@@ -646,9 +650,11 @@ class flunedCase:
 
         inlet_atoms = abs(results_sim.total_inlet_t_atoms)
         inlet_conc = abs(results_sim.inlet_td_atoms_m3[-1])
+        inlet_act = inlet_conc * results_sim.decay_constant
 
         outlet_atoms = results_sim.total_outlet_t_atoms
         outlet_conc = results_sim.outlet_t_atoms_m3[-1]
+        outlet_act = outlet_conc * results_sim.decay_constant
 
         tot_activity = results_sim.total_isotope_activity
         avg_activity = results_sim.total_average_isotope_activity
@@ -698,8 +704,14 @@ class flunedCase:
             activation, "total_inlet_conc", unit="# m^-3"
         ).text = f"{inlet_conc:.5e}"
         ET.SubElement(
+            activation, "total_inlet_act", unit="Bq m^-3"
+        ).text = f"{inlet_act:.5e}"
+        ET.SubElement(
             activation, "total_outlet_conc", unit="# m^-3"
         ).text = f"{outlet_conc:.5e}"
+        ET.SubElement(
+            activation, "total_outlet_act", unit="Bq m^-3"
+        ).text = f"{outlet_act:.5e}"
         ET.SubElement(
             activation, "total_case_activity", unit="Bq"
         ).text = f"{tot_activity:.5e}"
