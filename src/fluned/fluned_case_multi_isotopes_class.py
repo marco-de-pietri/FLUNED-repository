@@ -112,9 +112,9 @@ class flunedCaseMultiIsotopes:
             summary["normalized_average_decay_rate"] = (
                 sim.fluned_simulation.normalized_average_td[-1]
             )
-            summary["outlet_conc_atoms_m3"] = sim.fluned_simulation.outlet_ta_atoms_m3[
-                -1
-            ]
+            summary["outlet_conc_ta_atoms_m3"] = (
+                sim.fluned_simulation.outlet_ta_atoms_m3[-1]
+            )
             summary["concentation_file_vtk"] = sim.fluned_simulation.vtk_file_path
             self.isotopes_results[isotope] = summary
 
