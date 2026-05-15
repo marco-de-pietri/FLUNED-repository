@@ -37,6 +37,7 @@ copybutton_prompt_is_regexp = True
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+master_doc = "index"
 
 
 # -- Options for HTML output ------------------------------------------------
@@ -48,3 +49,12 @@ html_static_path = ["_static"]
 html_theme_options = {
     "includehidden": True,
 }
+
+
+# -- Options for LaTeX/PDF output -------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-latex-output
+
+latex_engine = "xelatex"
+latex_documents = [
+    (master_doc, "FLUNED.tex", "FLUNED Documentation", author, "manual"),
+]

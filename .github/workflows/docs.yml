@@ -9,10 +9,23 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with: { python-version: '3.13' }
-      - name: Install deps
-        run: pip install ".[docs]"
-      - name: Build HTML
-        run: sphinx-build -b html docs/source build/html
+      - name: Install docs deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            latexmk \
+            texlive-xetex \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            fonts-freefont-otf
+          pip install ".[docs]"
+      - name: Build docs
+        run: |
+          sphinx-build -M html docs/source build
+          sphinx-build -M latexpdf docs/source build
+          mkdir -p build/html/_downloads
+          cp build/latex/FLUNED.pdf build/html/_downloads/FLUNED.pdf
       - uses: actions/upload-pages-artifact@v5
         with: { path: build/html }
   deploy:
@@ -25,4 +38,3 @@ jobs:
     steps:
     - id: deployment
       uses: actions/deploy-pages@v5
-
