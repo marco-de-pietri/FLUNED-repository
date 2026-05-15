@@ -22,8 +22,8 @@ jobs:
           pip install ".[docs]"
       - name: Build docs
         run: |
-          sphinx-build -M html docs/source build
           sphinx-build -M latexpdf docs/source build
+          sphinx-build -M html docs/source build
           mkdir -p build/html/_downloads
           cp build/latex/FLUNED.pdf build/html/_downloads/FLUNED.pdf
       - uses: actions/upload-pages-artifact@v5

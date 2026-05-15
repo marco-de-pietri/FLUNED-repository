@@ -13,6 +13,10 @@ circuits exposed to fusion-neutron irradiation.
 Starting from completed CFD run (OpenFOAM or ANSYS Fluent) and the neutron-induced activation data, 
 it solves an advection–diffusion–decay problem and outputs specific-activity fields ready for dose-rate, shielding, or licensing analyses.
 
+.. only:: html
+
+   `Download the PDF version <_downloads/FLUNED.pdf>`_
+
 Key features
 ------------
 
@@ -37,5 +41,4 @@ Key features
   validation
   testing
   publications
-
 
